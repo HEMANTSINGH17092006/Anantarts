@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Color Palette */
+  --primary-gold: #D4AF37;
+  --primary-gold-hover: #AA7C11;
+  --primary-gold-light: rgba(212, 175, 55, 0.15);
+  --primary-gold-border: rgba(212, 175, 55, 0.3);
+  
+  --saffron-orange: #FF9933;
+  --saffron-orange-dark: #E65C00;
+  --saffron-light: rgba(255, 153, 51, 0.1);
+  
+  --luxury-maroon: #800020;
+  --luxury-maroon-dark: #4A0010;
+  --luxury-maroon-light: rgba(128, 0, 32, 0.08);
+
+  --bg-cream: #FCF9F2;
+  --bg-cream-dark: #F4EFE6;
+  --bg-dark-slate: #121212;
+  --bg-card-dark: #1E1E1E;
+
+  --text-dark: #2C2C2C;
+  --text-muted: #666666;
+  --text-light: #FFFFFF;
+  --text-gold: #D4AF37;
+  
+  /* Status Colors */
+  --color-success: #2E7D32;
+  --color-warning: #EF6C00;
+  --color-danger: #C62828;
+  --color-info: #1565C0;
+  
+  /* Fonts */
+  --font-heading: 'Cinzel', serif;
+  --font-body: 'Inter', sans-serif;
+  
+  /* Gradients */
+  --gold-gradient: linear-gradient(135deg, #FFE07D 0%, #D4AF37 50%, #AA7C11 100%);
+  --dark-gold-gradient: linear-gradient(135deg, #AA7C11 0%, #684C07 100%);
+  --luxury-gradient: linear-gradient(135deg, #800020 0%, #4A0010 100%);
+  --cream-gradient: linear-gradient(180deg, #FCF9F2 0%, #F4EFE6 100%);
+  --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.6) 100%);
+  --glass-dark-gradient: linear-gradient(135deg, rgba(30, 30, 30, 0.95) 0%, rgba(18, 18, 18, 0.9) 100%);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.25);
+  --shadow-maroon: 0 4px 20px rgba(128, 0, 32, 0.15);
+  
+  /* Borders */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  
+  /* Transition */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}

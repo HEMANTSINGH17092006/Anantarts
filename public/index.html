@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anant Arts - Bringing Divine Art to Every Home</title>
+  <meta name="description" content="Anant Arts offers luxury electroplated Hindu god and goddess idols, handcrafted in 24K gold, silver, and antique bronze. Elevate your home temples.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* Homepage Specific Styles */
+    .hero-section {
+      height: 70vh;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-light);
+      text-align: center;
+      padding: 0 2rem;
+      border-bottom: 3px solid var(--primary-gold);
+      position: relative;
+    }
+    
+    .hero-content {
+      max-width: 800px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 3rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--primary-gold-border);
+      backdrop-filter: blur(5px);
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-title {
+      font-size: 3rem;
+      color: var(--primary-gold);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      font-family: var(--font-heading);
+    }
+
+    .hero-cta {
+      display: inline-block;
+      padding: 0.85rem 2rem;
+      background: var(--gold-gradient);
+      color: var(--text-dark);
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: var(--radius-sm);
+      transition: var(--transition-normal);
+    }
+
+    .hero-cta:hover {
+      background: var(--luxury-gradient);
+      color: var(--text-light);
+      box-shadow: var(--shadow-maroon);
+    }
+
+    .section-title-group {
+      text-align: center;
+      margin: 4rem 0 2rem 0;
+    }
+
+    .section-title {
+      font-size: 2.2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      display: inline-block;
+      padding-bottom: 0.75rem;
+    }
+
+    .section-title::after {
+      content: '🏵️';
+      position: absolute;
+      bottom: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.2rem;
+    }
+
+    .section-subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 1rem;
+    }
+
+    /* Categories Grid styling */
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .category-card {
+      background: var(--text-light);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(212, 175, 55, 0.1);
+      transition: var(--transition-normal);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .category-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-gold);
+      border-color: var(--primary-gold);
+    }
+
+    .category-card-img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      border: 2px solid var(--primary-gold-border);
+      background: var(--bg-cream-dark);
+    }
+
+    .category-card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .category-card-title {
+      font-family: var(--font-heading);
+      font-weight: bold;
+      color: var(--luxury-maroon);
+      font-size: 0.95rem;
+    }
+
+    /* Features / Why Choose Us Grid */
+    .features-section {
+      background: var(--luxury-maroon-light);
+      padding: 5rem 2rem;
+      margin-top: 5rem;
+      border-top: 1px solid var(--primary-gold-border);
+      border-bottom: 1px solid var(--primary-gold-border);
+    }
+
+    .features-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 3rem;
+    }
+
+    .feature-item {
+      text-align: center;
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      color: var(--primary-gold-hover);
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      color: var(--luxury-maroon);
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-desc {
+      font-size: 0.9rem;
+      color: var(--text-dark);
+      opacity: 0.85;
+    }
+
+    /* Testimonials slider container */
+    .testimonials-section {
+      padding: 5rem 2rem;
+      background: var(--bg-cream-dark);
+      text-align: center;
+    }
+
+    .testimonials-container {
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .testimonial-slide {
+      background: var(--text-light);
+      padding: 3rem;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--primary-gold-border);
+    }
+
+    .testimonial-comment {
+      font-size: 1.15rem;
+      font-style: italic;
+      color: #333;
+      margin-bottom: 1.5rem;
+    }
+
+    .testimonial-rating {
+      font-size: 1.2rem;
+      color: #FFC107;
+      margin-bottom: 1rem;
+    }
+
+    .testimonial-author {
+      font-family: var(--font-heading);
+      color: var(--luxury-maroon);
+      font-weight: bold;
+    }
+
+    .testimonial-role {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* FAQ Section */
+    .faq-section {
+      max-width: 800px;
+      margin: 5rem auto;
+      padding: 0 2rem;
+    }
+
+    .faq-item {
+      background: var(--text-light);
+      border: 1px solid var(--primary-gold-border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .faq-question {
+      padding: 1.25rem 1.5rem;
+      font-family: var(--font-heading);
+      font-weight: bold;
+      color: var(--luxury-maroon);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    .faq-answer {
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+      color: #555;
+      font-size: 0.95rem;
+      border-top: 0 solid rgba(0,0,0,0.05);
+    }
+
+    .faq-item.active .faq-answer {
+      padding: 1.25rem 1.5rem;
+      max-height: 200px;
+      border-top-width: 1px;
+    }
+
+    .faq-question::after {
+      content: '+';
+      font-size: 1.5rem;
+      font-weight: normal;
+      transition: transform var(--transition-fast);
+    }
+
+    .faq-item.active .faq-question::after {
+      transform: rotate(45deg);
+    }
+  </style>
+</head>
+<body id="home-page">
+
+  <!-- Header -->
+  <header id="main-header"></header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">Anant Arts</h1>
+      <p class="hero-subtitle">Bringing Divine Art to Every Home</p>
+      <a href="shop.html" class="hero-cta">Explore Collections</a>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <div class="section-title-group">
+    <h2 class="section-title">Shop by Deity</h2>
+    <p class="section-subtitle">Select from our premium, electroplated masterworks of Hindu Gods & Goddesses.</p>
+  </div>
+  <section class="categories-grid" id="home-categories-grid">
+    <!-- Dyn Hydrated -->
+  </section>
+
+  <!-- Featured Products Section -->
+  <div class="section-title-group">
+    <h2 class="section-title">Featured Sculptures</h2>
+    <p class="section-subtitle">Our handpicked luxurious highlights for your home mandir.</p>
+  </div>
+  <section style="max-width:1200px; margin:0 auto; padding:0 2rem;">
+    <div class="product-grid" id="featured-grid">
+      <!-- Hydrated by app.js -->
+    </div>
+  </section>
+
+  <!-- Why Choose Us -->
+  <section class="features-section">
+    <div class="section-title-group" style="margin-top:0;">
+      <h2 class="section-title">Why Choose Anant Arts</h2>
+      <p class="section-subtitle">The gold standard in luxury spiritual statues.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-item">
+        <div class="feature-icon">✨</div>
+        <h3 class="feature-title">24K Gold Electroplating</h3>
+        <p class="feature-desc">We use thick, premium electroplating layers of pure 24K gold, silver, and copper.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🛡️</div>
+        <h3 class="feature-title">Lifelong Polish Lacquer</h3>
+        <p class="feature-desc">All idols are sealed with dynamic, protective layers to prevent fading or blackening over decades.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🏵️</div>
+        <h3 class="feature-title">Master Craftsmanship</h3>
+        <p class="feature-desc">Handcrafted in our New Delhi studio by traditional Indian sculpture artisans.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📦</div>
+        <h3 class="feature-title">Wooden Crate Shipping</h3>
+        <p class="feature-desc">Insured and packed with heavy wood frameworks, bubble covers, and secure courier logs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Best Sellers -->
+  <div class="section-title-group">
+    <h2 class="section-title">Best Sellers</h2>
+    <p class="section-subtitle">The most revered and ordered idols by our devotees worldwide.</p>
+  </div>
+  <section style="max-width:1200px; margin:0 auto; padding:0 2rem;">
+    <div class="product-grid" id="bestsellers-grid">
+      <!-- Hydrated by app.js -->
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="testimonials-section">
+    <div class="section-title-group" style="margin-top:0;">
+      <h2 class="section-title">Our Devoted Customers</h2>
+      <p class="section-subtitle">Words of appreciation from luxury collectors and home temples.</p>
+    </div>
+    <div class="testimonials-container" id="testimonials-container">
+      <!-- Hydrated -->
+    </div>
+  </section>
+
+  <!-- New Arrivals -->
+  <div class="section-title-group">
+    <h2 class="section-title">New Arrivals</h2>
+    <p class="section-subtitle">Freshly casted spiritual designs added to our catalog.</p>
+  </div>
+  <section style="max-width:1200px; margin:0 auto; padding:0 2rem;">
+    <div class="product-grid" id="newarrivals-grid">
+      <!-- Hydrated by app.js -->
+    </div>
+  </section>
+
+  <!-- FAQs Accordion -->
+  <section class="faq-section">
+    <div class="section-title-group" style="margin-top:0;">
+      <h2 class="section-title">Frequently Asked Questions</h2>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">Is the gold electroplating real?</div>
+      <div class="faq-answer">Yes. We use pure 24-karat gold electroplating over brass. Each product comes with a certificate of gold purity and electroplating thickness.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">How do I clean and maintain the idol?</div>
+      <div class="faq-answer">Do not use chemical cleaners, scrubs, or water. Since the idols are protected by a thick lacquer coating, you only need to wipe them gently with a dry, soft micro-fiber cloth once in a while.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">Do you offer cash on delivery (COD)?</div>
+      <div class="faq-answer">Yes, we support Cash on Delivery across most pin codes in India. We also offer secure online payments including UPI, credit/debit cards, and net banking with extra discounts.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">What if the idol is damaged in transit?</div>
+      <div class="faq-answer">We secure all shipments with robust multi-layered packing and wooden crates. We offer a 100% free replacement guarantee if your idol gets damaged in transit. Simply record an unboxing video when opening the parcel.</div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="main-footer"></footer>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Checkout - Anant Arts</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .checkout-container {
+      max-width: 1200px;
+      margin: 2.5rem auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 3.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .checkout-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    .checkout-billing-section {
+      background: var(--text-light);
+      border-radius: var(--radius-md);
+      padding: 2.5rem;
+      border: 1px solid var(--primary-gold-border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .checkout-summary-section {
+      background: var(--bg-cream-dark);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      border: 1px solid var(--primary-gold-border);
+      box-shadow: var(--shadow-sm);
+      height: fit-content;
+    }
+
+    .checkout-heading {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      color: var(--luxury-maroon);
+      border-bottom: 2px solid var(--primary-gold-border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Coupon Field */
+    .coupon-box {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Payments box styling */
+    .payment-options-box {
+      border: 1px solid #CCC;
+      border-radius: var(--radius-sm);
+      background: white;
+      margin-top: 1.5rem;
+      overflow: hidden;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      border-bottom: 1px solid #EEE;
+      cursor: pointer;
+    }
+
+    .payment-option:last-child {
+      border: none;
+    }
+
+    .payment-option input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary-gold-hover);
+    }
+  </style>
+</head>
+<body id="checkout-page">
+
+  <!-- Dynamic Header -->
+  <header id="main-header"></header>
+
+  <!-- Checkout Container -->
+  <main class="checkout-container">
+    
+    <!-- Billing Address Column -->
+    <section class="checkout-billing-section">
+      <h2 class="checkout-heading">Shipping & Billing Information</h2>
+      
+      <form id="checkout-form">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Full Name</label>
+          <input type="text" id="billing-name" class="admin-form-input" required placeholder="e.g. Aniket Sharma">
+        </div>
+        
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label class="admin-form-label">Email Address</label>
+            <input type="email" id="billing-email" class="admin-form-input" required placeholder="e.g. aniket@gmail.com">
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label">Contact Phone</label>
+            <input type="tel" id="billing-phone" class="admin-form-input" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+          </div>
+        </div>
+
+        <div class="admin-form-group">
+          <label class="admin-form-label">Street Address</label>
+          <input type="text" id="billing-address" class="admin-form-input" required placeholder="Flat No, Building, Street Name...">
+        </div>
+
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label class="admin-form-label">City</label>
+            <input type="text" id="billing-city" class="admin-form-input" required placeholder="New Delhi">
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label">State</label>
+            <input type="text" id="billing-state" class="admin-form-input" required placeholder="Delhi">
+          </div>
+          <div class="admin-form-group">
+            <label class="admin-form-label">PIN Code (ZIP)</label>
+            <input type="text" id="billing-pin" class="admin-form-input" required placeholder="110001" pattern="[0-9]{6}">
+          </div>
+        </div>
+
+        <div class="admin-form-group">
+          <label class="admin-form-label">Order Notes (Optional)</label>
+          <textarea id="billing-notes" class="admin-form-input" rows="3" placeholder="Provide extra delivery details (e.g. call before delivery, gift wrap request)..."></textarea>
+        </div>
+
+        <h3 class="checkout-heading" style="margin-top:2.5rem; margin-bottom:1rem;">Select Payment Method</h3>
+        <p style="font-size:0.85rem; color:#666;">All payments are securely processed. Cards and UPI will redirect to the mock sandbox gateway.</p>
+        
+        <div class="payment-options-box">
+          <label class="payment-option">
+            <input type="radio" name="payment-method" value="UPI" checked>
+            <div>
+              <strong>UPI (GPay / PhonePe / Paytm)</strong>
+              <div style="font-size:0.75rem; color:#666;">Pay instantly using any UPI client app</div>
+            </div>
+          </label>
+          
+          <label class="payment-option">
+            <input type="radio" name="payment-method" value="Card">
+            <div>
+              <strong>Credit / Debit Card</strong>
+              <div style="font-size:0.75rem; color:#666;">Visa, Mastercard, RuPay, Maestro</div>
+            </div>
+          </label>
+
+          <label class="payment-option">
+            <input type="radio" name="payment-method" value="COD">
+            <div>
+              <strong>Cash on Delivery (COD)</strong>
+              <div style="font-size:0.75rem; color:#666;">Extra ₹150 charge applies unless eligible for free delivery.</div>
+            </div>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-add-cart" style="width:100%; height:50px; font-size:1.1rem; margin-top:2rem;">
+          Place Sacred Order 🏵️
+        </button>
+
+      </form>
+    </section>
+
+    <!-- Summary Details Column -->
+    <aside class="checkout-summary-section">
+      <h2 class="checkout-heading">Order Summary</h2>
+      
+      <!-- Checkout Items container -->
+      <div id="checkout-items" style="max-height: 250px; overflow-y: auto; margin-bottom: 1.5rem; padding-right: 0.5rem;">
+        <!-- Dyn Hydrated -->
+      </div>
+
+      <!-- Coupon Apply Group -->
+      <div class="coupon-box">
+        <input type="text" id="coupon-code-input" class="admin-form-input" placeholder="COUPON CODE (DIVINE10)">
+        <button class="btn-admin" id="apply-coupon-btn">Apply</button>
+      </div>
+
+      <!-- Costs breakdown details -->
+      <table style="width:100%; font-size:0.95rem; border-collapse:collapse; line-height:2.2;">
+        <tr style="border-bottom:1px solid rgba(0,0,0,0.05);">
+          <td>Items Subtotal</td>
+          <td style="text-align:right; font-weight:bold;" id="chk-subtotal">₹0</td>
+        </tr>
+        <tr id="chk-discount-row" style="border-bottom:1px solid rgba(0,0,0,0.05); display:none; color:var(--color-success);">
+          <td>Coupon Discount</td>
+          <td style="text-align:right; font-weight:bold;" id="chk-discount">-₹0</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(0,0,0,0.05);">
+          <td>Shipping & Handling</td>
+          <td style="text-align:right; font-weight:bold;" id="chk-shipping">₹0</td>
+        </tr>
+        <tr>
+          <td style="font-size:1.1rem; font-weight:bold; color:var(--luxury-maroon);">Order Grand Total</td>
+          <td style="text-align:right; font-size:1.25rem; font-weight:bold; color:var(--luxury-maroon);" id="chk-total">₹0</td>
+        </tr>
+      </table>
+
+      <!-- Secure SSL logo mock -->
+      <div style="margin-top:2rem; text-align:center; font-size:0.8rem; color:#666;">
+        <div style="display:flex; justify-content:center; gap:0.5rem; font-size:1.5rem; margin-bottom:0.5rem;">🔒🛡️🏵️</div>
+        <strong>100% Encrypted SSL checkout transaction</strong>
+        <p style="margin-top:0.25rem;">Anant Arts guarantees secure packing and safe delivery.</p>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- Dynamic Footer -->
+  <footer id="main-footer"></footer>
+
+  <!-- Scripts -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
