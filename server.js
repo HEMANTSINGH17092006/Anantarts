@@ -421,6 +421,14 @@ app.get('/api/orders/:id/invoice', async (req, res) => {
 
     const items = await dbAll('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
 
+    // Fetch dynamic store contact info from settings
+    const settingsRows = await dbAll('SELECT * FROM website_settings');
+    const settings = {};
+    settingsRows.forEach(r => { settings[r.key] = r.value; });
+    const storeAddress = settings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra';
+    const storeEmail = settings.contact_email || 'hemant4507vns@gmail.com';
+    const storePhone = settings.contact_phone || '+91 72758 19354';
+
     const doc = new PDFDocument({ margin: 50 });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=invoice-${order.order_number}.pdf`);
@@ -430,7 +438,7 @@ app.get('/api/orders/:id/invoice', async (req, res) => {
     // Brand header
     doc.fillColor('#800020').fontSize(24).font('Helvetica-Bold').text('ANANT ARTS', 50, 50);
     doc.fillColor('#666').fontSize(9).font('Helvetica').text('Bringing Divine Art to Every Home', 50, 75);
-    doc.text('New Delhi, India | care@anantarts.com | +91 98765 43210', 50, 88);
+    doc.text(`${storeAddress} | ${storeEmail} | ${storePhone}`, 50, 88);
 
     doc.fillColor('#800020').fontSize(18).font('Helvetica-Bold').text('INVOICE', 400, 50, { align: 'right' });
     doc.fillColor('#333').fontSize(9).font('Helvetica').text(`Invoice #: INV-${order.order_number.substring(3)}`, 400, 75, { align: 'right' });
