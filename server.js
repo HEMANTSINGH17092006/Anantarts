@@ -1080,10 +1080,17 @@ app.post('/api/admin/restore', authenticateAdmin, upload.single('dbFile'), async
 });
 
 // Start Express Listener and boot up Database
-initDb().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Anant Arts Server is running at http://localhost:${PORT}`);
+if (process.env.VERCEL) {
+  module.exports = async (req, res) => {
+    await initDb();
+    app(req, res);
+  };
+} else {
+  initDb().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Anant Arts Server is running at http://localhost:${PORT}`);
+    });
+  }).catch(err => {
+    console.error('Fatal: Database setup failed.', err);
   });
-}).catch(err => {
-  console.error('Fatal: Database setup failed.', err);
-});
+}
