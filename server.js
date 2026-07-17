@@ -26,7 +26,7 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'anant_arts_divine_key_999';
 
 // Ensure uploads folder exists
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
