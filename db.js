@@ -505,7 +505,7 @@ async function seedDefaultData() {
       { key: 'whatsapp_number', value: '917275819354' },
       { key: 'contact_email', value: 'hemant4507vns@gmail.com' },
       { key: 'contact_phone', value: '+91 72758 19354' },
-      { key: 'contact_address', value: 'Anant Arts Luxury Studio, MG Road, New Delhi, India - 110001' },
+      { key: 'contact_address', value: 'Bhoirwadi, Dombivli East, Maharashtra' },
       { key: 'razorpay_key_id', value: '' },
       { key: 'social_links', value: JSON.stringify({ instagram: 'https://instagram.com/anantarts', facebook: 'https://facebook.com/anantarts', youtube: 'https://youtube.com/anantarts' }) },
       { key: 'about_us_text', value: 'Anant Arts is a premium Indian brand specializing in manufacturing high-end electroplated idols of Hindu gods and goddesses. Based in New Delhi, we blend centuries-old craftsmanship with modern electroplating technology (using 24K gold, fine silver, and copper) to create timeless spiritual masterworks for your home and offices. Each sculpture is lacquered to protect its shine and ensure lifelong durability.' },
