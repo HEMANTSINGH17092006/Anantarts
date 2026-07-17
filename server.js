@@ -390,6 +390,35 @@ app.post('/api/orders', async (req, res) => {
       }
     }
 
+    // 6. Trigger Admin WhatsApp Notification (CallMeBot API)
+    try {
+      const apiKeyRow = await dbGet("SELECT value FROM website_settings WHERE key = 'whatsapp_admin_apikey'");
+      const apiKey = apiKeyRow ? apiKeyRow.value : '';
+      if (apiKey && apiKey.trim() !== '') {
+        const adminPhoneRow = await dbGet("SELECT value FROM website_settings WHERE key = 'whatsapp_number'");
+        const adminPhone = adminPhoneRow ? adminPhoneRow.value : '917275819354';
+        
+        // Build notification text
+        const itemsList = items.map(i => `${i.product_name} (x${i.quantity})`).join(', ');
+        const messageText = `New Order Placed! 🎉\n\n` +
+                            `Order No: #${orderNumber}\n` +
+                            `Customer: ${customer_name}\n` +
+                            `Phone: ${customer_phone}\n` +
+                            `Total: Rs. ${total_amount.toLocaleString()}\n` +
+                            `Items: ${itemsList}\n\n` +
+                            `Login to your dashboard to process: http://localhost:3000/admin.html`;
+        
+        const gatewayUrl = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(adminPhone)}&text=${encodeURIComponent(messageText)}&apikey=${encodeURIComponent(apiKey)}`;
+        
+        // Run fetch asynchronously (don't await, keeping checkouts instant)
+        fetch(gatewayUrl).catch(fetchErr => {
+          console.error('WhatsApp gateway send failed:', fetchErr);
+        });
+      }
+    } catch (wsErr) {
+      console.error('Failed to process WhatsApp admin notification setup:', wsErr);
+    }
+
     const createdOrder = await dbGet('SELECT * FROM orders WHERE id = ?', [orderId]);
     return res.status(201).json({ message: 'Order created', order: createdOrder });
 

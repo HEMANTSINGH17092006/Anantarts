@@ -740,6 +740,7 @@ async function loadAdminSettings() {
     document.getElementById('set-email').value = settings.contact_email || '';
     document.getElementById('set-address').value = settings.contact_address || '';
     document.getElementById('set-razorpay-key').value = settings.razorpay_key_id || '';
+    document.getElementById('set-whatsapp-apikey').value = settings.whatsapp_admin_apikey || '';
     document.getElementById('set-about').value = settings.about_us_text || '';
     document.getElementById('set-shipping-policy').value = settings.shipping_policy || '';
     document.getElementById('set-return-policy').value = settings.return_policy || '';
@@ -775,6 +776,7 @@ async function handleSettingsFormSubmit(e) {
     contact_email: document.getElementById('set-email').value,
     contact_address: document.getElementById('set-address').value,
     razorpay_key_id: document.getElementById('set-razorpay-key').value,
+    whatsapp_admin_apikey: document.getElementById('set-whatsapp-apikey').value,
     about_us_text: document.getElementById('set-about').value,
     shipping_policy: document.getElementById('set-shipping-policy').value,
     return_policy: document.getElementById('set-return-policy').value,
