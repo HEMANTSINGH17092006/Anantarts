@@ -1,4 +1,3 @@
-const sqlite3 = require('sqlite3').verbose();
 const { Pool } = require('pg');
 const path = require('path');
 const bcrypt = require('bcryptjs');
@@ -20,6 +19,7 @@ if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== '') {
   console.log('Database Mode: Supabase (PostgreSQL)');
 } else {
   isPostgres = false;
+  const sqlite3 = require('sqlite3').verbose();
   db = new sqlite3.Database(dbPath);
   console.log('Database Mode: Fallback Local (SQLite)');
 }
