@@ -41,6 +41,12 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' or 'razorpay'
   const [touched, setTouched] = useState({});
 
+  // Checkout execution states
+  const [loading, setLoading] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(null);
+  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
+
   // Inline Validation Helpers
   const validateName = (val) => val.trim().length >= 3 && val.trim().length <= 50 && /^[a-zA-Z\s]+$/.test(val.trim());
   const validatePhone = (val) => /^[6-9][0-9]{9}$/.test(val.trim());
@@ -51,31 +57,33 @@ export default function CheckoutPage() {
   const validateZip = (val) => /^[1-9][0-9]{5}$/.test(val.trim());
   const validateLandmark = (val) => val.trim().length === 0 || val.trim().length <= 100;
 
-  // Real-time validation
-  useEffect(() => {
-    let tempErrors = {};
-    if (touched.name && !validateName(name)) tempErrors.name = 'Please enter a valid full name.';
-    if (touched.email && !validateEmail(email)) tempErrors.email = 'Please enter a valid email address.';
-    if (touched.phone && !validatePhone(phone)) tempErrors.phone = 'Please enter a valid 10-digit mobile number.';
-    if (touched.address && !validateAddress(address)) tempErrors.address = 'Please enter a complete delivery address.';
-    if (touched.city && !validateCity(city)) tempErrors.city = 'Please enter a valid city name.';
-    if (touched.state && !validateState(state)) tempErrors.state = 'Please select your state.';
-    if (touched.zip && !validateZip(zip)) tempErrors.zip = 'Please enter a valid 6-digit postal code.';
-    if (touched.landmark && !validateLandmark(landmark)) tempErrors.landmark = 'Landmark must be under 100 characters.';
-    setErrors(tempErrors);
-  }, [name, email, phone, address, city, state, zip, landmark, touched]);
+  const handleInputChange = (field, value, validator, errorMessage) => {
+    if (field === 'name') setName(value);
+    if (field === 'email') setEmail(value);
+    if (field === 'phone') setPhone(value);
+    if (field === 'address') setAddress(value);
+    if (field === 'landmark') setLandmark(value);
+    if (field === 'city') setCity(value);
+    if (field === 'state') setState(value);
+    
+    setTouched(prev => ({ ...prev, [field]: true }));
+    
+    if (!validator(value)) {
+      setErrors(prev => ({ ...prev, [field]: errorMessage }));
+    } else {
+      setErrors(prev => {
+        const copy = { ...prev };
+        delete copy[field];
+        return copy;
+      });
+    }
+  };
 
   // Coupon states
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
   const [applying, setApplying] = useState(false);
-
-  // Checkout execution states
-  const [loading, setLoading] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(null);
-  const [error, setError] = useState('');
-  const [errors, setErrors] = useState({});
 
   // Load Razorpay Checkout script on mount
   useEffect(() => {
@@ -153,6 +161,16 @@ export default function CheckoutPage() {
     setZip(cleaned);
     setTouched(prev => ({ ...prev, zip: true }));
 
+    if (!validateZip(cleaned)) {
+      setErrors(prev => ({ ...prev, zip: 'Please enter a valid 6-digit postal code.' }));
+    } else {
+      setErrors(prev => {
+        const copy = { ...prev };
+        delete copy.zip;
+        return copy;
+      });
+    }
+
     if (cleaned.length === 6 && cleaned[0] !== '0') {
       try {
         const response = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
@@ -163,6 +181,14 @@ export default function CheckoutPage() {
             if (office) {
               setCity(office.District || office.Name || '');
               setState(office.State || '');
+              
+              setErrors(prev => {
+                const copy = { ...prev };
+                delete copy.city;
+                delete copy.state;
+                return copy;
+              });
+
               setTouched(prev => ({ ...prev, city: true, state: true }));
             }
           }
@@ -321,11 +347,8 @@ export default function CheckoutPage() {
                   type="text"
                   id="name"
                   value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setTouched(prev => ({ ...prev, name: true }));
-                  }}
-                  onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
+                  onChange={(e) => handleInputChange('name', e.target.value, validateName, 'Please enter a valid full name.')}
+                  onBlur={() => handleInputChange('name', name, validateName, 'Please enter a valid full name.')}
                   placeholder="e.g. Hemant Singh"
                   style={{
                     width: '100%',
@@ -352,11 +375,8 @@ export default function CheckoutPage() {
                     type="email"
                     id="email"
                     value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setTouched(prev => ({ ...prev, email: true }));
-                    }}
-                    onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                    onChange={(e) => handleInputChange('email', e.target.value, validateEmail, 'Please enter a valid email address.')}
+                    onBlur={() => handleInputChange('email', email, validateEmail, 'Please enter a valid email address.')}
                     placeholder="e.g. customer@example.com"
                     style={{
                       width: '100%',
@@ -380,11 +400,8 @@ export default function CheckoutPage() {
                     type="tel"
                     id="phone"
                     value={phone}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      setTouched(prev => ({ ...prev, phone: true }));
-                    }}
-                    onBlur={() => setTouched(prev => ({ ...prev, phone: true }))}
+                    onChange={(e) => handleInputChange('phone', e.target.value, validatePhone, 'Please enter a valid 10-digit mobile number.')}
+                    onBlur={() => handleInputChange('phone', phone, validatePhone, 'Please enter a valid 10-digit mobile number.')}
                     placeholder="e.g. 9876543210"
                     style={{
                       width: '100%',
@@ -411,11 +428,8 @@ export default function CheckoutPage() {
                   type="text"
                   id="address"
                   value={address}
-                  onChange={(e) => {
-                    setAddress(e.target.value);
-                    setTouched(prev => ({ ...prev, address: true }));
-                  }}
-                  onBlur={() => setTouched(prev => ({ ...prev, address: true }))}
+                  onChange={(e) => handleInputChange('address', e.target.value, validateAddress, 'Please enter a complete delivery address.')}
+                  onBlur={() => handleInputChange('address', address, validateAddress, 'Please enter a complete delivery address.')}
                   placeholder="House No, Building name, Street name, Locality"
                   style={{
                     width: '100%',
@@ -441,10 +455,8 @@ export default function CheckoutPage() {
                   type="text"
                   id="landmark"
                   value={landmark}
-                  onChange={(e) => {
-                    setLandmark(e.target.value);
-                    setTouched(prev => ({ ...prev, landmark: true }));
-                  }}
+                  onChange={(e) => handleInputChange('landmark', e.target.value, validateLandmark, 'Landmark must be under 100 characters.')}
+                  onBlur={() => handleInputChange('landmark', landmark, validateLandmark, 'Landmark must be under 100 characters.')}
                   placeholder="e.g. Near Big Temple or School"
                   style={{
                     width: '100%',
@@ -471,11 +483,8 @@ export default function CheckoutPage() {
                     type="text"
                     id="city"
                     value={city}
-                    onChange={(e) => {
-                      setCity(e.target.value);
-                      setTouched(prev => ({ ...prev, city: true }));
-                    }}
-                    onBlur={() => setTouched(prev => ({ ...prev, city: true }))}
+                    onChange={(e) => handleInputChange('city', e.target.value, validateCity, 'Please enter a valid city name.')}
+                    onBlur={() => handleInputChange('city', city, validateCity, 'Please enter a valid city name.')}
                     placeholder="City"
                     style={{
                       width: '100%',
@@ -498,11 +507,8 @@ export default function CheckoutPage() {
                   <select
                     id="state"
                     value={state}
-                    onChange={(e) => {
-                      setState(e.target.value);
-                      setTouched(prev => ({ ...prev, state: true }));
-                    }}
-                    onBlur={() => setTouched(prev => ({ ...prev, state: true }))}
+                    onChange={(e) => handleInputChange('state', e.target.value, validateState, 'Please select your state.')}
+                    onBlur={() => handleInputChange('state', state, validateState, 'Please select your state.')}
                     style={{
                       width: '100%',
                       padding: '10px 14px',
