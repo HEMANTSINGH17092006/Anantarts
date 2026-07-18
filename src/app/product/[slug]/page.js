@@ -229,11 +229,69 @@ export default async function ProductDetailPage({ params }) {
               </p>
             </div>
 
+            {/* Variants Selector */}
+            {(() => {
+              let variants = [];
+              try {
+                if (product.variants) {
+                  variants = typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants;
+                }
+              } catch (e) {
+                console.error('Error parsing product variants:', e);
+              }
+              if (variants.length === 0) return null;
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'white', padding: '16px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: '600', margin: 0, color: 'var(--text-dark)' }}>Select Options</h4>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    {variants.map((v, i) => (
+                      <div key={i} style={{ flex: '1 1 120px' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>{v.name}</label>
+                        <select style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.82rem', background: 'white', cursor: 'pointer' }}>
+                          {v.options.map((opt, idx) => (
+                            <option key={idx} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Customization Engraving Box */}
+            {product.customization_option && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'white', padding: '16px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--text-dark)', display: 'block' }}>Customization Message (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Engrave name or custom message here"
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                />
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>
+                  <i className="fas fa-info-circle" style={{ color: 'var(--primary-gold)', marginRight: '4px' }}></i>
+                  {product.customization_option}
+                </p>
+              </div>
+            )}
+
+            {/* Bulk wholesale pricing */}
+            {product.bulk_pricing && (
+              <div style={{ background: '#fff9f0', border: '1px dashed var(--primary-gold)', borderRadius: '8px', padding: '14px 18px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ fontSize: '1.4rem' }}>💼</span>
+                <div>
+                  <h4 style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--primary-gold-hover)', margin: '0 0 3px' }}>Wholesale B2B / Bulk Discount</h4>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-dark)', margin: 0, lineHeight: '1.4' }}>{product.bulk_pricing}</p>
+                </div>
+              </div>
+            )}
+
             {/* Specifications Card */}
             <div style={{ background: 'white', border: '1px solid var(--primary-gold-border)', borderRadius: '8px', padding: '16px' }}>
               <h3 style={{ fontSize: '0.95rem', fontWeight: '600', marginBottom: '12px' }}>Specifications</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: '0.8rem' }}>
                 <div><strong>Material:</strong> {product.material || 'Premium Brass & 24K Gold'}</div>
+                {product.finish_type && <div><strong>Finish Type:</strong> {product.finish_type}</div>}
                 <div><strong>SKU Code:</strong> {product.sku}</div>
                 <div><strong>Dimensions:</strong> {product.dimensions || 'N/A'}</div>
                 <div><strong>Weight:</strong> {product.weight ? `${product.weight} kg` : 'N/A'}</div>
@@ -273,7 +331,7 @@ export default async function ProductDetailPage({ params }) {
         {relatedProducts.length > 0 && (
           <div style={{ marginTop: '5rem' }}>
             <div className="section-heading" style={{ textAlign: 'left', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.6rem' }}>Related Sculptures</h2>
+              <h2 style={{ fontSize: '1.6rem' }}>Related Products</h2>
               <div className="gold-line" style={{ margin: '8px 0 0 0' }}></div>
             </div>
             <div className="products-grid" style={{ padding: 0, gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>

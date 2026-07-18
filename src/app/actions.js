@@ -178,7 +178,12 @@ export async function duplicateProduct(id) {
         is_featured: prod.is_featured,
         video_url: prod.video_url,
         seo_title: prod.seo_title,
-        seo_description: prod.seo_description
+        seo_description: prod.seo_description,
+        finish_type: prod.finish_type,
+        customization_option: prod.customization_option,
+        bulk_pricing: prod.bulk_pricing,
+        variants: prod.variants,
+        related_products: prod.related_products
       })
       .select('*')
       .single();
@@ -230,6 +235,13 @@ export async function addOrUpdateProduct(formData) {
     const seo_title = formData.get('seo_title') || null;
     const seo_description = formData.get('seo_description') || null;
 
+    // Rebranding fields
+    const finish_type = formData.get('finish_type') || null;
+    const customization_option = formData.get('customization_option') || null;
+    const bulk_pricing = formData.get('bulk_pricing') || null;
+    const variants = formData.get('variants') || null;
+    const related_products = formData.get('related_products') || null;
+
     // Handle image file uploads
     const primaryImageFile = formData.get('primary_image');
     let primaryImageUrl = formData.get('existing_primary_image');
@@ -264,7 +276,12 @@ export async function addOrUpdateProduct(formData) {
           is_featured,
           video_url,
           seo_title,
-          seo_description
+          seo_description,
+          finish_type,
+          customization_option,
+          bulk_pricing,
+          variants,
+          related_products
         })
         .eq('id', id)
         .select('*')
@@ -295,7 +312,12 @@ export async function addOrUpdateProduct(formData) {
           is_featured,
           video_url,
           seo_title,
-          seo_description
+          seo_description,
+          finish_type,
+          customization_option,
+          bulk_pricing,
+          variants,
+          related_products
         })
         .select('*')
         .single();
@@ -788,5 +810,49 @@ export async function submitCorporateInquiry({ name, email, phone, company, quan
   } catch (err) {
     console.error('[submitCorporateInquiry] Error:', err.message);
     return { success: false, message: 'Could not submit your inquiry. Please try again or call us directly.' };
+  }
+}
+
+export async function submitB2bEnquiry(prevState, formData) {
+  try {
+    const name = formData.get('name')?.trim();
+    const email = formData.get('email')?.trim().toLowerCase();
+    const phone = formData.get('phone')?.trim();
+    const company = formData.get('company')?.trim() || null;
+    const quantity = parseInt(formData.get('quantity') || 0);
+    const product_interest = formData.get('product_interest')?.trim() || 'General';
+    const message = formData.get('message')?.trim() || '';
+
+    if (!name || !email || !phone || !quantity) {
+      return { success: false, message: 'Please fill in all required fields.' };
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
+
+    const phoneRegex = /^[6-9][0-9]{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return { success: false, message: 'Please enter a valid 10-digit mobile number.' };
+    }
+
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('b2b_enquiries').insert({
+      name,
+      email,
+      phone,
+      company,
+      quantity,
+      product_interest,
+      message
+    });
+
+    if (error) throw error;
+
+    return { success: true, message: 'Thank you! Your bulk/corporate enquiry has been received. Our team will contact you in 24 hours.' };
+  } catch (err) {
+    console.error('[submitB2bEnquiry] Error:', err.message);
+    return { success: false, message: 'Could not submit your enquiry. Please try again or contact us on WhatsApp.' };
   }
 }

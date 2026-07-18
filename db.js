@@ -381,6 +381,18 @@ async function initDb() {
       email TEXT NOT NULL UNIQUE,
       subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS b2b_enquiries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      company TEXT,
+      quantity INTEGER,
+      product_interest TEXT,
+      message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Run schema expansions / column additions
@@ -392,6 +404,11 @@ async function initDb() {
   await addColumn('products', 'video_url', 'TEXT');
   await addColumn('products', 'seo_title', 'TEXT');
   await addColumn('products', 'seo_description', 'TEXT');
+  await addColumn('products', 'finish_type', 'TEXT');
+  await addColumn('products', 'customization_option', 'TEXT');
+  await addColumn('products', 'bulk_pricing', 'TEXT');
+  await addColumn('products', 'variants', 'TEXT');
+  await addColumn('products', 'related_products', 'TEXT');
 
   await addColumn('categories', 'type', "TEXT DEFAULT 'deity'");
   await addColumn('orders', 'tracking_number', 'TEXT');
@@ -428,30 +445,32 @@ async function seedDefaultData() {
     console.log('Default admin seeded: admin@anantarts.in / admin123');
   }
 
-  // 2. Seed default Categories
-  const categoryCount = await dbGet('SELECT COUNT(*) as count FROM categories');
+  // 2. Seed default Categories (Rebranded)
+  const requiredCategories = [
+    { name: 'Spiritual Collection', slug: 'spiritual-collection', image_path: '/uploads/category-ganesha.jpg', sort_order: 1 },
+    { name: 'Home Décor', slug: 'home-decor', image_path: '/uploads/category-others.jpg', sort_order: 2 },
+    { name: 'Corporate Gifts', slug: 'corporate-gifts', image_path: '/uploads/corporate-gifts.jpg', sort_order: 3 },
+    { name: 'Decorative Figurines', slug: 'decorative-figurines', image_path: '/uploads/category-hanuman.jpg', sort_order: 4 },
+    { name: 'Festive Gifts', slug: 'festive-gifts', image_path: '/uploads/category-lakshmi.jpg', sort_order: 5 },
+    { name: 'Customized Products', slug: 'customized-products', image_path: '/uploads/our-story-artisan.jpg', sort_order: 6 },
+    { name: 'Premium Collectibles', slug: 'premium-collectibles', image_path: '/uploads/category-krishna.jpg', sort_order: 7 },
+    { name: 'New Arrivals', slug: 'new-arrivals', image_path: '/uploads/banner-1.jpg', sort_order: 8 }
+  ];
+
   let categoryMap = {};
-  if (parseInt(categoryCount.count) === 0) {
-    const defaultCategories = [
-      { name: 'Lord Ganesha', slug: 'lord-ganesha', image_path: '/uploads/category-ganesha.jpg', sort_order: 1 },
-      { name: 'Lord Krishna', slug: 'lord-krishna', image_path: '/uploads/category-krishna.jpg', sort_order: 2 },
-      { name: 'Lord Shiva', slug: 'lord-shiva', image_path: '/uploads/category-shiva.jpg', sort_order: 3 },
-      { name: 'Goddess Lakshmi', slug: 'goddess-lakshmi', image_path: '/uploads/category-lakshmi.jpg', sort_order: 4 },
-      { name: 'Lord Hanuman', slug: 'lord-hanuman', image_path: '/uploads/category-hanuman.jpg', sort_order: 5 },
-      { name: 'Other God Idols', slug: 'other-god-idols', image_path: '/uploads/category-others.jpg', sort_order: 6 }
-    ];
-    for (const cat of defaultCategories) {
+  for (const cat of requiredCategories) {
+    let existing = await dbGet('SELECT * FROM categories WHERE slug = ?', [cat.slug]);
+    if (!existing) {
       const res = await dbRun(
         'INSERT INTO categories (name, slug, image_path, sort_order) VALUES (?, ?, ?, ?)',
         [cat.name, cat.slug, cat.image_path, cat.sort_order]
       );
       categoryMap[cat.slug] = res.id;
+    } else {
+      categoryMap[cat.slug] = existing.id;
     }
-    console.log('Default categories seeded.');
-  } else {
-    const rows = await dbAll('SELECT id, slug FROM categories');
-    rows.forEach(r => { categoryMap[r.slug] = r.id; });
   }
+  console.log('Categories verified/seeded.');
 
   // 3. Seed default Products
   const productCount = await dbGet('SELECT COUNT(*) as count FROM products');
@@ -461,7 +480,7 @@ async function seedDefaultData() {
         name: 'Divine 24K Gold Electroplated Ganesha Idol',
         slug: 'divine-24k-gold-ganesha-idol',
         description: 'Invite prosperity, wisdom, and success into your home with this breathtaking 24K gold electroplated Ganesha idol. Meticulously handcrafted by master artisans, this sculpture showcases intricate details of Lord Ganesha’s crown and ornaments. Features a high-gloss protective lacquer coating that ensures the gold shines brilliantly for decades.',
-        category_slug: 'lord-ganesha',
+        category_slug: 'spiritual-collection',
         price: 18999,
         discount_price: 15499,
         sku: 'AA-GAN-001',
@@ -470,13 +489,20 @@ async function seedDefaultData() {
         weight: 3.2,
         stock_quantity: 15,
         tags: JSON.stringify(['Featured', 'Best Seller']),
-        images: ['/uploads/ganesha-gold-1.jpg', '/uploads/ganesha-gold-2.jpg']
+        images: ['/uploads/ganesha-gold-1.jpg', '/uploads/ganesha-gold-2.jpg'],
+        finish_type: '24K Gold Electroplated',
+        customization_option: 'Custom name engraving on wooden base.',
+        variants: JSON.stringify([
+          { name: 'Size', options: ['Standard', 'Grand'] },
+          { name: 'Finish', options: ['24K Gold Plated', 'Silver Plated'] }
+        ]),
+        bulk_pricing: '10-25 units: 10% off, 25+ units: 18% off'
       },
       {
         name: 'Lord Krishna Flute Playing Elegant Idol',
         slug: 'lord-krishna-flute-elegant-idol',
         description: 'Bring the divine aura of Gokul with this stunning, electroplated silver & gold dual-tone Krishna idol. Capturing Lord Krishna in his signature tribhanga posture playing the flute, this statue features fine embellishments, from the peacock feather in his crown to the detailed folds of his dhoti. Perfect for home temples or luxury gifting.',
-        category_slug: 'lord-krishna',
+        category_slug: 'spiritual-collection',
         price: 24999,
         discount_price: 19999,
         sku: 'AA-KRI-001',
@@ -485,13 +511,17 @@ async function seedDefaultData() {
         weight: 4.1,
         stock_quantity: 8,
         tags: JSON.stringify(['Featured', 'New Arrival']),
-        images: ['/uploads/krishna-gold-1.jpg', '/uploads/krishna-gold-2.jpg']
+        images: ['/uploads/krishna-gold-1.jpg', '/uploads/krishna-gold-2.jpg'],
+        finish_type: 'Dual Tone Gold & Silver Electroplated',
+        variants: JSON.stringify([
+          { name: 'Size', options: ['12 Inches', '18 Inches'] }
+        ])
       },
       {
         name: 'Meditating Lord Shiva Antique Bronze & Gold Idol',
         slug: 'meditating-shiva-bronze-gold-idol',
         description: 'Immerse your space in meditative tranquility with this Lord Shiva idol in dhyana mudra. Finished in antique bronze with brilliant 24k gold electroplated highlights on his trident, snake, and hair accents. Designed to radiate peace, focus, and strength in your home or meditation room.',
-        category_slug: 'lord-shiva',
+        category_slug: 'spiritual-collection',
         price: 21999,
         discount_price: 17999,
         sku: 'AA-SHI-001',
@@ -500,13 +530,14 @@ async function seedDefaultData() {
         weight: 5.0,
         stock_quantity: 5,
         tags: JSON.stringify(['Best Seller']),
-        images: ['/uploads/shiva-gold-1.jpg']
+        images: ['/uploads/shiva-gold-1.jpg'],
+        finish_type: 'Antique Bronze & 24K Gold Highlights'
       },
       {
         name: 'Goddess Lakshmi Ashta-Lakshmi Blessing Idol',
         slug: 'goddess-lakshmi-blessing-idol',
         description: 'Welcome wealth, abundance, and auspiciousness with this exquisite Goddess Lakshmi idol. Seated gracefully on a double-lotus pedestal, the goddess holds twin lotus flowers, with coins falling from her front hand. Electroplated in radiant 24k gold for a timeless premium finish.',
-        category_slug: 'goddess-lakshmi',
+        category_slug: 'spiritual-collection',
         price: 16999,
         discount_price: 13999,
         sku: 'AA-LAK-001',
@@ -515,13 +546,14 @@ async function seedDefaultData() {
         weight: 2.8,
         stock_quantity: 20,
         tags: JSON.stringify(['Featured', 'Best Seller', 'Festival Special']),
-        images: ['/uploads/lakshmi-gold-1.jpg', '/uploads/lakshmi-gold-2.jpg']
+        images: ['/uploads/lakshmi-gold-1.jpg', '/uploads/lakshmi-gold-2.jpg'],
+        finish_type: '24K Gold Electroplated'
       },
       {
         name: 'Veer Hanuman Sanjeevani Mountain Lift Idol',
         slug: 'veer-hanuman-sanjeevani-mountain-idol',
         description: 'Celebrate the symbol of strength, courage, and devotion with this dynamic Lord Hanuman idol, depicting him carrying the Sanjeevani mountain. The electroplated copper and gold finish highlights the muscular detail and vigorous action of the deity. Ideal for study rooms, offices, and living rooms.',
-        category_slug: 'lord-hanuman',
+        category_slug: 'spiritual-collection',
         price: 19999,
         discount_price: 16499,
         sku: 'AA-HAN-001',
@@ -530,16 +562,71 @@ async function seedDefaultData() {
         weight: 3.8,
         stock_quantity: 12,
         tags: JSON.stringify(['New Arrival']),
-        images: ['/uploads/hanuman-gold-1.jpg']
+        images: ['/uploads/hanuman-gold-1.jpg'],
+        finish_type: 'Dual Tone Copper & Gold Electroplated'
+      },
+      {
+        name: 'Geometric Golden Electroplated Leaf Accent',
+        slug: 'geometric-golden-leaf-accent',
+        description: 'A striking modern home accent featuring abstract leaf silhouettes electroplated in brilliant 24K gold. Resting on a solid black marble base, this sculpture brings an air of luxury and contemporary style to any mantelpiece, console table, or executive office desk.',
+        category_slug: 'home-decor',
+        price: 5999,
+        discount_price: 4499,
+        sku: 'AA-DEC-001',
+        material: 'Stainless Steel & Black Marble',
+        dimensions: '10.0 x 3.5 x 12.0 Inches',
+        weight: 1.8,
+        stock_quantity: 15,
+        tags: JSON.stringify(['Featured', 'Home Decor']),
+        images: ['/uploads/banner-2.jpg'],
+        finish_type: '24K Gold Electroplated',
+        variants: JSON.stringify([
+          { name: 'Finish', options: ['Gold Electroplated', 'Chrome Electroplated'] }
+        ]),
+        bulk_pricing: '10+ units: 15% discount, 50+ units: 25% discount'
+      },
+      {
+        name: 'Silver Plated Executive Desk Clock & Pen Organizer',
+        slug: 'silver-plated-executive-desk-clock',
+        description: 'The ultimate statement of professional luxury. This executive organizer is handcrafted in fine teak wood and wrapped in sterling silver electroplated panels. Features a precise quartz analog clock, two pen holsters, and a phone rest. Comes in a premium leatherette presentation box.',
+        category_slug: 'corporate-gifts',
+        price: 8999,
+        discount_price: 6999,
+        sku: 'AA-CORP-001',
+        material: 'Teak Wood & Sterling Silver Plating',
+        dimensions: '8.5 x 4.0 x 6.0 Inches',
+        weight: 1.4,
+        stock_quantity: 40,
+        tags: JSON.stringify(['Corporate Gifting', 'Best Seller']),
+        images: ['/uploads/corporate-gifts.jpg'],
+        finish_type: 'Sterling Silver Electroplated',
+        customization_option: 'We provide custom engraving for corporate orders. Upload logo during bulk checkout.',
+        bulk_pricing: '20-50 units: 12% off, 50-100 units: 20% off, 100+ units: 30% off'
+      },
+      {
+        name: 'Limited Edition 24K Gold Peacock Figurine',
+        slug: 'limited-edition-gold-peacock-figurine',
+        description: 'Celebrate the royal national bird of India. This premium electroplated collector item showcases the peacock with its majestic feathers fully fanned, highlighted in detailed dual-tone 24K gold and silver plating. Each piece is numbered and includes a certificate of authenticity.',
+        category_slug: 'premium-collectibles',
+        price: 34999,
+        discount_price: 29999,
+        sku: 'AA-COLL-001',
+        material: 'Premium Brass & Gold Highlights',
+        dimensions: '11.0 x 6.5 x 13.0 Inches',
+        weight: 4.6,
+        stock_quantity: 6,
+        tags: JSON.stringify(['Collectibles', 'Featured']),
+        images: ['/uploads/banner-1.jpg'],
+        finish_type: 'Dual Tone 24K Gold & Silver Electroplated'
       }
     ];
 
     for (const prod of defaultProducts) {
       const categoryId = categoryMap[prod.category_slug] || null;
       const res = await dbRun(
-        `INSERT INTO products (name, slug, description, category_id, price, discount_price, sku, material, dimensions, weight, stock_quantity, is_published, tags)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
-        [prod.name, prod.slug, prod.description, categoryId, prod.price, prod.discount_price, prod.sku, prod.material, prod.dimensions, prod.weight, prod.stock_quantity, prod.tags]
+        `INSERT INTO products (name, slug, description, category_id, price, discount_price, sku, material, dimensions, weight, stock_quantity, is_published, tags, finish_type, customization_option, bulk_pricing, variants)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`,
+        [prod.name, prod.slug, prod.description, categoryId, prod.price, prod.discount_price, prod.sku, prod.material, prod.dimensions, prod.weight, prod.stock_quantity, prod.tags, prod.finish_type || null, prod.customization_option || null, prod.bulk_pricing || null, prod.variants || null]
       );
       
       // Insert product images

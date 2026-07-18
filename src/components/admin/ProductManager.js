@@ -34,6 +34,13 @@ export default function ProductManager({ initialProducts = [], categories = [] }
   const [shortDesc, setShortDesc] = useState('');
   const [description, setDescription] = useState('');
   
+  // Rebranding fields
+  const [finishType, setFinishType] = useState('');
+  const [customizationOption, setCustomizationOption] = useState('');
+  const [bulkPricing, setBulkPricing] = useState('');
+  const [variants, setVariants] = useState('');
+  const [relatedProducts, setRelatedProducts] = useState('');
+  
   // Image files states
   const [primaryImage, setPrimaryImage] = useState(null);
   const [additionalImages, setAdditionalImages] = useState([]);
@@ -79,6 +86,11 @@ export default function ProductManager({ initialProducts = [], categories = [] }
     setVideoUrl('');
     setSeoTitle('');
     setSeoDescription('');
+    setFinishType('24K Gold Electroplated');
+    setCustomizationOption('');
+    setBulkPricing('');
+    setVariants('');
+    setRelatedProducts('');
     setFormOpen(true);
   };
 
@@ -116,6 +128,11 @@ export default function ProductManager({ initialProducts = [], categories = [] }
     setVideoUrl(p.video_url || '');
     setSeoTitle(p.seo_title || '');
     setSeoDescription(p.seo_description || '');
+    setFinishType(p.finish_type || '');
+    setCustomizationOption(p.customization_option || '');
+    setBulkPricing(p.bulk_pricing || '');
+    setVariants(p.variants || '');
+    setRelatedProducts(p.related_products || '');
     setFormOpen(true);
   };
 
@@ -145,6 +162,11 @@ export default function ProductManager({ initialProducts = [], categories = [] }
     formData.append('video_url', videoUrl);
     formData.append('seo_title', seoTitle);
     formData.append('seo_description', seoDescription);
+    formData.append('finish_type', finishType);
+    formData.append('customization_option', customizationOption);
+    formData.append('bulk_pricing', bulkPricing);
+    formData.append('variants', variants);
+    formData.append('related_products', relatedProducts);
 
     if (primaryImage) {
       formData.append('primary_image', primaryImage);
@@ -511,6 +533,34 @@ export default function ProductManager({ initialProducts = [], categories = [] }
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Detailed Description</label>
                 <textarea rows="4" value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}></textarea>
+              </div>
+
+              {/* Rebranding parameters */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Finish Type</label>
+                  <input type="text" value={finishType} onChange={(e) => setFinishType(e.target.value)} placeholder="e.g. 24K Gold Electroplated" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Customization Option</label>
+                  <input type="text" value={customizationOption} onChange={(e) => setCustomizationOption(e.target.value)} placeholder="e.g. Engraving available on request" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Bulk Pricing Tiers</label>
+                  <input type="text" value={bulkPricing} onChange={(e) => setBulkPricing(e.target.value)} placeholder="e.g. Buy 10+ for 15% off" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Product Variants (JSON String)</label>
+                  <input type="text" value={variants} onChange={(e) => setVariants(e.target.value)} placeholder='e.g. [{"name": "Size", "options": ["Medium", "Large"]}]' style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Related Product IDs (JSON list or comma separated)</label>
+                <input type="text" value={relatedProducts} onChange={(e) => setRelatedProducts(e.target.value)} placeholder='e.g. [1, 2, 5] or ids' style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '16px' }}>

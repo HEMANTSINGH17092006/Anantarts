@@ -12,8 +12,9 @@ import NewArrivalsCarousel from '@/components/home/NewArrivalsCarousel';
 import ProductCard from '@/components/common/ProductCard';
 import HeroParticles from '@/components/home/HeroParticles';
 import NewsletterExitModals from '@/components/home/NewsletterExitModals';
+import BulkEnquiryForm from '@/components/home/BulkEnquiryForm';
 
-export const revalidate = 3600; // Cache home page for up to 1 hour, revalidate on tag trigger
+export const revalidate = 3600; // Cache home page for up to 1 hour
 
 export default async function Home() {
   const settings = await getSettings();
@@ -27,11 +28,11 @@ export default async function Home() {
   const newArrivalProducts = await getProducts({ tag: 'New Arrival', limit: 10 });
 
   const heroBanner = banners[0] || {
-    title: 'Bring Divine Blessings Into Every Home',
-    subtitle: 'Premium Electroplated Idols Crafted With Timeless Indian Artistry.',
+    title: 'Timeless Electroplated Creations for Every Space',
+    subtitle: 'Discover premium electroplated décor, spiritual artifacts, luxury gifts, collectibles, and customized creations crafted with exceptional artistry.',
     image_path: '/uploads/mandir-hero-bg.jpg',
     cta_link: '/shop',
-    cta_text: 'Explore Collection'
+    cta_text: 'Shop Collection'
   };
 
   const whatsappNumber = settings.whatsapp_number || '917275819354';
@@ -52,20 +53,20 @@ export default async function Home() {
         </div>
         <div className="hero-overlay" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(30,26,23,0.3) 0%, rgba(30,26,23,0.85) 100%)' }} />
         <HeroParticles />
-        <div className="hero-content" style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: '800px', margin: '0 auto', padding: '0 2rem' }}>
-          <h1 className="hero-title" style={{ fontSize: '3rem', color: 'var(--text-light)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>
-            {heroBanner.title}
+        <div className="hero-content" style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: '850px', margin: '0 auto', padding: '0 2rem' }}>
+          <h1 className="hero-title" style={{ fontSize: '3.2rem', color: 'var(--text-light)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)', lineHeight: '1.2' }}>
+            Timeless Electroplated Creations for Every Space
           </h1>
-          <p className="hero-subtitle" style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.9)', marginBottom: '2.5rem', lineHeight: '1.6' }}>
-            {heroBanner.subtitle}
+          <p className="hero-subtitle" style={{ fontSize: '1.15rem', color: 'rgba(255,255,255,0.9)', marginBottom: '2.5rem', lineHeight: '1.6' }}>
+            Discover premium electroplated décor, spiritual artifacts, luxury gifts, collectibles, and customized creations crafted with exceptional artistry.
           </p>
           <div className="hero-buttons" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href={heroBanner.cta_link || '/shop'} className="btn-gold">
-              <i className="fas fa-gem" style={{ marginRight: '8px' }}></i> {heroBanner.cta_text || 'Explore Collection'}
+            <Link href="/shop" className="btn-gold">
+              <i className="fas fa-gem" style={{ marginRight: '8px' }}></i> Shop Collection
             </Link>
-            <Link href="/shop?tag=Best+Seller" className="btn-outline-gold" style={{ color: 'var(--text-light)', borderColor: 'var(--text-light)' }}>
-              <i className="fas fa-fire" style={{ marginRight: '8px' }}></i> Shop Best Sellers
-            </Link>
+            <a href="#categories-section" className="btn-outline-gold" style={{ color: 'var(--text-light)', borderColor: 'var(--text-light)' }}>
+              <i className="fas fa-th-large" style={{ marginRight: '8px' }}></i> Explore Categories
+            </a>
           </div>
         </div>
       </section>
@@ -81,11 +82,11 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* 2. SHOP BY DEITY SECTION */}
-      <div className="section-heading" style={{ marginTop: '5rem' }}>
-        <h2>Shop By Deity</h2>
+      {/* 2. EXPLORE CATEGORIES SECTION */}
+      <div id="categories-section" className="section-heading" style={{ marginTop: '5rem' }}>
+        <h2>Explore Our Collections</h2>
         <div className="gold-line"></div>
-        <p>Select from our revered collections curated with sacred precision.</p>
+        <p>Premium electroplated masterpieces curated for spiritual, home, and corporate spaces.</p>
       </div>
 
       <section className="categories-grid">
@@ -109,10 +110,10 @@ export default async function Home() {
       </section>
 
       {/* 3. BEST SELLERS SECTION */}
-      <div className="section-heading">
+      <div className="section-heading" style={{ marginTop: '5rem' }}>
         <h2>Best Sellers</h2>
         <div className="gold-line"></div>
-        <p>Our most treasured and adored creations in homes and workspaces worldwide.</p>
+        <p>Our most treasured and adored creations in homes and workplaces worldwide.</p>
       </div>
 
       <section style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem' }}>
@@ -123,11 +124,11 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 3.5. SHOP BY OCCASION SECTION */}
+      {/* 4. CORPORATE GIFTING SOLUTIONS */}
       <div className="section-heading" style={{ marginTop: '5rem' }}>
-        <h2>Shop By Occasion</h2>
+        <h2>Corporate Gifting Solutions</h2>
         <div className="gold-line"></div>
-        <p>Mark auspicious moments and celebrate milestones with timeless spiritual gifts.</p>
+        <p>Make a lasting impression with premium electroplated business gifts.</p>
       </div>
 
       <section style={{ 
@@ -135,55 +136,31 @@ export default async function Home() {
         margin: '0 auto 5rem auto', 
         padding: '0 2rem',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
         gap: '2rem'
       }}>
         {[
-          { title: 'Diwali & Festive Gifting', desc: 'Invoke wealth and prosperity under the gold sheen of Laxmi & Ganesh.', link: '/shop?tag=Festive', bg: '/uploads/diwali-gifting.jpg', icon: '🪷' },
-          { title: 'Griha Pravesh', desc: 'Sanctify new thresholds with the protective, auspicious gaze of Lord Ganesha.', link: '/shop?tag=Griha+Pravesh', bg: '/uploads/griha-pravesh.jpg', icon: '🗝️' },
-          { title: 'Corporate Milestones', desc: 'Reward partners and patrons with hand-plated brass executive accents.', link: '/corporate-gifts', bg: '/uploads/corporate-milestone.jpg', icon: '💼' },
-          { title: 'Wedding Blessings', desc: 'Gift divine spiritual grace with Radha Krishna and eternal avatars.', link: '/shop?tag=Wedding', bg: '/uploads/wedding-blessing.jpg', icon: '✨' }
-        ].map((occ, idx) => (
-          <div key={idx} className="luxury-shimmer" style={{ 
-            height: '240px',
-            position: 'relative',
+          { title: 'Executive Desk Accents', desc: 'Silver and gold plated clock organizers, business card holsters, and customized desk plaques.', icon: '💼' },
+          { title: 'Custom Logo Engravings', desc: 'Bespoke corporate awards and identity plaques electroplated with precision branding.', icon: '🏷️' },
+          { title: 'Volume Tier Pricing', desc: 'Tiered wholesale discounts for large orders starting from 10 units up to bulk requirements.', icon: '📈' },
+          { title: 'Luxury Presentation Boxes', desc: 'Premium velvet, leatherette, or wooden packaging boxes with custom brand embossings.', icon: '🎁' }
+        ].map((corp, idx) => (
+          <div key={idx} style={{ 
+            padding: '30px 24px',
             borderRadius: '8px',
-            overflow: 'hidden',
-            boxShadow: 'var(--shadow-sm)',
             border: '1px solid var(--primary-gold-border)',
-            background: 'var(--bg-dark)'
+            background: 'white',
+            boxShadow: 'var(--shadow-sm)',
+            textAlign: 'center'
           }}>
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'var(--luxury-gradient)',
-              opacity: 0.7,
-              zIndex: 1
-            }}></div>
-            <div style={{
-              position: 'relative',
-              zIndex: 2,
-              padding: '24px',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              color: 'white'
-            }}>
-              <div>
-                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>{occ.icon}</span>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', color: 'white', marginBottom: '8px' }}>{occ.title}</h3>
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)', lineHeight: '1.5' }}>{occ.desc}</p>
-              </div>
-              <Link href={occ.link} style={{ fontSize: '0.78rem', color: 'var(--primary-gold)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                View Occasion Catalog <i className="fas fa-arrow-right"></i>
-              </Link>
-            </div>
+            <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '14px' }}>{corp.icon}</span>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', color: 'var(--text-dark)', marginBottom: '10px' }}>{corp.title}</h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>{corp.desc}</p>
           </div>
         ))}
       </section>
 
-      {/* 4. BRAND PROMO SECTION (Glow Effect) */}
+      {/* 5. CUSTOMIZED ELECTROPLATED PRODUCTS */}
       <section style={{ 
         background: 'var(--luxury-gradient)', 
         color: 'white', 
@@ -194,58 +171,68 @@ export default async function Home() {
         marginBottom: '5rem',
         position: 'relative'
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <span style={{ color: 'var(--primary-gold)', letterSpacing: '4px', textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: '600' }}>Crafted with Devotion</span>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', margin: '1rem 0 1.5rem 0', color: 'white' }}>
-            Bring Divine Positive Energy to Your Spaces
+        <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+          <span style={{ color: 'var(--primary-gold)', letterSpacing: '4px', textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: '600' }}>Customization Studio</span>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.6rem', margin: '1rem 0 1.5rem 0', color: 'white', lineHeight: '1.2' }}>
+            Custom Electroplated Products Crafted to Order
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.8)', lineHeight: '1.8', marginBottom: '2.5rem', fontSize: '1rem' }}>
-            Each idol undergoes a meticulous 24-step electroplating process, creating a layered micro-sheet of pure 24K Gold or Sterling Silver. A high-durability protective lacquer finish guarantees the sculpture will never blacken or tarnish in home temples, requiring zero daily maintenance.
+          <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: '1.8', marginBottom: '2.5rem', fontSize: '1rem' }}>
+            Whether it is custom sized sculptures, personalized nameplates, or bespoke home accessories, Anant Arts provides high-grade electroplating customizations. Select your base material (brass, steel, composite), pick your plating finish (24K Gold, Pure Silver, Antique Bronze), and upload your dimensions.
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/shop" className="btn-gold">Explore Shop</Link>
-            <a href={`https://wa.me/${whatsappNumber}?text=I%20am%20interested%20in%20custom%20pooja%20room%20idols.`} target="_blank" rel="noopener noreferrer" className="btn-outline-gold" style={{ color: 'white', borderColor: 'var(--primary-gold)' }}>
-              Custom Orders <i className="fab fa-whatsapp" style={{ marginLeft: '6px', color: '#25D366' }}></i>
+            <a href="#bulk-enquiry-section" className="btn-gold">Request Custom Quote</a>
+            <a href={`https://wa.me/${whatsappNumber}?text=I%20am%20interested%20in%20custom%20electroplated%20products.`} target="_blank" rel="noopener noreferrer" className="btn-outline-gold" style={{ color: 'white', borderColor: 'var(--primary-gold)' }}>
+              WhatsApp Custom Studio <i className="fab fa-whatsapp" style={{ marginLeft: '6px', color: '#25D366' }}></i>
             </a>
           </div>
         </div>
       </section>
 
-      {/* 5. NEW ARRIVALS SECTION */}
+      {/* 6. NEW ARRIVALS SECTION */}
       <div className="section-heading">
         <h2>New Arrivals</h2>
         <div className="gold-line"></div>
-        <p>Freshly casted spiritual designs newly added to our collections.</p>
+        <p>Freshly electroplated designs newly added to our collections.</p>
       </div>
 
       <NewArrivalsCarousel products={newArrivalProducts} />
 
-      {/* 6. WHY CHOOSE ANANT ARTS & CUSTOMER COUNTERS */}
+      {/* 7. WHY CHOOSE ANANT ARTS */}
       <div className="section-heading" style={{ marginTop: '5rem' }}>
         <h2>Why Choose Anant Arts</h2>
         <div className="gold-line"></div>
-        <p>Authentic spiritual luxury designed to last for generations.</p>
+        <p>Experience premium craftsmanship designed to bring elegance and luxury to any space.</p>
       </div>
 
-      <section style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
-        <div style={{ textAlign: 'center', padding: '32px', background: 'var(--bg-white)', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
-          <strong style={{ display: 'block', fontSize: '2.8rem', fontFamily: 'var(--font-heading)', color: 'var(--primary-gold)', marginBottom: '8px' }}>15+</strong>
-          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', marginBottom: '8px' }}>Jaipur Lineage Families</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>We co-design with traditional sthapatis preserving ancient shastra measurements for holy feature alignments.</p>
-        </div>
-        <div style={{ textAlign: 'center', padding: '32px', background: 'var(--bg-white)', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
-          <strong style={{ display: 'block', fontSize: '2.8rem', fontFamily: 'var(--font-heading)', color: 'var(--primary-gold)', marginBottom: '8px' }}>24-Step</strong>
-          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', marginBottom: '8px' }}>Plating & Lacquer Bake</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>Layered with pure 24K gold or silver sheets under electrical currents, baked with lacquer to prevent fading.</p>
-        </div>
-        <div style={{ textAlign: 'center', padding: '32px', background: 'var(--bg-white)', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
-          <strong style={{ display: 'block', fontSize: '2.8rem', fontFamily: 'var(--font-heading)', color: 'var(--primary-gold)', marginBottom: '8px' }}>10,000+</strong>
-          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', marginBottom: '8px' }}>Pooja Temples Blessed</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>Adorning home sanctuaries and high-end corporate tables with secure transit wooden crate delivery.</p>
-        </div>
+      <section style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+        {[
+          { title: 'Premium Electroplating Finish', desc: 'Layered with pure 24K gold, silver, or bronze under precise electrical currents for absolute brilliance.', icon: '✨' },
+          { title: 'Handcrafted Designs', desc: 'Intricately hand chiselled and cast by master traditional artisans preserving heritage structures.', icon: '🔨' },
+          { title: 'Perfect for Gifting', desc: 'Luxurious gift presentation boxes, customized tags, and certificates of electroplate authenticity.', icon: '💝' },
+          { title: 'Pan India Delivery', desc: 'Insured express logistics and double-reinforced packaging to ensure damage-free transit.', icon: '🚚' },
+          { title: 'Customization Available', desc: 'Bespoke dimensions, customized text engravings, logo integrations, and select dual plating finishes.', icon: '🛠️' },
+          { title: 'Secure Packaging', desc: 'Reinforced secure boxes, foam cushioning, and wooden-crating options for larger collector sculptures.', icon: '📦' }
+        ].map((feat, idx) => (
+          <div key={idx} style={{ 
+            padding: '24px', 
+            background: 'var(--bg-white)', 
+            borderRadius: '8px', 
+            border: '1px solid var(--primary-gold-border)', 
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'flex-start'
+          }}>
+            <span style={{ fontSize: '2rem', lineHeight: 1 }}>{feat.icon}</span>
+            <div>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.05rem', marginBottom: '6px' }}>{feat.title}</h3>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>{feat.desc}</p>
+            </div>
+          </div>
+        ))}
       </section>
 
-      {/* 7. TESTIMONIALS SECTION */}
+      {/* 8. TESTIMONIALS SECTION */}
       <div className="section-heading">
         <h2>Customer Testimonials</h2>
         <div className="gold-line"></div>
@@ -264,7 +251,7 @@ export default async function Home() {
               "{test.comment}"
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--primary-gold-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>🪷</div>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--primary-gold-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>💎</div>
               <div>
                 <h4 style={{ fontSize: '0.9rem', fontWeight: '600' }}>{test.name}</h4>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{test.role}</span>
@@ -274,8 +261,15 @@ export default async function Home() {
         ))}
       </section>
 
-      {/* 8. FAQ PREVIEW SECTION */}
-      <div className="section-heading">
+      {/* 9. BULK ENQUIRIES SECTION */}
+      <div id="bulk-enquiry-section" style={{ padding: '4rem 0', background: 'var(--bg-cream)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+          <BulkEnquiryForm />
+        </div>
+      </div>
+
+      {/* FAQ PREVIEW SECTION */}
+      <div className="section-heading" style={{ marginTop: '5rem' }}>
         <h2>Frequently Asked Questions</h2>
         <div className="gold-line"></div>
       </div>
@@ -283,12 +277,12 @@ export default async function Home() {
       <section style={{ maxWidth: '800px', margin: '0 auto 5rem auto', padding: '0 2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{ background: 'white', padding: '20px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
-            <h4 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '8px' }}>How do I clean my gold-plated idol?</h4>
+            <h4 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '8px' }}>How do I clean my gold-plated artifacts?</h4>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Use a dry, soft microfiber cloth to gently wipe off dust. Avoid liquid cleaners, water, soaps, or rough materials, as they can wear off the protective lacquer finish.</p>
           </div>
           <div style={{ background: 'white', padding: '20px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
-            <h4 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '8px' }}>Do you support custom sizes for home temples?</h4>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Yes! We construct larger sculptures (above 15 inches up to 4 feet) on order. Contact us on WhatsApp or fill the form on our Corporate Gifting/Contact page.</p>
+            <h4 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '8px' }}>Do you support custom sizes for home and office decor?</h4>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Yes! We construct larger sculptures and decorative accents on order. Please fill the B2B Enquiry form or contact us on WhatsApp directly.</p>
           </div>
         </div>
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
@@ -296,9 +290,9 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 8.5. JAIPUR ARTISAN STUDIO GALLERY */}
+      {/* JAIPUR ARTISAN STUDIO GALLERY */}
       <div className="section-heading">
-        <h2>Jaipur Artisan Studio</h2>
+        <h2>Artisan Studio Workshop</h2>
         <div className="gold-line"></div>
         <p>Sneak peek into our workshop lines, highlighting wax casting, gold electroplating, and detailed hand engraving.</p>
       </div>
@@ -312,10 +306,10 @@ export default async function Home() {
         gap: '1rem'
       }}>
         {[
-          { title: 'Sacred Wax Molding', desc: 'Rajasthan artisans molding pure beeswax templates.', img: '/uploads/artisan-mold.png' },
-          { title: 'Fine Brass Casting', desc: 'Pouring molten premium bell-metal brass into sacred molds.', img: '/uploads/artisan-cast.png' },
-          { title: 'Chiseling Detail', desc: 'Hand engraving the complex features and textures of deities.', img: '/uploads/artisan-chisel.png' },
-          { title: '24K Electroplating Rigor', desc: 'Submerging under high voltage currents to fuse gold sheets.', img: '/uploads/artisan-electroplate.png' }
+          { title: 'Wax Molding', desc: 'Rajasthan artisans molding pure beeswax templates.', img: '/uploads/artisan-mold.png' },
+          { title: 'Fine Brass Casting', desc: 'Pouring molten premium bell-metal brass into molds.', img: '/uploads/artisan-cast.png' },
+          { title: 'Chiseling Detail', desc: 'Hand engraving the complex features and textures of products.', img: '/uploads/artisan-chisel.png' },
+          { title: 'Electroplating Rigor', desc: 'Submerging under high voltage currents to fuse gold sheets.', img: '/uploads/artisan-electroplate.png' }
         ].map((gal, idx) => (
           <div key={idx} style={{ 
             borderRadius: '6px', 
@@ -343,47 +337,6 @@ export default async function Home() {
           </div>
         ))}
       </section>
-
-      {/* 9. RECENT BLOGS SECTION */}
-      {blogs.length > 0 && (
-        <>
-          <div className="section-heading">
-            <h2>Artisan Blogs</h2>
-            <div className="gold-line"></div>
-            <p>Learn the stories, design lineages, and temple vastu guidelines.</p>
-          </div>
-          <section style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-            {blogs.slice(0, 3).map((blog) => (
-              <div key={blog.id} style={{ background: 'white', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifySelf: 'stretch', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
-                    <Image 
-                      src={blog.featured_image || '/uploads/blog-placeholder.jpg'} 
-                      alt={blog.title} 
-                      fill 
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      style={{ objectFit: 'cover' }}
-                      loading="lazy"
-                    />
-                  </div>
-                  <div style={{ padding: '20px' }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--primary-gold)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                      {new Date(blog.publish_date || blog.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </span>
-                    <h3 style={{ fontSize: '1.1rem', margin: '8px 0 12px 0', fontFamily: 'var(--font-heading)', height: '50px', overflow: 'hidden' }}>{blog.title}</h3>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6', height: '80px', overflow: 'hidden' }}>{blog.short_desc}</p>
-                  </div>
-                </div>
-                <div style={{ padding: '0 20px 20px 20px' }}>
-                  <Link href={`/blog/${blog.slug}`} className="btn-outline-gold" style={{ width: '100%', padding: '6px', fontSize: '0.78rem', justifyContent: 'center' }}>
-                    Read Article
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </section>
-        </>
-      )}
 
       {/* Pop-up Modals */}
       <NewsletterExitModals />
