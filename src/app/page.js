@@ -40,14 +40,14 @@ export default async function Home() {
     <>
       {/* 1. PREMIUM HERO SECTION */}
       <section className="hero-section" style={{ position: 'relative', height: '80vh', overflow: 'hidden' }}>
-        <div className="hero-bg" style={{ position: 'absolute', inset: 0, opacity: 0.4 }}>
-          <Image
-            src={heroBanner.image_path}
-            alt="Anant Arts Luxury Hero Banner"
-            fill
-            priority
-            sizes="100vw"
-            style={{ objectFit: 'cover' }}
+        <div className="hero-bg" style={{ position: 'absolute', inset: 0, opacity: 0.5 }}>
+          <video 
+            src={heroBanner.video_url || "https://assets.mixkit.co/videos/preview/mixkit-gold-dust-particles-background-loop-41584-large.mp4"}
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </div>
         <div className="hero-overlay" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(30,26,23,0.3) 0%, rgba(30,26,23,0.85) 100%)' }} />
@@ -88,20 +88,21 @@ export default async function Home() {
         <p>Select from our revered collections curated with sacred precision.</p>
       </div>
 
-      <section className="deity-collection-grid" id="deity-categories-grid" style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem' }}>
+      <section className="categories-grid">
         {categories.map((cat) => (
-          <Link href={`/shop?category=${cat.slug}`} key={cat.id} className="deity-card" style={{ position: 'relative', height: '350px', display: 'block', overflow: 'hidden' }}>
-            <Image 
-              src={cat.image_path || '/images/placeholder.jpg'} 
-              alt={cat.name} 
-              fill 
-              sizes="(max-width: 768px) 100vw, 33vw"
-              style={{ objectFit: 'cover' }}
-              loading="lazy"
-            />
-            <div className="deity-card-overlay" style={{ zIndex: 2 }}>
-              <h3 className="deity-title">{cat.name}</h3>
-              <span className="deity-link">Explore Collection <i className="fas fa-arrow-right" style={{ marginLeft: '4px' }}></i></span>
+          <Link href={`/shop?category=${cat.slug}`} key={cat.id} className="category-card">
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+              <Image 
+                src={cat.image_path || '/images/placeholder.jpg'} 
+                alt={cat.name} 
+                fill 
+                sizes="(max-width: 768px) 50vw, 25vw"
+                style={{ objectFit: 'cover' }}
+                loading="lazy"
+              />
+            </div>
+            <div className="overlay">
+              <h3>{cat.name}</h3>
             </div>
           </Link>
         ))}

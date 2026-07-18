@@ -1135,3 +1135,32 @@ button { cursor: pointer; font-family: var(--font-body); }
   }
 }
 
+/* ==================== HERO TRUST BAR ==================== */
+.hero-trust-bar {
+  background: var(--bg-cream-dark);
+  border-bottom: 1px solid var(--primary-gold-border);
+  padding: 1.25rem 1rem;
+  width: 100%;
+}
+.hero-trust-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+.hero-trust-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+.hero-trust-badge i {
+  color: var(--primary-gold);
+  font-size: 1.15rem;
+}
+
