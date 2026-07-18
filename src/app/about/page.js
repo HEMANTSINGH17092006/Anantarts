@@ -5,7 +5,8 @@ export const revalidate = 3600; // Cache about page for up to 1 hour
 
 export default async function AboutPage() {
   const settings = await getSettings();
-  const aboutText = settings.about_us_text || 'Anant Arts is a premium Indian brand specializing in manufacturing high-end electroplated idols of Hindu gods and goddesses. Based in New Delhi, we blend centuries-old craftsmanship with modern electroplating technology (using 24K gold, fine silver, and copper) to create timeless spiritual masterworks for your home and offices.';
+  const rawAboutText = settings.about_us_text || 'Anant Arts is a premium Indian brand specializing in manufacturing high-end electroplated idols of Hindu gods and goddesses. Based in New Delhi, we blend centuries-old craftsmanship with modern electroplating technology (using 24K gold, fine silver, and copper) to create timeless spiritual masterworks for your home and offices.';
+  const aboutText = rawAboutText.replace(/New Delhi/g, 'Maharashtra');
 
   return (
     <div style={{ background: 'var(--bg-cream)', padding: '4rem 0' }}>
@@ -20,7 +21,7 @@ export default async function AboutPage() {
         <div style={{ background: 'white', padding: '40px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ float: 'left', width: '100%', marginBottom: '20px', borderRadius: '8px', overflow: 'hidden' }}>
             <img 
-              src="/uploads/about-craftsmanship.jpg" 
+              src="/uploads/our-story-artisan.jpg" 
               alt="Craftsmanship" 
               style={{ width: '100%', height: 'auto', maxHeight: '350px', objectFit: 'cover' }}
             />
