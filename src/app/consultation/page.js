@@ -40,6 +40,22 @@ export default function ConsultationPage() {
       tempErrors.phone = 'Please enter a valid phone number.';
     }
     setErrors(tempErrors);
+
+    const firstErrKey = Object.keys(tempErrors)[0];
+    if (firstErrKey) {
+      setTimeout(() => {
+        const el = document.getElementById(firstErrKey);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus();
+        }
+      }, 100);
+
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+    }
+
     return Object.keys(tempErrors).length === 0;
   };
 
@@ -152,12 +168,14 @@ export default function ConsultationPage() {
                 <input 
                   type="text" 
                   name="name" 
+                  id="name"
                   value={formData.name} 
                   onChange={handleChange}
                   placeholder="e.g. Rajesh Kumar" 
+                  className={errors.name ? 'form-input-error' : ''}
                   style={{ width: '100%', padding: '10px', borderRadius: '6px', border: errors.name ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.88rem' }}
                 />
-                {errors.name && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.name}</span>}
+                {errors.name && <span className="error-msg-inline">{errors.name}</span>}
               </div>
 
               <div>
@@ -167,12 +185,14 @@ export default function ConsultationPage() {
                 <input 
                   type="tel" 
                   name="phone" 
+                  id="phone"
                   value={formData.phone} 
                   onChange={handleChange}
                   placeholder="e.g. +91 99999 99999" 
+                  className={errors.phone ? 'form-input-error' : ''}
                   style={{ width: '100%', padding: '10px', borderRadius: '6px', border: errors.phone ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.88rem' }}
                 />
-                {errors.phone && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.phone}</span>}
+                {errors.phone && <span className="error-msg-inline">{errors.phone}</span>}
               </div>
 
               <div>

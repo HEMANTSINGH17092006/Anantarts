@@ -48,6 +48,7 @@ export default function AccountPage() {
   const [supportSubject, setSupportSubject] = useState('');
   const [supportMsg, setSupportMsg] = useState('');
   const [supportStatus, setSupportStatus] = useState('');
+  const [supportErrors, setSupportErrors] = useState({});
   const [supportLoading, setSupportLoading] = useState(false);
 
   // Cancel/Edit modal
@@ -117,6 +118,28 @@ export default function AccountPage() {
 
   const handleSupportSubmit = async (e) => {
     e.preventDefault();
+    let tempErrors = {};
+    if (!supportSubject) tempErrors.supportSubject = 'Please select a topic.';
+    if (!supportMsg.trim()) tempErrors.supportMsg = 'Please enter a message.';
+
+    if (Object.keys(tempErrors).length > 0) {
+      setSupportErrors(tempErrors);
+      const firstErrKey = Object.keys(tempErrors)[0];
+      setTimeout(() => {
+        const el = document.getElementById(firstErrKey);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus();
+        }
+      }, 100);
+
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+      return;
+    }
+
+    setSupportErrors({});
     setSupportLoading(true);
     const result = await submitContactInquiry({
       name: profileName || patron,
@@ -575,15 +598,24 @@ export default function AccountPage() {
 
                 {/* Support form */}
                 <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '0.95rem', marginBottom: '16px' }}>Send a Message</h4>
-                {supportStatus && (
+                 {supportStatus && (
                   <div style={{ padding: '12px 16px', borderRadius: '6px', marginBottom: '16px', fontSize: '0.84rem', background: supportStatus.startsWith('✅') ? 'rgba(46,125,50,0.08)' : 'rgba(198,40,40,0.08)', color: supportStatus.startsWith('✅') ? 'var(--success)' : 'var(--danger)', border: `1px solid ${supportStatus.startsWith('✅') ? 'rgba(46,125,50,0.2)' : 'rgba(198,40,40,0.2)'}` }}>
                     {supportStatus}
                   </div>
                 )}
-                <form onSubmit={handleSupportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '520px' }}>
+                <form onSubmit={handleSupportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '520px' }} noValidate>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Subject</label>
-                    <select value={supportSubject} onChange={e => setSupportSubject(e.target.value)} required style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid var(--primary-gold-border)', fontSize: '0.88rem', background: 'white', boxSizing: 'border-box' }}>
+                    <select
+                      id="supportSubject"
+                      value={supportSubject}
+                      onChange={e => {
+                        setSupportSubject(e.target.value);
+                        if (supportErrors.supportSubject) setSupportErrors({ ...supportErrors, supportSubject: '' });
+                      }}
+                      className={supportErrors.supportSubject ? 'form-input-error' : ''}
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: supportErrors.supportSubject ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.88rem', background: 'white', boxSizing: 'border-box' }}
+                    >
                       <option value="">— Select a topic —</option>
                       <option>Order Status Inquiry</option>
                       <option>Damaged Product / Refund Request</option>
@@ -594,10 +626,23 @@ export default function AccountPage() {
                       <option>Corporate / Bulk Order</option>
                       <option>Other</option>
                     </select>
+                    {supportErrors.supportSubject && <span className="error-msg-inline">{supportErrors.supportSubject}</span>}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Message</label>
-                    <textarea rows="4" required value={supportMsg} onChange={e => setSupportMsg(e.target.value)} placeholder="Describe your issue or question in detail..." style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid var(--primary-gold-border)', fontSize: '0.88rem', fontFamily: 'var(--font-body)', resize: 'vertical', boxSizing: 'border-box' }} />
+                    <textarea
+                      rows="4"
+                      id="supportMsg"
+                      value={supportMsg}
+                      onChange={e => {
+                        setSupportMsg(e.target.value);
+                        if (supportErrors.supportMsg) setSupportErrors({ ...supportErrors, supportMsg: '' });
+                      }}
+                      className={supportErrors.supportMsg ? 'form-input-error' : ''}
+                      placeholder="Describe your issue or question in detail..."
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: supportErrors.supportMsg ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.88rem', fontFamily: 'var(--font-body)', resize: 'vertical', boxSizing: 'border-box' }}
+                    />
+                    {supportErrors.supportMsg && <span className="error-msg-inline">{supportErrors.supportMsg}</span>}
                   </div>
                   <button type="submit" className="btn-gold" style={{ padding: '12px 28px', width: 'fit-content' }} disabled={supportLoading}>
                     {supportLoading ? <><i className="fas fa-spinner fa-spin"></i> Sending...</> : <><i className="fas fa-paper-plane"></i> Send Message</>}

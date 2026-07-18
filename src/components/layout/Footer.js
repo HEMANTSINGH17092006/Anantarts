@@ -1,11 +1,15 @@
 'use client';
 import Link from 'next/link';
+import { useCart, useWishlist } from '../context/AppContext';
 
-export default function Footer({ settings = {} }) {
+export default function Footer({ settings = {}, onCartClick }) {
   const contactAddress = settings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
   const contactPhone = settings.contact_phone || '+91 72758 19354';
   const contactEmail = settings.contact_email || 'care@anantarts.in';
   const whatsappNumber = settings.whatsapp_number || '917275819354';
+
+  const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   
   let socialLinks = { instagram: '', facebook: '', youtube: '', pinterest: '' };
   try {
@@ -127,18 +131,48 @@ export default function Footer({ settings = {} }) {
 
       {/* Mobile Sticky Floating Dock */}
       <div className="mobile-action-dock">
-        <a href={`tel:${contactPhone.replace(/\s+/g, '')}`} className="mobile-action-dock-item">
-          <i className="fas fa-phone-alt"></i>
-          <span>Call Support</span>
-        </a>
-        <a href={`https://wa.me/${whatsappNumber}?text=Hi%20Anant%20Arts%20team%2C%20I%20want%20to%20know%20more%20about%20your%20idols.`} target="_blank" rel="noopener noreferrer" className="mobile-action-dock-item">
-          <i className="fab fa-whatsapp"></i>
-          <span>WhatsApp Chat</span>
-        </a>
-        <Link href="/order-tracking" className="mobile-action-dock-item">
-          <i className="fas fa-shipping-fast"></i>
-          <span>Track Order</span>
+        <Link href="/" className="mobile-action-dock-item">
+          <i className="fas fa-home"></i>
+          <span>Home</span>
         </Link>
+        <Link href="/shop" className="mobile-action-dock-item">
+          <i className="fas fa-search"></i>
+          <span>Search</span>
+        </Link>
+        <Link href="/shop?wishlist=true" className="mobile-action-dock-item" style={{ position: 'relative' }}>
+          <i className="fas fa-heart"></i>
+          {wishlistCount > 0 && (
+            <span style={{
+              position: 'absolute', top: '4px', right: '18%',
+              background: 'var(--primary-gold)', color: 'var(--bg-dark)',
+              borderRadius: '50%', width: '16px', height: '16px',
+              fontSize: '0.62rem', fontWeight: '700',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {wishlistCount}
+            </span>
+          )}
+          <span>Wishlist</span>
+        </Link>
+        <button onClick={onCartClick} className="mobile-action-dock-item" style={{ position: 'relative', background: 'none', border: 'none', color: 'inherit', width: '100%', fontFamily: 'inherit' }}>
+          <i className="fas fa-shopping-bag"></i>
+          {cartCount > 0 && (
+            <span style={{
+              position: 'absolute', top: '4px', right: '22%',
+              background: 'var(--primary-gold)', color: 'var(--bg-dark)',
+              borderRadius: '50%', width: '16px', height: '16px',
+              fontSize: '0.62rem', fontWeight: '700',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {cartCount}
+            </span>
+          )}
+          <span>Cart</span>
+        </button>
+        <a href={`https://wa.me/${whatsappNumber}?text=Hi%20Anant%20Arts%20team%2C%20I%20want%20to%20know%20more%20about%20your%20idols.`} target="_blank" rel="noopener noreferrer" className="mobile-action-dock-item">
+          <i className="fab fa-whatsapp" style={{ color: '#25D366' }}></i>
+          <span>WhatsApp</span>
+        </a>
       </div>
     </footer>
   );

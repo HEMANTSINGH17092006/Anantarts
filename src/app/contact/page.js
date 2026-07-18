@@ -39,18 +39,34 @@ export default function ContactPage() {
 
   const validate = () => {
     let tempErrors = {};
-    if (!name.trim()) tempErrors.name = 'Your Name is required.';
+    if (!name.trim()) tempErrors.name = 'Please enter your name.';
     
     if (!formEmail.trim()) {
-      tempErrors.email = 'Email address is required.';
+      tempErrors.formEmail = 'Email address is required.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEmail.trim())) {
-      tempErrors.email = 'Please enter a valid email.';
+      tempErrors.formEmail = 'Please enter a valid email.';
     }
 
-    if (!subject.trim()) tempErrors.subject = 'Subject is required.';
+    if (!subject.trim()) tempErrors.subject = 'Please enter a subject.';
     if (!message.trim()) tempErrors.message = 'Inquiry Message cannot be empty.';
 
     setErrors(tempErrors);
+
+    const firstErrKey = Object.keys(tempErrors)[0];
+    if (firstErrKey) {
+      setTimeout(() => {
+        const el = document.getElementById(firstErrKey);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus();
+        }
+      }, 100);
+
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+    }
+
     return Object.keys(tempErrors).length === 0;
   };
 
@@ -146,53 +162,73 @@ export default function ContactPage() {
           <div style={{ background: 'white', padding: '32px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '20px' }}>Inquiry Message Portal</h3>
             
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} noValidate>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Your Name *</label>
                 <input
                   type="text"
-                  required
+                  id="name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.name) setErrors({ ...errors, name: '' });
+                  }}
                   placeholder="e.g. Hemant Singh"
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  className={errors.name ? 'form-input-error' : ''}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.name ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
+                {errors.name && <span className="error-msg-inline">{errors.name}</span>}
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Email Address *</label>
                 <input
                   type="email"
-                  required
+                  id="formEmail"
                   value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
+                  onChange={(e) => {
+                    setFormEmail(e.target.value);
+                    if (errors.formEmail) setErrors({ ...errors, formEmail: '' });
+                  }}
                   placeholder="e.g. support@example.com"
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  className={errors.formEmail ? 'form-input-error' : ''}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.formEmail ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
+                {errors.formEmail && <span className="error-msg-inline">{errors.formEmail}</span>}
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Subject *</label>
                 <input
                   type="text"
-                  required
+                  id="subject"
                   value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                    if (errors.subject) setErrors({ ...errors, subject: '' });
+                  }}
                   placeholder="e.g. Custom order size question"
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  className={errors.subject ? 'form-input-error' : ''}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.subject ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
+                {errors.subject && <span className="error-msg-inline">{errors.subject}</span>}
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Inquiry Message *</label>
                 <textarea
                   rows="4"
-                  required
+                  id="message"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    if (errors.message) setErrors({ ...errors, message: '' });
+                  }}
                   placeholder="Type your message details here..."
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}
+                  className={errors.message ? 'form-input-error' : ''}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.message ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}
                 ></textarea>
+                {errors.message && <span className="error-msg-inline">{errors.message}</span>}
               </div>
 
               {error && <p style={{ color: 'var(--danger)', fontSize: '0.82rem', margin: 0 }}>{error}</p>}

@@ -97,6 +97,42 @@ export default function AddToCartButton({ product }) {
           {isOutOfStock ? 'Out of Stock' : 'Buy It Now'}
         </button>
       </div>
+
+      {/* Sticky Bottom Bar for Mobile View */}
+      {!isOutOfStock && (
+        <div className="mobile-sticky-buy-bar" style={{
+          position: 'fixed',
+          bottom: '60px',
+          left: 0,
+          width: '100%',
+          backgroundColor: 'white',
+          borderTop: '1.5px solid var(--primary-gold-border)',
+          padding: '10px 16px',
+          boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
+          zIndex: 999,
+          display: 'none',
+          boxSizing: 'border-box'
+        }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', maxWidth: '600px', margin: '0 auto' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-dark)', fontWeight: '600', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</p>
+              <p style={{ fontSize: '0.88rem', fontWeight: '700', margin: '2px 0 0 0', color: 'var(--primary-gold-hover)' }}>
+                {product.discount_price > 0 ? formatPrice(product.discount_price) : formatPrice(product.price)}
+              </p>
+            </div>
+            <button
+              onClick={handleAdd}
+              className="btn-gold"
+              style={{ flex: '0 0 140px', padding: '10px', fontSize: '0.8rem', borderRadius: '6px', justifyContent: 'center', minHeight: '38px' }}
+            >
+              {adding ? 'Added!' : 'Add to Cart'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+import { formatPrice } from '@/lib/utils';
+

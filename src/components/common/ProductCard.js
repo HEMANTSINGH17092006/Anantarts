@@ -51,9 +51,9 @@ export default function ProductCard({ product }) {
   return (
     <>
       <div className="product-card luxury-shimmer">
-        {/* Wishlist Button */}
+        {/* Wishlist Button (Desktop Only) */}
         <button 
-          className={`wishlist-badge-btn ${inWish ? 'active' : ''}`}
+          className={`wishlist-badge-btn desktop-wishlist-btn ${inWish ? 'active' : ''}`}
           onClick={handleWishlist}
           aria-label="Add to wishlist"
           style={{
@@ -90,14 +90,14 @@ export default function ProductCard({ product }) {
         )}
 
         <Link href={`/product/${product.slug}`} className="product-card-link">
-          <div className="product-card-image" style={{ position: 'relative', height: '280px', overflow: 'hidden' }}>
+          <div className="product-card-image" style={{ position: 'relative', overflow: 'hidden' }}>
             <Image 
               src={product.image_path} 
               alt={product.name} 
               fill 
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
               style={{ objectFit: 'cover' }}
-              loading="lazy"
+              priority={tags.includes('Best Seller') || tags.includes('New Arrival')}
             />
             <div className="product-card-overlay-actions" style={{ zIndex: 2 }}>
               <button onClick={handleQuickView} className="btn-quickview" style={{
@@ -120,7 +120,7 @@ export default function ProductCard({ product }) {
         <div className="product-card-info">
           <span className="category-label">{product.category_name || 'Spiritual Sculpture'}</span>
           <Link href={`/product/${product.slug}`}>
-            <h3 style={{
+            <h3 className="product-card-title" style={{
               fontSize: '0.95rem',
               fontWeight: '600',
               height: '42px',
@@ -132,23 +132,63 @@ export default function ProductCard({ product }) {
               marginBottom: '8px'
             }}>{product.name}</h3>
           </Link>
+
+          {/* Rating (⭐ 4.9) - Mobile Only via display:none toggled to flex */}
+          <div className="mobile-only-rating" style={{ display: 'none', margin: '4px 0 8px 0', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}>
+            <span style={{ color: '#D4AF37' }}>★★★★★</span>
+            <span style={{ fontWeight: '700', color: 'var(--text-dark)', marginLeft: '4px' }}>4.9</span>
+          </div>
+
+          {/* Short Description - Mobile Only */}
+          <p className="mobile-only-desc" style={{ display: 'none', fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: '1.4' }}>
+            {product.description ? (product.description.slice(0, 120) + '...') : 'Premium electroplated spiritual sculpture, handcrafted with 24K gold highlights by master artisans.'}
+          </p>
           
           <div className="product-price">
             <span className="current">{formatPrice(activePrice)}</span>
             {product.discount_price > 0 && (
-              <span className="original">{formatPrice(product.price)}</span>
+              <>
+                <span className="original">{formatPrice(product.price)}</span>
+                <span className="discount" style={{ fontSize: '0.76rem', color: 'var(--success)', fontWeight: '600', marginLeft: '6px' }}>
+                  ({discountPercent}% OFF)
+                </span>
+              </>
             )}
           </div>
 
-          <div className="product-card-actions" style={{ marginTop: '12px' }}>
+          <div className="product-card-actions" style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+            {/* Wishlist Button (Mobile Only) */}
+            <button 
+              onClick={handleWishlist}
+              className={`btn-wishlist-mobile ${inWish ? 'active' : ''}`}
+              style={{
+                display: 'none',
+                width: '46px',
+                height: '42px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: inWish ? 'rgba(231, 76, 60, 0.1)' : 'white',
+                border: inWish ? '1.5px solid #E74C3C' : '1.5px solid var(--primary-gold-border)',
+                borderRadius: '8px',
+                color: inWish ? '#E74C3C' : 'var(--text-muted)',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxSizing: 'border-box'
+              }}
+              aria-label="Add to wishlist"
+            >
+              <i className={inWish ? "fas fa-heart" : "far fa-heart"}></i>
+            </button>
+
             <button 
               onClick={handleAddToCart}
               className="btn-gold" 
-              style={{ width: '100%', padding: '8px', fontSize: '0.8rem', justifyContent: 'center' }}
+              style={{ flex: 1, padding: '10px', fontSize: '0.8rem', justifyContent: 'center', minHeight: '42px', borderRadius: '8px' }}
               disabled={product.stock_quantity <= 0}
             >
               <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i>
-              {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added!' : 'Add to Bag'}
+              {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added!' : 'Add to Cart'}
             </button>
           </div>
         </div>

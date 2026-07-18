@@ -16,7 +16,7 @@ export default function AppLayout({ children, settings = {} }) {
         <main style={{ flex: 1 }}>
           {children}
         </main>
-        <Footer settings={settings} />
+        <Footer settings={settings} onCartClick={() => setCartOpen(true)} />
       </div>
     </AppProviders>
   );

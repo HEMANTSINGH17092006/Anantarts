@@ -12,11 +12,51 @@ export default function CorporateGiftsPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    let tempErrors = {};
+    if (!name.trim()) tempErrors.name = 'Please enter your name.';
+    if (!company.trim()) tempErrors.company = 'Company name is required.';
+    
+    if (!email.trim()) {
+      tempErrors.email = 'Business email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      tempErrors.email = 'Please enter a valid email.';
+    }
+
+    if (!phone.trim()) {
+      tempErrors.phone = 'Phone number is required.';
+    } else if (!/^\+?[0-9\s\-]{8,15}$/.test(phone.trim())) {
+      tempErrors.phone = 'Please enter a valid phone number.';
+    }
+
+    if (!message.trim()) tempErrors.message = 'Inquiry Details cannot be empty.';
+
+    setErrors(tempErrors);
+
+    const firstErrKey = Object.keys(tempErrors)[0];
+    if (firstErrKey) {
+      setTimeout(() => {
+        const el = document.getElementById(firstErrKey);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus();
+        }
+      }, 100);
+
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+    }
+
+    return Object.keys(tempErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !company || !email || !phone || !message) {
-      setError('Please fill in all required fields.');
+    if (!validate()) {
+      setError('Please fix the errors in the inquiry form.');
       return;
     }
     setError('');
@@ -40,6 +80,7 @@ export default function CorporateGiftsPage() {
       setPhone('');
       setQuantity('50');
       setMessage('');
+      setErrors({});
     } else {
       setError(result.message);
     }
@@ -82,29 +123,39 @@ export default function CorporateGiftsPage() {
           <div style={{ background: 'white', padding: '32px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '20px' }}>Gifting Inquiry Portal</h3>
             
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} noValidate>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Your Name *</label>
                 <input
                   type="text"
-                  required
+                  id="name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.name) setErrors({ ...errors, name: '' });
+                  }}
                   placeholder="e.g. Anoop Deshmukh"
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  className={errors.name ? 'form-input-error' : ''}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.name ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
+                {errors.name && <span className="error-msg-inline">{errors.name}</span>}
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Company Name *</label>
                 <input
                   type="text"
-                  required
+                  id="company"
                   value={company}
-                  onChange={(e) => setCompany(e.target.value)}
+                  onChange={(e) => {
+                    setCompany(e.target.value);
+                    if (errors.company) setErrors({ ...errors, company: '' });
+                  }}
                   placeholder="e.g. Anant Corporate Ltd"
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  className={errors.company ? 'form-input-error' : ''}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.company ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
+                {errors.company && <span className="error-msg-inline">{errors.company}</span>}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', flexWrap: 'wrap' }}>
@@ -112,23 +163,33 @@ export default function CorporateGiftsPage() {
                   <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Business Email *</label>
                   <input
                     type="email"
-                    required
+                    id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) setErrors({ ...errors, email: '' });
+                    }}
                     placeholder="e.g. corporate@company.com"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    className={errors.email ? 'form-input-error' : ''}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.email ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
+                  {errors.email && <span className="error-msg-inline">{errors.email}</span>}
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Phone Number *</label>
                   <input
                     type="tel"
-                    required
+                    id="phone"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (errors.phone) setErrors({ ...errors, phone: '' });
+                    }}
                     placeholder="e.g. +91 98200 12345"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    className={errors.phone ? 'form-input-error' : ''}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.phone ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
+                  {errors.phone && <span className="error-msg-inline">{errors.phone}</span>}
                 </div>
               </div>
 
@@ -150,12 +211,17 @@ export default function CorporateGiftsPage() {
                 <label style={{ fontSize: '0.8rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Inquiry Details *</label>
                 <textarea
                   rows="4"
-                  required
+                  id="message"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    if (errors.message) setErrors({ ...errors, message: '' });
+                  }}
                   placeholder="Specify deity collection, delivery dates, GST invoice requirements, logo customization needs..."
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}
+                  className={errors.message ? 'form-input-error' : ''}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.message ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem', fontFamily: 'var(--font-body)' }}
                 ></textarea>
+                {errors.message && <span className="error-msg-inline">{errors.message}</span>}
               </div>
 
               {error && <p style={{ color: 'var(--danger)', fontSize: '0.82rem', margin: 0 }}>{error}</p>}

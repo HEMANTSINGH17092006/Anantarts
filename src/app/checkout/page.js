@@ -114,7 +114,7 @@ export default function CheckoutPage() {
 
   const validate = () => {
     let tempErrors = {};
-    if (!name.trim()) tempErrors.name = 'Name is required.';
+    if (!name.trim()) tempErrors.name = 'Please enter your name.';
     
     if (!email.trim()) {
       tempErrors.email = 'Email address is required.';
@@ -141,6 +141,22 @@ export default function CheckoutPage() {
     if (!paymentMethod) tempErrors.paymentMethod = 'Please select a payment method.';
 
     setErrors(tempErrors);
+
+    const firstErrKey = Object.keys(tempErrors)[0];
+    if (firstErrKey) {
+      setTimeout(() => {
+        const el = document.getElementById(firstErrKey);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus();
+        }
+      }, 100);
+
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+    }
+
     return Object.keys(tempErrors).length === 0;
   };
 
@@ -249,17 +265,22 @@ export default function CheckoutPage() {
           <div style={{ flex: '2 1 500px', background: 'white', padding: '32px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '20px' }}>Shipping Information</h3>
             
-            <form onSubmit={handleCheckoutSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleCheckoutSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} noValidate>
               <div>
                 <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Full Name *</label>
                 <input
                   type="text"
+                  id="name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.name) setErrors({ ...errors, name: '' });
+                  }}
                   placeholder="e.g. Hemant Singh"
+                  className={errors.name ? 'form-input-error' : ''}
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.name ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
-                {errors.name && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.name}</span>}
+                {errors.name && <span className="error-msg-inline">{errors.name}</span>}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', flexWrap: 'wrap' }}>
@@ -267,23 +288,33 @@ export default function CheckoutPage() {
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Email Address *</label>
                   <input
                     type="email"
+                    id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) setErrors({ ...errors, email: '' });
+                    }}
                     placeholder="e.g. customer@example.com"
+                    className={errors.email ? 'form-input-error' : ''}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.email ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
-                  {errors.email && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.email}</span>}
+                  {errors.email && <span className="error-msg-inline">{errors.email}</span>}
                 </div>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Phone Number *</label>
                   <input
                     type="tel"
+                    id="phone"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (errors.phone) setErrors({ ...errors, phone: '' });
+                    }}
                     placeholder="e.g. +91 98765 43210"
+                    className={errors.phone ? 'form-input-error' : ''}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.phone ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
-                  {errors.phone && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.phone}</span>}
+                  {errors.phone && <span className="error-msg-inline">{errors.phone}</span>}
                 </div>
               </div>
 
@@ -291,12 +322,17 @@ export default function CheckoutPage() {
                 <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Street Address *</label>
                 <input
                   type="text"
+                  id="address"
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    if (errors.address) setErrors({ ...errors, address: '' });
+                  }}
                   placeholder="House No, Building name, Street name, Locality"
+                  className={errors.address ? 'form-input-error' : ''}
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.address ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
-                {errors.address && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.address}</span>}
+                {errors.address && <span className="error-msg-inline">{errors.address}</span>}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', flexWrap: 'wrap' }}>
@@ -304,34 +340,49 @@ export default function CheckoutPage() {
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>City *</label>
                   <input
                     type="text"
+                    id="city"
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      if (errors.city) setErrors({ ...errors, city: '' });
+                    }}
                     placeholder="City"
+                    className={errors.city ? 'form-input-error' : ''}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.city ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
-                  {errors.city && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.city}</span>}
+                  {errors.city && <span className="error-msg-inline">{errors.city}</span>}
                 </div>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>State *</label>
                   <input
                     type="text"
+                    id="state"
                     value={state}
-                    onChange={(e) => setState(e.target.value)}
+                    onChange={(e) => {
+                      setState(e.target.value);
+                      if (errors.state) setErrors({ ...errors, state: '' });
+                    }}
                     placeholder="State"
+                    className={errors.state ? 'form-input-error' : ''}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.state ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
-                  {errors.state && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.state}</span>}
+                  {errors.state && <span className="error-msg-inline">{errors.state}</span>}
                 </div>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>ZIP Code *</label>
                   <input
                     type="text"
+                    id="zip"
                     value={zip}
-                    onChange={(e) => setZip(e.target.value)}
+                    onChange={(e) => {
+                      setZip(e.target.value);
+                      if (errors.zip) setErrors({ ...errors, zip: '' });
+                    }}
                     placeholder="e.g. 421201"
+                    className={errors.zip ? 'form-input-error' : ''}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.zip ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
-                  {errors.zip && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.zip}</span>}
+                  {errors.zip && <span className="error-msg-inline">{errors.zip}</span>}
                 </div>
               </div>
 
