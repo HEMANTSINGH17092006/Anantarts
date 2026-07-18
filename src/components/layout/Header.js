@@ -43,7 +43,7 @@ export default function Header({ settings = {}, onCartClick }) {
               <li><Link href="/consultation" onClick={() => setMobileOpen(false)} style={{ color: 'var(--primary-gold)', fontWeight: '600' }}><i className="fas fa-gem" style={{ fontSize: '0.75rem', marginRight: '4px' }}></i> Vastu Consultation</Link></li>
               <li><Link href="/blog" onClick={() => setMobileOpen(false)}>Artisan Blogs</Link></li>
               <li><Link href="/about" onClick={() => setMobileOpen(false)}>Our Story</Link></li>
-              <li><Link href="/my-orders" onClick={() => setMobileOpen(false)}>My Orders</Link></li>
+              <li><Link href="/account" onClick={() => setMobileOpen(false)}><i className="fas fa-user-circle" style={{ fontSize: '0.8rem', marginRight: '4px' }}></i>My Account</Link></li>
               <li><Link href="/contact" onClick={() => setMobileOpen(false)}>Contact</Link></li>
             </ul>
           </nav>
@@ -51,6 +51,9 @@ export default function Header({ settings = {}, onCartClick }) {
           <div className="header-actions">
             <Link href="/shop" className="header-icon" aria-label="Search">
               <i className="fas fa-search"></i>
+            </Link>
+            <Link href="/account" className="header-icon" aria-label="My Account">
+              <i className="fas fa-user-circle"></i>
             </Link>
             <Link href="/shop?wishlist=true" className="header-icon" aria-label="Wishlist">
               <i className="far fa-heart"></i>
