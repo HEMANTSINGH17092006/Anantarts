@@ -701,7 +701,7 @@ async function seedDefaultData() {
       { key: 'orders_email', value: 'orders@anantarts.in' },
       { key: 'contact_phone', value: '+91 72758 19354' },
       { key: 'contact_address', value: 'Bhoirwadi, Dombivli East, Maharashtra' },
-      { key: 'razorpay_key_id', value: '' },
+      { key: 'razorpay_key_id', value: 'rzp_live_TF5Q4XYGrKlT1b' },
       { key: 'ga_measurement_id', value: '' },
       { key: 'clarity_project_id', value: '' },
       { key: 'gsc_verification', value: '' },
@@ -725,6 +725,7 @@ async function seedDefaultData() {
  
   await dbRun("UPDATE website_settings SET value = 'anantarts39@gmail.com' WHERE key = 'contact_email'");
   await dbRun("UPDATE website_settings SET value = ? WHERE key = 'social_links'", [JSON.stringify({ instagram: 'https://www.instagram.com/arts_by_anant' })]);
+  await dbRun("UPDATE website_settings SET value = 'rzp_live_TF5Q4XYGrKlT1b' WHERE key = 'razorpay_key_id'");
 }
 
 module.exports = {
