@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 import * as jose from 'jose';
 import { cookies } from 'next/headers';
@@ -854,5 +854,23 @@ export async function submitB2bEnquiry(prevState, formData) {
   } catch (err) {
     console.error('[submitB2bEnquiry] Error:', err.message);
     return { success: false, message: 'Could not submit your enquiry. Please try again or contact us on WhatsApp.' };
+  }
+}
+
+export async function updateSettings(settingsArray) {
+  try {
+    const adminSession = await checkAuthRole(['admin', 'super_admin']);
+    const supabase = createAdminClient();
+    for (const setting of settingsArray) {
+      await supabase
+        .from('website_settings')
+        .upsert({ key: setting.key, value: setting.value }, { onConflict: 'key' });
+    }
+    await logAudit(adminSession.email, 'UPDATE_SETTINGS', 'Updated website settings.');
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err) {
+    console.error('updateSettings error:', err);
+    return { success: false, message: 'Failed to update settings.' };
   }
 }

@@ -29,6 +29,7 @@ ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.consultations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.flash_sales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_logs ENABLE ROW LEVEL SECURITY;
 
 -- =====================================
 -- 2. DROP EXISTING POLICIES (Clean Slate)
@@ -288,6 +289,17 @@ WITH CHECK (true);
 
 CREATE POLICY "Service role manages audit logs"
 ON public.audit_logs
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- =====================================
+-- 20. WHATSAPP LOGS — service role only
+-- =====================================
+
+CREATE POLICY "Service role manages whatsapp logs"
+ON public.whatsapp_logs
 FOR ALL
 TO service_role
 USING (true)

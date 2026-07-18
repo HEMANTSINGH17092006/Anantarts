@@ -23,7 +23,8 @@ export default function AdminLayout({ children }) {
     { href: '/admin/customers', label: 'Customers', icon: 'fa-users' },
     { href: '/admin/coupons', label: 'Marketing & Coupons', icon: 'fa-ticket-alt' },
     { href: '/admin/content', label: 'Content & Banners', icon: 'fa-sliders-h' },
-    { href: '/admin/blogs', label: 'Blogs', icon: 'fa-pencil-alt' }
+    { href: '/admin/blogs', label: 'Blogs', icon: 'fa-pencil-alt' },
+    { href: '/admin/settings', label: 'Settings', icon: 'fa-cog' }
   ];
 
   return (

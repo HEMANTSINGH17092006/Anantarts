@@ -393,6 +393,15 @@ async function initDb() {
       message TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS whatsapp_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_number TEXT NOT NULL,
+      phone_number TEXT NOT NULL,
+      status TEXT NOT NULL,
+      message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Run schema expansions / column additions
@@ -741,6 +750,19 @@ async function seedDefaultData() {
   ];
   for (const banner of newBanners) {
     await dbRun("UPDATE categories SET image_path = ? WHERE slug = ?", [banner.path, banner.slug]);
+  }
+
+  // Seed WhatsApp settings if not exist
+  const wpSettings = [
+    { key: 'whatsapp_notifications_enabled', value: '1' },
+    { key: 'whatsapp_admin_number', value: '917275819354' },
+    { key: 'whatsapp_message_template', value: "🛒 *New Order Received – Anant Arts*\n\nOrder ID: {{order_id}}\n\nCustomer Name: {{customer_name}}\nMobile Number: {{customer_phone}}\nEmail: {{customer_email}}\n\nProducts Ordered:\n{{product_list}}\n\nTotal Amount: ₹{{order_total}}\n\nPayment Method: {{payment_method}}\nPayment Status: {{payment_status}}\n\nDelivery Address:\n{{full_address}}\n\nOrder Date:\n{{order_date}}\n\nView Order:\n{{admin_order_link}}\n\nPlease process this order as soon as possible." }
+  ];
+  for (const s of wpSettings) {
+    const exists = await dbGet('SELECT * FROM website_settings WHERE key = ?', [s.key]);
+    if (!exists) {
+      await dbRun('INSERT INTO website_settings (key, value) VALUES (?, ?)', [s.key, s.value]);
+    }
   }
 }
 

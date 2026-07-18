@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
+import { sendAdminOrderNotification } from '@/lib/whatsapp';
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
@@ -209,6 +210,19 @@ export async function POST(req) {
         type: 'success',
         link: `/admin/orders`
       });
+
+    // 6. Send WhatsApp Notification
+    try {
+      const { data: settingsData } = await supabase.from('website_settings').select('*');
+      const settings = {};
+      if (settingsData) {
+        settingsData.forEach(r => { settings[r.key] = r.value; });
+        // Don't await this so it doesn't block the API response
+        sendAdminOrderNotification(order, items, settings).catch(e => console.error('WhatsApp Error:', e));
+      }
+    } catch (e) {
+      console.error('Failed to prepare WhatsApp notification', e);
+    }
 
     return NextResponse.json({ success: true, order });
   } catch (err) {
