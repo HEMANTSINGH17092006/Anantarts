@@ -5,7 +5,7 @@ import { useCart, useWishlist } from '../context/AppContext';
 export default function Footer({ settings = {}, onCartClick }) {
   const contactAddress = settings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
   const contactPhone = settings.contact_phone || '+91 72758 19354';
-  const contactEmail = settings.contact_email || 'care@anantarts.in';
+  const contactEmail = settings.contact_email || 'anantarts39@gmail.com';
   const whatsappNumber = settings.whatsapp_number || '917275819354';
 
   const { cartCount } = useCart();
@@ -22,7 +22,7 @@ export default function Footer({ settings = {}, onCartClick }) {
     console.error(e);
   }
 
-  const instUrl = socialLinks.instagram || 'https://instagram.com/anantarts';
+  const instUrl = socialLinks.instagram || 'https://www.instagram.com/arts_by_anant?igsh=MXB0d215YzVtZ3Q0aw==';
   const fbUrl = socialLinks.facebook || 'https://facebook.com/anantarts';
   const ytUrl = socialLinks.youtube || 'https://youtube.com/anantarts';
 

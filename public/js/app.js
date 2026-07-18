@@ -44,11 +44,11 @@ async function injectCommonLayout() {
   const siteName = websiteSettings.site_name || 'Anant Arts';
   const tagline = websiteSettings.site_tagline || 'Bringing Divine Art to Every Home';
   const phone = websiteSettings.contact_phone || '+91 72758 19354';
-  const email = websiteSettings.contact_email || 'care@anantarts.com';
+  const email = websiteSettings.contact_email || 'anantarts39@gmail.com';
   const address = websiteSettings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
   const waNumber = websiteSettings.whatsapp_number || '917275819354';
   
-  let social = { instagram: 'https://instagram.com/anantarts', facebook: 'https://facebook.com/anantarts', youtube: 'https://youtube.com/anantarts', pinterest: 'https://pinterest.com/anantarts' };
+  let social = { instagram: 'https://www.instagram.com/arts_by_anant?igsh=MXB0d215YzVtZ3Q0aw==', facebook: 'https://facebook.com/anantarts', youtube: 'https://youtube.com/anantarts', pinterest: 'https://pinterest.com/anantarts' };
   try {
     if (websiteSettings.social_links) {
       social = JSON.parse(websiteSettings.social_links);

@@ -4,7 +4,7 @@ import { submitContactInquiry } from '@/app/actions';
 
 export default function ContactPage() {
   const [phone, setPhone] = useState('+91 72758 19354');
-  const [email, setEmail] = useState('care@anantarts.in');
+  const [email, setEmail] = useState('anantarts39@gmail.com');
   const [address, setAddress] = useState('Bhoirwadi, Dombivli East, Maharashtra, India');
   const [whatsapp, setWhatsapp] = useState('917275819354');
 

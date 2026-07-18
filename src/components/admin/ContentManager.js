@@ -21,7 +21,7 @@ export default function ContentManager({ settings = {}, banners = [] }) {
 
   // Tab 2: Contact & Email
   const [contactPhone, setContactPhone] = useState(settings.contact_phone || '+91 72758 19354');
-  const [contactEmail, setContactEmail] = useState(settings.contact_email || 'care@anantarts.in');
+  const [contactEmail, setContactEmail] = useState(settings.contact_email || 'anantarts39@gmail.com');
   const [supportEmail, setSupportEmail] = useState(settings.support_email || 'support@anantarts.in');
   const [ordersEmail, setOrdersEmail] = useState(settings.orders_email || 'orders@anantarts.in');
   const [contactAddress, setContactAddress] = useState(settings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra');

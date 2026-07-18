@@ -104,7 +104,7 @@ export async function generateMetadata() {
 function OrganizationSchema({ settings }) {
   const siteName = settings?.site_name || 'Anant Arts';
   const contactPhone = settings?.contact_phone || '+91 72758 19354';
-  const contactEmail = settings?.contact_email || 'care@anantarts.in';
+  const contactEmail = settings?.contact_email || 'anantarts39@gmail.com';
   const contactAddress = settings?.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
 
   let socialLinks = {};
