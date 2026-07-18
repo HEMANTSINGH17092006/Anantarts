@@ -1,6 +1,22 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
+  "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
+  "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", 
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", 
+  "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", 
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", 
+  "Ladakh", "Lakshadweep", "Puducherry"
+];
+
+function sanitizeInput(str) {
+  if (!str) return '';
+  // Strip any HTML tags to prevent XSS
+  return str.replace(/<[^>]*>/g, '').trim();
+}
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -9,8 +25,11 @@ export async function POST(req) {
       customer_name,
       customer_email,
       customer_phone,
-      shipping_address,
-      billing_address,
+      street_address,
+      city,
+      state,
+      zip,
+      landmark,
       coupon_id,
       discount_amount,
       shipping_charge,
@@ -22,9 +41,56 @@ export async function POST(req) {
       items
     } = body;
 
-    if (!order_number || !customer_name || !customer_email || !customer_phone || !shipping_address || !items || items.length === 0) {
+    // 1. Mandatory base fields presence check
+    if (!order_number || !customer_name || !customer_email || !customer_phone || !street_address || !city || !state || !zip || !items || items.length === 0) {
       return NextResponse.json({ message: 'Missing required order details.' }, { status: 400 });
     }
+
+    // 2. Perform server-side validation & sanitization
+    const sanitizedName = sanitizeInput(customer_name);
+    const sanitizedEmail = sanitizeInput(customer_email);
+    const sanitizedPhone = sanitizeInput(customer_phone);
+    const sanitizedStreet = sanitizeInput(street_address);
+    const sanitizedCity = sanitizeInput(city);
+    const sanitizedState = sanitizeInput(state);
+    const sanitizedZip = sanitizeInput(zip);
+    const sanitizedLandmark = sanitizeInput(landmark);
+
+    if (!/^[a-zA-Z\s]{3,50}$/.test(sanitizedName)) {
+      return NextResponse.json({ message: 'Please enter a valid full name.' }, { status: 400 });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail)) {
+      return NextResponse.json({ message: 'Please enter a valid email address.' }, { status: 400 });
+    }
+
+    if (!/^[6-9][0-9]{9}$/.test(sanitizedPhone)) {
+      return NextResponse.json({ message: 'Please enter a valid 10-digit mobile number.' }, { status: 400 });
+    }
+
+    if (sanitizedStreet.length < 10 || sanitizedStreet.length > 200) {
+      return NextResponse.json({ message: 'Please enter a complete delivery address.' }, { status: 400 });
+    }
+
+    if (!/^[a-zA-Z\s]+$/.test(sanitizedCity)) {
+      return NextResponse.json({ message: 'Please enter a valid city name.' }, { status: 400 });
+    }
+
+    if (!INDIAN_STATES.includes(sanitizedState)) {
+      return NextResponse.json({ message: 'Please select your state.' }, { status: 400 });
+    }
+
+    if (!/^[1-9][0-9]{5}$/.test(sanitizedZip)) {
+      return NextResponse.json({ message: 'Please enter a valid 6-digit postal code.' }, { status: 400 });
+    }
+
+    if (sanitizedLandmark && sanitizedLandmark.length > 100) {
+      return NextResponse.json({ message: 'Landmark cannot exceed 100 characters.' }, { status: 400 });
+    }
+
+    // Compose final clean address string for storage
+    const shipping_address = `${sanitizedStreet}, ${sanitizedLandmark ? sanitizedLandmark + ', ' : ''}${sanitizedCity}, ${sanitizedState} - ${sanitizedZip}, India`;
+    const billing_address = shipping_address;
 
     // Use service role admin client to bypass RLS and perform database insertions
     const supabase = createAdminClient();

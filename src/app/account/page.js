@@ -43,6 +43,8 @@ export default function AccountPage() {
   const [profileName, setProfileName] = useState('');
   const [profilePhone, setProfilePhone] = useState('');
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileErrors, setProfileErrors] = useState({});
+  const [profileTouched, setProfileTouched] = useState({});
 
   // Support form
   const [supportSubject, setSupportSubject] = useState('');
@@ -109,7 +111,45 @@ export default function AccountPage() {
     setSection('overview');
   };
 
+  const validateProfileName = (val) => val.trim().length >= 3 && val.trim().length <= 50 && /^[a-zA-Z\s]+$/.test(val.trim());
+  const validateProfilePhone = (val) => /^[6-9][0-9]{9}$/.test(val.trim());
+
+  useEffect(() => {
+    let newErrors = {};
+    if (profileTouched.name && !validateProfileName(profileName)) {
+      newErrors.name = 'Please enter a valid full name.';
+    }
+    if (profileTouched.phone && !validateProfilePhone(profilePhone)) {
+      newErrors.phone = 'Please enter a valid 10-digit mobile number.';
+    }
+    setProfileErrors(newErrors);
+  }, [profileName, profilePhone, profileTouched]);
+
   const handleSaveProfile = () => {
+    setProfileTouched({ name: true, phone: true });
+    let tempErrors = {};
+    if (!validateProfileName(profileName)) tempErrors.name = 'Please enter a valid full name.';
+    if (!validateProfilePhone(profilePhone)) tempErrors.phone = 'Please enter a valid 10-digit mobile number.';
+
+    if (Object.keys(tempErrors).length > 0) {
+      setProfileErrors(tempErrors);
+      
+      const firstErrKey = Object.keys(tempErrors)[0];
+      setTimeout(() => {
+        const el = document.getElementById('profile_' + firstErrKey);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus();
+        }
+      }, 100);
+
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+      return;
+    }
+
+    setProfileErrors({});
     localStorage.setItem('anant_patron_name', profileName);
     localStorage.setItem('anant_patron_phone', profilePhone);
     setProfileSaved(true);
@@ -546,8 +586,32 @@ export default function AccountPage() {
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', marginBottom: '24px', paddingBottom: '12px', borderBottom: '1px solid var(--primary-gold-border)' }}>👤 My Profile</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '480px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Display Name</label>
-                    <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} placeholder="Your Name" style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid var(--primary-gold-border)', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                    <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                      Display Name
+                      {profileName.trim().length > 0 && validateProfileName(profileName) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.8rem' }}></i>}
+                    </label>
+                    <input
+                      type="text"
+                      id="profile_name"
+                      value={profileName}
+                      onChange={e => {
+                        setProfileName(e.target.value);
+                        setProfileTouched(prev => ({ ...prev, name: true }));
+                      }}
+                      onBlur={() => setProfileTouched(prev => ({ ...prev, name: true }))}
+                      placeholder="Your Name"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '8px',
+                        border: profileErrors.name ? '1.5px solid var(--danger)' : (profileName.trim().length > 0 && validateProfileName(profileName)) ? '1.5px solid var(--success)' : '1.5px solid var(--primary-gold-border)',
+                        backgroundColor: profileErrors.name ? 'rgba(198,40,40,0.01)' : 'white',
+                        fontSize: '0.9rem',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.2s'
+                      }}
+                    />
+                    {profileErrors.name && <span className="error-msg-inline">{profileErrors.name}</span>}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Contact Identifier</label>
@@ -555,11 +619,44 @@ export default function AccountPage() {
                     <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>This is your order lookup identifier. Contact support to change it.</p>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Phone Number</label>
-                    <input type="tel" value={profilePhone} onChange={e => setProfilePhone(e.target.value)} placeholder="+91 98765 43210" style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1.5px solid var(--primary-gold-border)', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                    <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                      Phone Number
+                      {profilePhone.trim().length > 0 && validateProfilePhone(profilePhone) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.8rem' }}></i>}
+                    </label>
+                    <input
+                      type="tel"
+                      id="profile_phone"
+                      value={profilePhone}
+                      onChange={e => {
+                        setProfilePhone(e.target.value);
+                        setProfileTouched(prev => ({ ...prev, phone: true }));
+                      }}
+                      onBlur={() => setProfileTouched(prev => ({ ...prev, phone: true }))}
+                      placeholder="e.g. 9876543210"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '8px',
+                        border: profileErrors.phone ? '1.5px solid var(--danger)' : (profilePhone.trim().length > 0 && validateProfilePhone(profilePhone)) ? '1.5px solid var(--success)' : '1.5px solid var(--primary-gold-border)',
+                        backgroundColor: profileErrors.phone ? 'rgba(198,40,40,0.01)' : 'white',
+                        fontSize: '0.9rem',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.2s'
+                      }}
+                    />
+                    {profileErrors.phone && <span className="error-msg-inline">{profileErrors.phone}</span>}
                   </div>
                   <div style={{ paddingTop: '8px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <button className="btn-gold" onClick={handleSaveProfile} style={{ padding: '11px 28px' }}>
+                    <button
+                      className="btn-gold"
+                      onClick={handleSaveProfile}
+                      style={{
+                        padding: '11px 28px',
+                        opacity: (!validateProfileName(profileName) || !validateProfilePhone(profilePhone)) ? 0.55 : 1,
+                        cursor: (!validateProfileName(profileName) || !validateProfilePhone(profilePhone)) ? 'not-allowed' : 'pointer'
+                      }}
+                      disabled={!validateProfileName(profileName) || !validateProfilePhone(profilePhone)}
+                    >
                       <i className="fas fa-save"></i> Save Profile
                     </button>
                     {profileSaved && <span style={{ color: 'var(--success)', fontSize: '0.82rem', fontWeight: '600' }}>✅ Saved!</span>}

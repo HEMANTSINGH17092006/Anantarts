@@ -112,46 +112,54 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleZipChange = async (e) => {
+    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setZip(cleaned);
+    setTouched(prev => ({ ...prev, zip: true }));
+
+    if (cleaned.length === 6 && cleaned[0] !== '0') {
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data[0]?.Status === 'Success') {
+            const office = data[0].PostOffice[0];
+            if (office) {
+              setCity(office.District || office.Name || '');
+              setState(office.State || '');
+              setTouched(prev => ({ ...prev, city: true, state: true }));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('ZIP lookup failed', err);
+      }
+    }
+  };
+
   const validate = () => {
+    const allTouched = { name: true, email: true, phone: true, address: true, city: true, state: true, zip: true, landmark: true };
+    setTouched(allTouched);
+
     let tempErrors = {};
-    if (!name.trim()) tempErrors.name = 'Please enter your name.';
-    
-    if (!email.trim()) {
-      tempErrors.email = 'Email address is required.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      tempErrors.email = 'Please enter a valid email.';
-    }
-
-    if (!phone.trim()) {
-      tempErrors.phone = 'Phone number is required.';
-    } else if (!/^\+?[0-9\s\-]{8,15}$/.test(phone.trim())) {
-      tempErrors.phone = 'Please enter a valid phone number.';
-    }
-
-    if (!address.trim()) tempErrors.address = 'Address cannot be empty.';
-    if (!city.trim()) tempErrors.city = 'City is required.';
-    if (!state.trim()) tempErrors.state = 'State is required.';
-
-    if (!zip.trim()) {
-      tempErrors.zip = 'ZIP code is required.';
-    } else if (!/^[0-9]{5,6}$/.test(zip.trim())) {
-      tempErrors.zip = 'Please enter a valid pincode.';
-    }
-
-    if (!paymentMethod) tempErrors.paymentMethod = 'Please select a payment method.';
+    if (!validateName(name)) tempErrors.name = 'Please enter a valid full name.';
+    if (!validateEmail(email)) tempErrors.email = 'Please enter a valid email address.';
+    if (!validatePhone(phone)) tempErrors.phone = 'Please enter a valid 10-digit mobile number.';
+    if (!validateAddress(address)) tempErrors.address = 'Please enter a complete delivery address.';
+    if (!validateCity(city)) tempErrors.city = 'Please enter a valid city name.';
+    if (!validateState(state)) tempErrors.state = 'Please select your state.';
+    if (!validateZip(zip)) tempErrors.zip = 'Please enter a valid 6-digit postal code.';
+    if (!validateLandmark(landmark)) tempErrors.landmark = 'Landmark must be under 100 characters.';
 
     setErrors(tempErrors);
 
     const firstErrKey = Object.keys(tempErrors)[0];
     if (firstErrKey) {
-      setTimeout(() => {
-        const el = document.getElementById(firstErrKey);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.focus();
-        }
-      }, 100);
-
+      const el = document.getElementById(firstErrKey);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus();
+      }
       if (typeof window !== 'undefined' && navigator.vibrate) {
         navigator.vibrate(100);
       }
@@ -169,19 +177,17 @@ export default function CheckoutPage() {
     setError('');
     
     const orderNumber = generateOrderNumber();
-    const shippingAddressString = `${address}, ${city}, ${state} - ${zip}, India`;
+    const shippingAddressString = `${address}, ${landmark ? landmark + ', ' : ''}${city}, ${state} - ${zip}, India`;
 
     if (paymentMethod === 'razorpay') {
       setLoading(true);
-      // Load Razorpay checkout popup — uses env variable for live/test key
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_sandboxKeyId',
-        amount: Math.round(total * 100), // in paise
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TETve5wueqfJjp',
+        amount: Math.round(total * 100),
         currency: 'INR',
         name: 'Anant Arts',
         description: `Order ${orderNumber}`,
         handler: async function (response) {
-          // On Payment Success, create order in database
           createDbOrder(orderNumber, shippingAddressString, 'Razorpay', 'Paid', response.razorpay_payment_id);
         },
         prefill: {
@@ -202,7 +208,6 @@ export default function CheckoutPage() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } else {
-      // COD Order
       setLoading(true);
       createDbOrder(orderNumber, shippingAddressString, 'COD', 'Pending', null);
     }
@@ -218,6 +223,11 @@ export default function CheckoutPage() {
           customer_name: name,
           customer_email: email,
           customer_phone: phone,
+          street_address: address,
+          city: city,
+          state: state,
+          zip: zip,
+          landmark: landmark,
           shipping_address: shippingAddress,
           billing_address: shippingAddress,
           coupon_id: coupon?.id || null,
@@ -240,7 +250,6 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error completing checkout');
 
-      // Clear cart globally
       clearCart();
       setOrderSuccess(data.order);
     } catch (err) {
@@ -266,126 +275,254 @@ export default function CheckoutPage() {
             <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '20px' }}>Shipping Information</h3>
             
             <form onSubmit={handleCheckoutSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} noValidate>
+              {/* Full Name */}
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Full Name *</label>
+                <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '6px', color: 'var(--text-dark)' }}>
+                  Full Name *
+                  {name.trim().length > 0 && validateName(name) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.85rem' }}></i>}
+                </label>
                 <input
                   type="text"
                   id="name"
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value);
-                    if (errors.name) setErrors({ ...errors, name: '' });
+                    setTouched(prev => ({ ...prev, name: true }));
                   }}
+                  onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
                   placeholder="e.g. Hemant Singh"
-                  className={errors.name ? 'form-input-error' : ''}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.name ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '4px',
+                    border: errors.name ? '1.5px solid var(--danger)' : (name.trim().length > 0 && validateName(name)) ? '1.5px solid var(--success)' : '1px solid var(--primary-gold-border)',
+                    backgroundColor: errors.name ? 'rgba(198,40,40,0.01)' : 'white',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s',
+                    boxSizing: 'border-box'
+                  }}
                 />
                 {errors.name && <span className="error-msg-inline">{errors.name}</span>}
               </div>
 
+              {/* Email & Phone */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', flexWrap: 'wrap' }}>
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Email Address *</label>
+                  <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '6px', color: 'var(--text-dark)' }}>
+                    Email Address *
+                    {email.trim().length > 0 && validateEmail(email) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.85rem' }}></i>}
+                  </label>
                   <input
                     type="email"
                     id="email"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
-                      if (errors.email) setErrors({ ...errors, email: '' });
+                      setTouched(prev => ({ ...prev, email: true }));
                     }}
+                    onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
                     placeholder="e.g. customer@example.com"
-                    className={errors.email ? 'form-input-error' : ''}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.email ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '4px',
+                      border: errors.email ? '1.5px solid var(--danger)' : (email.trim().length > 0 && validateEmail(email)) ? '1.5px solid var(--success)' : '1px solid var(--primary-gold-border)',
+                      backgroundColor: errors.email ? 'rgba(198,40,40,0.01)' : 'white',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s',
+                      boxSizing: 'border-box'
+                    }}
                   />
                   {errors.email && <span className="error-msg-inline">{errors.email}</span>}
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Phone Number *</label>
+                  <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '6px', color: 'var(--text-dark)' }}>
+                    Phone Number *
+                    {phone.trim().length > 0 && validatePhone(phone) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.85rem' }}></i>}
+                  </label>
                   <input
                     type="tel"
                     id="phone"
                     value={phone}
                     onChange={(e) => {
                       setPhone(e.target.value);
-                      if (errors.phone) setErrors({ ...errors, phone: '' });
+                      setTouched(prev => ({ ...prev, phone: true }));
                     }}
-                    placeholder="e.g. +91 98765 43210"
-                    className={errors.phone ? 'form-input-error' : ''}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.phone ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    onBlur={() => setTouched(prev => ({ ...prev, phone: true }))}
+                    placeholder="e.g. 9876543210"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '4px',
+                      border: errors.phone ? '1.5px solid var(--danger)' : (phone.trim().length > 0 && validatePhone(phone)) ? '1.5px solid var(--success)' : '1px solid var(--primary-gold-border)',
+                      backgroundColor: errors.phone ? 'rgba(198,40,40,0.01)' : 'white',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s',
+                      boxSizing: 'border-box'
+                    }}
                   />
                   {errors.phone && <span className="error-msg-inline">{errors.phone}</span>}
                 </div>
               </div>
 
+              {/* Street Address */}
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Street Address *</label>
+                <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '6px', color: 'var(--text-dark)' }}>
+                  Street Address *
+                  {address.trim().length > 0 && validateAddress(address) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.85rem' }}></i>}
+                </label>
                 <input
                   type="text"
                   id="address"
                   value={address}
                   onChange={(e) => {
                     setAddress(e.target.value);
-                    if (errors.address) setErrors({ ...errors, address: '' });
+                    setTouched(prev => ({ ...prev, address: true }));
                   }}
+                  onBlur={() => setTouched(prev => ({ ...prev, address: true }))}
                   placeholder="House No, Building name, Street name, Locality"
-                  className={errors.address ? 'form-input-error' : ''}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.address ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '4px',
+                    border: errors.address ? '1.5px solid var(--danger)' : (address.trim().length > 0 && validateAddress(address)) ? '1.5px solid var(--success)' : '1px solid var(--primary-gold-border)',
+                    backgroundColor: errors.address ? 'rgba(198,40,40,0.01)' : 'white',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s',
+                    boxSizing: 'border-box'
+                  }}
                 />
                 {errors.address && <span className="error-msg-inline">{errors.address}</span>}
               </div>
 
+              {/* Landmark */}
+              <div>
+                <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '6px', color: 'var(--text-dark)' }}>
+                  Landmark (Optional)
+                  {landmark.trim().length > 0 && validateLandmark(landmark) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.85rem' }}></i>}
+                </label>
+                <input
+                  type="text"
+                  id="landmark"
+                  value={landmark}
+                  onChange={(e) => {
+                    setLandmark(e.target.value);
+                    setTouched(prev => ({ ...prev, landmark: true }));
+                  }}
+                  placeholder="e.g. Near Big Temple or School"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '4px',
+                    border: errors.landmark ? '1.5px solid var(--danger)' : (landmark.trim().length > 0 && validateLandmark(landmark)) ? '1.5px solid var(--success)' : '1px solid var(--primary-gold-border)',
+                    backgroundColor: errors.landmark ? 'rgba(198,40,40,0.01)' : 'white',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                {errors.landmark && <span className="error-msg-inline">{errors.landmark}</span>}
+              </div>
+
+              {/* City, State & ZIP Code */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', flexWrap: 'wrap' }}>
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>City *</label>
+                  <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '6px', color: 'var(--text-dark)' }}>
+                    City *
+                    {city.trim().length > 0 && validateCity(city) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.85rem' }}></i>}
+                  </label>
                   <input
                     type="text"
                     id="city"
                     value={city}
                     onChange={(e) => {
                       setCity(e.target.value);
-                      if (errors.city) setErrors({ ...errors, city: '' });
+                      setTouched(prev => ({ ...prev, city: true }));
                     }}
+                    onBlur={() => setTouched(prev => ({ ...prev, city: true }))}
                     placeholder="City"
-                    className={errors.city ? 'form-input-error' : ''}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.city ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '4px',
+                      border: errors.city ? '1.5px solid var(--danger)' : (city.trim().length > 0 && validateCity(city)) ? '1.5px solid var(--success)' : '1px solid var(--primary-gold-border)',
+                      backgroundColor: errors.city ? 'rgba(198,40,40,0.01)' : 'white',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s',
+                      boxSizing: 'border-box'
+                    }}
                   />
                   {errors.city && <span className="error-msg-inline">{errors.city}</span>}
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>State *</label>
-                  <input
-                    type="text"
+                  <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '6px', color: 'var(--text-dark)' }}>
+                    State *
+                    {state && validateState(state) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.85rem' }}></i>}
+                  </label>
+                  <select
                     id="state"
                     value={state}
                     onChange={(e) => {
                       setState(e.target.value);
-                      if (errors.state) setErrors({ ...errors, state: '' });
+                      setTouched(prev => ({ ...prev, state: true }));
                     }}
-                    placeholder="State"
-                    className={errors.state ? 'form-input-error' : ''}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.state ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
-                  />
+                    onBlur={() => setTouched(prev => ({ ...prev, state: true }))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '4px',
+                      border: errors.state ? '1.5px solid var(--danger)' : (state && validateState(state)) ? '1.5px solid var(--success)' : '1px solid var(--primary-gold-border)',
+                      backgroundColor: errors.state ? 'rgba(198,40,40,0.01)' : 'white',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s',
+                      boxSizing: 'border-box',
+                      backgroundPosition: 'right 12px center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    <option value="">— Select State —</option>
+                    {INDIAN_STATES.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                   {errors.state && <span className="error-msg-inline">{errors.state}</span>}
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>ZIP Code *</label>
+                  <label style={{ fontSize: '0.82rem', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '6px', color: 'var(--text-dark)' }}>
+                    ZIP Code *
+                    {zip.trim().length > 0 && validateZip(zip) && <i className="fas fa-check-circle" style={{ color: 'var(--success)', marginLeft: '6px', fontSize: '0.85rem' }}></i>}
+                  </label>
                   <input
                     type="text"
                     id="zip"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
                     value={zip}
-                    onChange={(e) => {
-                      setZip(e.target.value);
-                      if (errors.zip) setErrors({ ...errors, zip: '' });
+                    onChange={handleZipChange}
+                    onBlur={() => setTouched(prev => ({ ...prev, zip: true }))}
+                    placeholder="e.g. 400001"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '4px',
+                      border: errors.zip ? '1.5px solid var(--danger)' : (zip.trim().length > 0 && validateZip(zip)) ? '1.5px solid var(--success)' : '1px solid var(--primary-gold-border)',
+                      backgroundColor: errors.zip ? 'rgba(198,40,40,0.01)' : 'white',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s',
+                      boxSizing: 'border-box'
                     }}
-                    placeholder="e.g. 421201"
-                    className={errors.zip ? 'form-input-error' : ''}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.zip ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
                   {errors.zip && <span className="error-msg-inline">{errors.zip}</span>}
+                  {zip.length === 6 && zip[0] !== '0' && (
+                    <div style={{ color: 'var(--success)', fontSize: '0.78rem', marginTop: '6px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <i className="fas fa-truck"></i> Estimated delivery: 3–5 business days
+                    </div>
+                  )}
                 </div>
               </div>
 
+              {/* Payment Methods */}
               <div style={{ marginTop: '16px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '20px' }}>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '16px' }}>Payment Method</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -426,8 +563,16 @@ export default function CheckoutPage() {
               <button 
                 type="submit" 
                 className="btn-gold" 
-                style={{ width: '100%', justifyContent: 'center', marginTop: '24px', padding: '14px' }}
-                disabled={loading}
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  marginTop: '24px',
+                  padding: '14px',
+                  opacity: (!isFormValid || loading) ? 0.5 : 1,
+                  cursor: (!isFormValid || loading) ? 'not-allowed' : 'pointer',
+                  transition: 'opacity 0.2s'
+                }}
+                disabled={loading || !isFormValid}
               >
                 {loading ? 'Processing Order...' : paymentMethod === 'razorpay' ? 'Pay Now via Razorpay' : 'Place Order (COD)'}
               </button>
