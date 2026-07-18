@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
 export async function POST(req) {
@@ -8,7 +8,7 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Coupon code is required.' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     
     // Query coupon code details
     const { data: coupon, error } = await supabase
