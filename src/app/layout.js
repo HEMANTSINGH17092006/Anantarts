@@ -1,6 +1,20 @@
 import './globals.css';
 import AppLayout from '@/components/layout/AppLayout';
 import { getSettings } from '@/lib/db-helpers';
+import { Playfair_Display, Poppins } from 'next/font/google';
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-heading',
+});
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-body',
+});
 
 export async function generateMetadata() {
   const settings = await getSettings();
@@ -30,7 +44,7 @@ export default async function RootLayout({ children }) {
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
       </head>
-      <body>
+      <body className={`${playfair.variable} ${poppins.variable}`}>
         <AppLayout settings={settings}>
           {children}
         </AppLayout>

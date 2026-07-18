@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,100..900;1,100..900&display=swap');
-
 /* ==================== CSS VARIABLES ==================== */
 :root {
   --primary-gold: #D4AF37;
@@ -22,8 +20,8 @@
   --warning: #EF6C00;
   --danger: #C62828;
   --info: #1565C0;
-  --font-heading: 'Playfair Display', serif;
-  --font-body: 'Poppins', sans-serif;
+  --font-heading: var(--font-heading), 'Playfair Display', serif;
+  --font-body: var(--font-body), 'Poppins', sans-serif;
   --gold-gradient: linear-gradient(135deg, #FFE494 0%, #D4AF37 50%, #B59029 100%);
   --dark-gold-gradient: linear-gradient(135deg, #B59029 0%, #705814 100%);
   --luxury-gradient: linear-gradient(135deg, #3B2F2F 0%, #1E1A17 100%);

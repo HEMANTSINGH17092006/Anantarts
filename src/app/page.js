@@ -7,10 +7,11 @@ import {
   getTestimonials,
   getBlogs
 } from '@/lib/db-helpers';
-import HeroParticles from '@/components/home/HeroParticles';
+import Image from 'next/image';
 import NewArrivalsCarousel from '@/components/home/NewArrivalsCarousel';
-import NewsletterExitModals from '@/components/home/NewsletterExitModals';
 import ProductCard from '@/components/common/ProductCard';
+import HeroParticles from '@/components/home/HeroParticles';
+import NewsletterExitModals from '@/components/home/NewsletterExitModals';
 
 export const revalidate = 3600; // Cache home page for up to 1 hour, revalidate on tag trigger
 
@@ -39,17 +40,16 @@ export default async function Home() {
     <>
       {/* 1. PREMIUM HERO SECTION */}
       <section className="hero-section" style={{ position: 'relative', height: '80vh', overflow: 'hidden' }}>
-        <div 
-          className="hero-bg" 
-          style={{ 
-            backgroundImage: `url(${heroBanner.image_path})`,
-            position: 'absolute',
-            inset: 0,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.4
-          }} 
-        />
+        <div className="hero-bg" style={{ position: 'absolute', inset: 0, opacity: 0.4 }}>
+          <Image
+            src={heroBanner.image_path}
+            alt="Anant Arts Luxury Hero Banner"
+            fill
+            priority
+            sizes="100vw"
+            style={{ objectFit: 'cover' }}
+          />
+        </div>
         <div className="hero-overlay" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(30,26,23,0.3) 0%, rgba(30,26,23,0.85) 100%)' }} />
         <HeroParticles />
         <div className="hero-content" style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: '800px', margin: '0 auto', padding: '0 2rem' }}>
@@ -90,9 +90,16 @@ export default async function Home() {
 
       <section className="deity-collection-grid" id="deity-categories-grid" style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem' }}>
         {categories.map((cat) => (
-          <Link href={`/shop?category=${cat.slug}`} key={cat.id} className="deity-card">
-            <img src={cat.image_path || '/images/placeholder.jpg'} alt={cat.name} style={{ width: '100%', height: '350px', objectFit: 'cover' }} />
-            <div className="deity-card-overlay">
+          <Link href={`/shop?category=${cat.slug}`} key={cat.id} className="deity-card" style={{ position: 'relative', height: '350px', display: 'block', overflow: 'hidden' }}>
+            <Image 
+              src={cat.image_path || '/images/placeholder.jpg'} 
+              alt={cat.name} 
+              fill 
+              sizes="(max-width: 768px) 100vw, 33vw"
+              style={{ objectFit: 'cover' }}
+              loading="lazy"
+            />
+            <div className="deity-card-overlay" style={{ zIndex: 2 }}>
               <h3 className="deity-title">{cat.name}</h3>
               <span className="deity-link">Explore Collection <i className="fas fa-arrow-right" style={{ marginLeft: '4px' }}></i></span>
             </div>
@@ -319,7 +326,14 @@ export default async function Home() {
             <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
               <div style={{ width: '100%', height: '100%', background: 'var(--luxury-gradient)', opacity: 0.1, position: 'absolute', zIndex: 1 }}></div>
               <span style={{ position: 'absolute', top: '10px', right: '10px', color: '#fff', fontSize: '1rem', zIndex: 2 }}><i className="fab fa-instagram"></i></span>
-              <img src={gal.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Image 
+                src={gal.img} 
+                alt={gal.title} 
+                fill 
+                sizes="(max-width: 768px) 50vw, 25vw"
+                style={{ objectFit: 'cover' }}
+                loading="lazy"
+              />
             </div>
             <div style={{ padding: '16px' }}>
               <h4 style={{ fontSize: '0.88rem', fontWeight: '600', marginBottom: '4px' }}>{gal.title}</h4>
@@ -341,7 +355,16 @@ export default async function Home() {
             {blogs.slice(0, 3).map((blog) => (
               <div key={blog.id} style={{ background: 'white', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifySelf: 'stretch', justifyContent: 'space-between' }}>
                 <div>
-                  <img src={blog.featured_image || '/uploads/blog-placeholder.jpg'} alt={blog.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+                  <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+                    <Image 
+                      src={blog.featured_image || '/uploads/blog-placeholder.jpg'} 
+                      alt={blog.title} 
+                      fill 
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      style={{ objectFit: 'cover' }}
+                      loading="lazy"
+                    />
+                  </div>
                   <div style={{ padding: '20px' }}>
                     <span style={{ fontSize: '0.7rem', color: 'var(--primary-gold)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
                       {new Date(blog.publish_date || blog.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}

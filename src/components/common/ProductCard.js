@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCart, useWishlist } from '../context/AppContext';
 import { formatPrice, calcDiscount } from '@/lib/utils';
 
@@ -89,9 +90,16 @@ export default function ProductCard({ product }) {
         )}
 
         <Link href={`/product/${product.slug}`} className="product-card-link">
-          <div className="product-card-image">
-            <img src={product.image_path} alt={product.name} loading="lazy" />
-            <div className="product-card-overlay-actions">
+          <div className="product-card-image" style={{ position: 'relative', height: '280px', overflow: 'hidden' }}>
+            <Image 
+              src={product.image_path} 
+              alt={product.name} 
+              fill 
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              style={{ objectFit: 'cover' }}
+              loading="lazy"
+            />
+            <div className="product-card-overlay-actions" style={{ zIndex: 2 }}>
               <button onClick={handleQuickView} className="btn-quickview" style={{
                 padding: '8px 16px',
                 backgroundColor: 'rgba(30, 26, 23, 0.9)',
