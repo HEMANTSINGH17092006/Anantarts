@@ -447,14 +447,14 @@ async function seedDefaultData() {
 
   // 2. Seed default Categories (Rebranded)
   const requiredCategories = [
-    { name: 'Spiritual Collection', slug: 'spiritual-collection', image_path: '/uploads/category-ganesha.jpg', sort_order: 1 },
-    { name: 'Home Décor', slug: 'home-decor', image_path: '/uploads/category-others.jpg', sort_order: 2 },
-    { name: 'Corporate Gifts', slug: 'corporate-gifts', image_path: '/uploads/corporate-gifts.jpg', sort_order: 3 },
-    { name: 'Decorative Figurines', slug: 'decorative-figurines', image_path: '/uploads/category-hanuman.jpg', sort_order: 4 },
-    { name: 'Festive Gifts', slug: 'festive-gifts', image_path: '/uploads/category-lakshmi.jpg', sort_order: 5 },
-    { name: 'Customized Products', slug: 'customized-products', image_path: '/uploads/our-story-artisan.jpg', sort_order: 6 },
-    { name: 'Premium Collectibles', slug: 'premium-collectibles', image_path: '/uploads/category-krishna.jpg', sort_order: 7 },
-    { name: 'New Arrivals', slug: 'new-arrivals', image_path: '/uploads/banner-1.jpg', sort_order: 8 }
+    { name: 'Spiritual Collection', slug: 'spiritual-collection', image_path: '/uploads/category-spiritual-collection.png', sort_order: 1 },
+    { name: 'Home Décor', slug: 'home-decor', image_path: '/uploads/category-home-decor.png', sort_order: 2 },
+    { name: 'Corporate Gifts', slug: 'corporate-gifts', image_path: '/uploads/category-corporate-gifts.png', sort_order: 3 },
+    { name: 'Decorative Figurines', slug: 'decorative-figurines', image_path: '/uploads/category-decorative-figurines.png', sort_order: 4 },
+    { name: 'Festive Gifts', slug: 'festive-gifts', image_path: '/uploads/category-festive-gifts.png', sort_order: 5 },
+    { name: 'Customized Products', slug: 'customized-products', image_path: '/uploads/category-customized-products.png', sort_order: 6 },
+    { name: 'Premium Collectibles', slug: 'premium-collectibles', image_path: '/uploads/category-premium-collectibles.png', sort_order: 7 },
+    { name: 'New Arrivals', slug: 'new-arrivals', image_path: '/uploads/category-new-arrivals.png', sort_order: 8 }
   ];
 
   let categoryMap = {};
@@ -726,6 +726,22 @@ async function seedDefaultData() {
   await dbRun("UPDATE website_settings SET value = 'anantarts39@gmail.com' WHERE key = 'contact_email'");
   await dbRun("UPDATE website_settings SET value = ? WHERE key = 'social_links'", [JSON.stringify({ instagram: 'https://www.instagram.com/arts_by_anant' })]);
   await dbRun("UPDATE website_settings SET value = 'rzp_live_TF5Q4XYGrKlT1b' WHERE key = 'razorpay_key_id'");
+
+  // Force update existing categories to the premium banners
+  const newBanners = [
+    { slug: 'idols', path: '/uploads/category-idols.png' },
+    { slug: 'spiritual-collection', path: '/uploads/category-spiritual-collection.png' },
+    { slug: 'home-decor', path: '/uploads/category-home-decor.png' },
+    { slug: 'corporate-gifts', path: '/uploads/category-corporate-gifts.png' },
+    { slug: 'decorative-figurines', path: '/uploads/category-decorative-figurines.png' },
+    { slug: 'festive-gifts', path: '/uploads/category-festive-gifts.png' },
+    { slug: 'customized-products', path: '/uploads/category-customized-products.png' },
+    { slug: 'premium-collectibles', path: '/uploads/category-premium-collectibles.png' },
+    { slug: 'new-arrivals', path: '/uploads/category-new-arrivals.png' }
+  ];
+  for (const banner of newBanners) {
+    await dbRun("UPDATE categories SET image_path = ? WHERE slug = ?", [banner.path, banner.slug]);
+  }
 }
 
 module.exports = {
