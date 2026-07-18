@@ -344,6 +344,19 @@ async function initDb() {
       end_date DATETIME,
       is_active INTEGER DEFAULT 1
     );
+
+    CREATE TABLE IF NOT EXISTS consultations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      whatsapp TEXT,
+      city TEXT,
+      deity_interest TEXT,
+      dimensions TEXT,
+      preferred_date TEXT,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Run schema expansions / column additions
@@ -575,6 +588,9 @@ async function seedDefaultData() {
     }
     console.log('Default settings seeded.');
   }
+
+  // Force update default contact email to branded email
+  await dbRun("UPDATE website_settings SET value = 'care@anantarts.com' WHERE key = 'contact_email' AND value = 'hemant4507vns@gmail.com'");
 }
 
 module.exports = {

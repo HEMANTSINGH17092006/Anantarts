@@ -519,3 +519,28 @@ export async function bulkImportProducts(productsList) {
     return { success: false, message: err.message };
   }
 }
+
+// 9. Consultation Actions
+export async function submitConsultation(data) {
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase
+      .from('consultations')
+      .insert({
+        name: data.name,
+        phone: data.phone,
+        whatsapp: data.whatsapp || null,
+        city: data.city || null,
+        deity_interest: data.deity_interest || null,
+        dimensions: data.dimensions || null,
+        preferred_date: data.preferred_date || null,
+        notes: data.notes || null
+      });
+
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.error('Submit consultation error:', err);
+    return { success: false, message: err.message };
+  }
+}

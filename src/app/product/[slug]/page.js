@@ -7,6 +7,7 @@ import ProductCard from '@/components/common/ProductCard';
 import { formatPrice } from '@/lib/utils';
 import AddToCartButton from '@/components/product/AddToCartButton';
 import RecentlyViewed, { RecentlyViewedLogger } from '@/components/common/RecentlyViewed';
+import FrequentlyBoughtTogether from '@/components/product/FrequentlyBoughtTogether';
 
 export const revalidate = 60; // Dynamic pages revalidated hourly or by tag
 
@@ -161,6 +162,8 @@ export default async function ProductDetailPage({ params }) {
             </div>
           </div>
         </div>
+
+        <FrequentlyBoughtTogether currentProduct={product} bundleProduct={relatedProducts[0]} />
 
         {/* Related Products Grid */}
         {relatedProducts.length > 0 && (
