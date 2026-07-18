@@ -398,8 +398,8 @@ export default function MyOrdersPage() {
 
       {/* ============ CANCELLATION MODAL ============ */}
       {cancelOrderId && (
-        <div className="admin-modal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div className="admin-modal-content" style={{ maxWidth: '400px', width: '90%', padding: '24px', textAlign: 'center' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '36px 32px', maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', border: '1px solid var(--primary-gold-border)' }}>
             <div style={{ fontSize: '3rem', color: 'var(--danger)', marginBottom: '12px' }}>⚠️</div>
             <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '12px' }}>Cancel Your Order?</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '24px' }}>
@@ -428,10 +428,11 @@ export default function MyOrdersPage() {
 
       {/* ============ EDIT SHIPPING DETAILS MODAL ============ */}
       {editOrder && (
-        <div className="admin-modal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div className="admin-modal-content" style={{ maxWidth: '480px', width: '90%', padding: '24px' }}>
-            <span className="modal-close-btn" onClick={() => setEditOrder(null)}>&times;</span>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '32px', maxWidth: '480px', width: '95%', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', border: '1px solid var(--primary-gold-border)', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: '15px', right: '20px', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setEditOrder(null)}>&times;</span>
             <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '16px' }}>Update Delivery Details</h3>
+
             
             <form onSubmit={handleEditDetailsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
