@@ -1164,3 +1164,96 @@ button { cursor: pointer; font-family: var(--font-body); }
   font-size: 1.15rem;
 }
 
+/* ==================== FOOTER LUXURY DARK STYLING ==================== */
+footer {
+  background: var(--bg-dark) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-top: 3px solid var(--primary-gold) !important;
+  padding: 4rem 2rem 2rem 2rem;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 3rem;
+  margin-bottom: 3.5rem;
+}
+
+.footer-column h3 {
+  font-family: var(--font-heading);
+  color: var(--primary-gold);
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.footer-column p {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.footer-links {
+  list-style: none;
+}
+
+.footer-links li {
+  margin-bottom: 0.75rem;
+}
+
+.footer-links a {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7) !important;
+  transition: all var(--transition-fast);
+}
+
+.footer-links a:hover {
+  color: var(--primary-gold) !important;
+  padding-left: 5px;
+}
+
+.social-icons {
+  display: flex;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.social-icon {
+  height: 36px;
+  width: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--primary-gold-border);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-gold);
+  font-size: 0.95rem;
+  transition: all var(--transition-fast);
+}
+
+.social-icon:hover {
+  background: var(--primary-gold);
+  color: var(--text-dark);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-gold);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding-top: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
