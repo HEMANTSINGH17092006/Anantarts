@@ -707,7 +707,7 @@ async function seedDefaultData() {
       { key: 'gsc_verification', value: '' },
       { key: 'seo_title', value: 'Anant Arts — Premium Electroplated Hindu God Idols | 24K Gold & Silver' },
       { key: 'seo_description', value: 'Anant Arts offers luxury electroplated idols of Hindu gods and goddesses. Handcrafted with 24K Gold, Sterling Silver, and Copper plating. Bringing Divine Art to Every Home.' },
-      { key: 'social_links', value: JSON.stringify({ instagram: 'https://www.instagram.com/arts_by_anant?igsh=MXB0d215YzVtZ3Q0aw==', facebook: 'https://facebook.com/anantarts', youtube: 'https://youtube.com/anantarts' }) },
+      { key: 'social_links', value: JSON.stringify({ instagram: 'https://www.instagram.com/arts_by_anant' }) },
       { key: 'about_us_text', value: 'Anant Arts is a premium Indian brand specializing in manufacturing high-end electroplated idols of Hindu gods and goddesses. Based in Dombivli East, Maharashtra, we blend centuries-old craftsmanship with modern electroplating technology (using 24K gold, fine silver, and copper) to create timeless spiritual masterworks for your home and offices. Each sculpture is lacquered to protect its shine and ensure lifelong durability.' },
       { key: 'shipping_policy', value: 'We offer free insured shipping all over India on orders above ₹10,000. All idols are securely packed in premium multi-layered bubble packaging and wooden crates (where necessary) to prevent damage. Standard delivery takes 3-7 business days.' },
       { key: 'return_policy', value: 'Because each idol is custom electroplated and highly delicate, we accept returns only in case of transit damages. Please record an unboxing video upon receiving the package. If any damage is noticed, notify us within 24 hours with the video for a free replacement.' },
@@ -724,7 +724,7 @@ async function seedDefaultData() {
   }
  
   await dbRun("UPDATE website_settings SET value = 'anantarts39@gmail.com' WHERE key = 'contact_email'");
-  await dbRun("UPDATE website_settings SET value = ? WHERE key = 'social_links'", [JSON.stringify({ instagram: 'https://www.instagram.com/arts_by_anant?igsh=MXB0d215YzVtZ3Q0aw==', facebook: 'https://facebook.com/anantarts', youtube: 'https://youtube.com/anantarts' })]);
+  await dbRun("UPDATE website_settings SET value = ? WHERE key = 'social_links'", [JSON.stringify({ instagram: 'https://www.instagram.com/arts_by_anant' })]);
 }
 
 module.exports = {

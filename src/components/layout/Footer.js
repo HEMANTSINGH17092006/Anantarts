@@ -22,9 +22,9 @@ export default function Footer({ settings = {}, onCartClick }) {
     console.error(e);
   }
 
-  const instUrl = socialLinks.instagram || 'https://www.instagram.com/arts_by_anant?igsh=MXB0d215YzVtZ3Q0aw==';
-  const fbUrl = socialLinks.facebook || 'https://facebook.com/anantarts';
-  const ytUrl = socialLinks.youtube || 'https://youtube.com/anantarts';
+  const instUrl = socialLinks.instagram || 'https://www.instagram.com/arts_by_anant';
+  const fbUrl = socialLinks.facebook || '';
+  const ytUrl = socialLinks.youtube || '';
 
   return (
     <footer id="main-footer" style={{ borderTop: '1px solid var(--primary-gold-border)' }}>
@@ -38,12 +38,16 @@ export default function Footer({ settings = {}, onCartClick }) {
             <a href={instUrl} target="_blank" rel="noopener noreferrer" className="social-icon">
               <i className="fab fa-instagram"></i>
             </a>
-            <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="social-icon">
-              <i className="fab fa-facebook-f"></i>
-            </a>
-            <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="social-icon">
-              <i className="fab fa-youtube"></i>
-            </a>
+            {fbUrl && (
+              <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="social-icon">
+                <i className="fab fa-facebook-f"></i>
+              </a>
+            )}
+            {ytUrl && (
+              <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="social-icon">
+                <i className="fab fa-youtube"></i>
+              </a>
+            )}
           </div>
         </div>
         
