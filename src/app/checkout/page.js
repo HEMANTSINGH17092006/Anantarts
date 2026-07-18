@@ -247,7 +247,7 @@ export default function CheckoutPage() {
     if (paymentMethod === 'razorpay') {
       setLoading(true);
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TF5Q4XYGrKlT1b',
+        key: 'rzp_live_TF5Q4XYGrKlT1b', // Using Live Key directly
         amount: Math.round(total * 100),
         currency: 'INR',
         name: 'Anant Arts',
