@@ -43,7 +43,7 @@ export async function generateMetadata({ params }) {
       title,
       description,
       url: canonicalUrl,
-      type: 'product',
+      type: 'website',
       images: [{ url: primaryImage.startsWith('http') ? primaryImage : `${BASE_URL}${primaryImage}`, width: 800, height: 800, alt: product.name }],
     },
     twitter: {
@@ -61,6 +61,10 @@ export default async function ProductDetailPage({ params }) {
   const { slug } = resolvedParams;
 
   const product = await getProductBySlug(slug);
+  
+  const activePrice = product ? (product.discount_price && product.discount_price > 0
+    ? product.discount_price
+    : product.price) : 0;
 
   if (!product) {
     return (
