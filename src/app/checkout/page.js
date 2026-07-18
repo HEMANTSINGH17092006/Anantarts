@@ -79,6 +79,9 @@ export default function CheckoutPage() {
     }
   };
 
+  // Form validity check
+  const isFormValid = validateName(name) && validateEmail(email) && validatePhone(phone) && validateAddress(address) && validateCity(city) && validateState(state) && validateZip(zip) && validateLandmark(landmark);
+
   // Coupon states
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
