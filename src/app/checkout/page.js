@@ -24,10 +24,36 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [landmark, setLandmark] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' or 'razorpay'
+  const [touched, setTouched] = useState({});
+
+  // Inline Validation Helpers
+  const validateName = (val) => val.trim().length >= 3 && val.trim().length <= 50 && /^[a-zA-Z\s]+$/.test(val.trim());
+  const validatePhone = (val) => /^[6-9][0-9]{9}$/.test(val.trim());
+  const validateEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+  const validateAddress = (val) => val.trim().length >= 10;
+  const validateCity = (val) => val.trim().length >= 3 && /^[a-zA-Z\s]+$/.test(val.trim());
+  const validateState = (val) => val.trim().length > 0;
+  const validateZip = (val) => /^[1-9][0-9]{5}$/.test(val.trim());
+  const validateLandmark = (val) => val.trim().length === 0 || val.trim().length <= 100;
+
+  // Real-time validation
+  useEffect(() => {
+    let tempErrors = {};
+    if (touched.name && !validateName(name)) tempErrors.name = 'Please enter a valid full name.';
+    if (touched.email && !validateEmail(email)) tempErrors.email = 'Please enter a valid email address.';
+    if (touched.phone && !validatePhone(phone)) tempErrors.phone = 'Please enter a valid 10-digit mobile number.';
+    if (touched.address && !validateAddress(address)) tempErrors.address = 'Please enter a complete delivery address.';
+    if (touched.city && !validateCity(city)) tempErrors.city = 'Please enter a valid city name.';
+    if (touched.state && !validateState(state)) tempErrors.state = 'Please select your state.';
+    if (touched.zip && !validateZip(zip)) tempErrors.zip = 'Please enter a valid 6-digit postal code.';
+    if (touched.landmark && !validateLandmark(landmark)) tempErrors.landmark = 'Landmark must be under 100 characters.';
+    setErrors(tempErrors);
+  }, [name, email, phone, address, city, state, zip, landmark, touched]);
 
   // Coupon states
   const [couponCode, setCouponCode] = useState('');
