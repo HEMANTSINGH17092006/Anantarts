@@ -1,0 +1,38 @@
+{
+  "name": "Anant Arts — Premium Electroplated Hindu God Idols",
+  "short_name": "Anant Arts",
+  "description": "Luxury handcrafted electroplated idols of Hindu gods and goddesses. 24K Gold, Sterling Silver, and Copper plating.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1E1A17",
+  "theme_color": "#D4AF37",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-IN",
+  "categories": ["shopping", "lifestyle", "religion"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Shop All Idols",
+      "url": "/shop",
+      "description": "Browse the complete collection of electroplated idols"
+    },
+    {
+      "name": "Track Order",
+      "url": "/order-tracking",
+      "description": "Track your current shipment"
+    },
+    {
+      "name": "Contact Support",
+      "url": "/contact",
+      "description": "Get in touch with our team"
+    }
+  ]
+}

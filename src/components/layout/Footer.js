@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function Footer({ settings = {} }) {
   const contactAddress = settings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
   const contactPhone = settings.contact_phone || '+91 72758 19354';
-  const contactEmail = settings.contact_email || 'care@anantarts.com';
+  const contactEmail = settings.contact_email || 'care@anantarts.in';
   const whatsappNumber = settings.whatsapp_number || '917275819354';
   
   let socialLinks = { instagram: '', facebook: '', youtube: '', pinterest: '' };
@@ -59,8 +59,10 @@ export default function Footer({ settings = {} }) {
           <h3>Policies</h3>
           <ul className="footer-links">
             <li><Link href="/shipping-policy">Shipping Policy</Link></li>
-            <li><Link href="/return-policy">Return & Refund Policy</Link></li>
+            <li><Link href="/return-policy">Return Policy</Link></li>
+            <li><Link href="/refund-policy">Refund Policy</Link></li>
             <li><Link href="/privacy-policy">Privacy Policy</Link></li>
+            <li><Link href="/terms-and-conditions">Terms &amp; Conditions</Link></li>
             <li><Link href="/faq">FAQ Helpdesk</Link></li>
             <li><Link href="/order-tracking">Track Shipment</Link></li>
           </ul>
@@ -70,15 +72,15 @@ export default function Footer({ settings = {} }) {
           <h3>Customer Support</h3>
           <p>
             <i className="fas fa-phone-alt" style={{ color: 'var(--primary-gold)', marginRight: '8px' }}></i>
-            Call Support: {contactPhone}
+            <a href={`tel:${contactPhone.replace(/\s+/g, '')}`} style={{ color: 'inherit' }}>{contactPhone}</a>
           </p>
           <p>
             <i className="fas fa-envelope" style={{ color: 'var(--primary-gold)', marginRight: '8px' }}></i>
-            Email: {contactEmail}
+            <a href={`mailto:${contactEmail}`} style={{ color: 'inherit' }}>{contactEmail}</a>
           </p>
           <p>
             <i className="fab fa-whatsapp" style={{ color: '#25D366', marginRight: '8px' }}></i>
-            WhatsApp: +{whatsappNumber}
+            <a href={`https://wa.me/${whatsappNumber}`} style={{ color: 'inherit' }} target="_blank" rel="noopener noreferrer">+{whatsappNumber}</a>
           </p>
           <p>
             <i className="fas fa-map-marker-alt" style={{ color: 'var(--primary-gold)', marginRight: '8px' }}></i>
@@ -88,8 +90,12 @@ export default function Footer({ settings = {} }) {
       </div>
 
       <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Anant Arts. All Rights Reserved. Crafted with Devotion.</p>
-        <p>Luxury Electroplated Hindu Idols | Brand of Divine luxury</p>
+        <p>&copy; {new Date().getFullYear()} Anant Arts. All Rights Reserved. Crafted with Devotion in India.</p>
+        <p style={{ fontSize: '0.78rem', opacity: '0.7' }}>
+          <Link href="/privacy-policy" style={{ color: 'inherit' }}>Privacy Policy</Link> &nbsp;|&nbsp;
+          <Link href="/terms-and-conditions" style={{ color: 'inherit' }}>Terms</Link> &nbsp;|&nbsp;
+          <Link href="/refund-policy" style={{ color: 'inherit' }}>Refund Policy</Link>
+        </p>
       </div>
 
       {/* Floating WhatsApp button */}

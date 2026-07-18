@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { trackOrderAction } from '@/app/actions';
 import { formatPrice } from '@/lib/utils';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ function OrderTrackingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [orderNumber, setOrderNumber] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState(null);
   const [items, setItems] = useState([]);
@@ -19,50 +20,31 @@ function OrderTrackingContent() {
   useEffect(() => {
     if (urlOrder) {
       setOrderNumber(urlOrder);
-      trackOrder(urlOrder);
     }
   }, [urlOrder]);
 
-  const trackOrder = async (num) => {
-    if (!num.trim()) return;
+  const trackOrder = async (num, ph) => {
+    if (!num?.trim()) return;
     setLoading(true);
     setError('');
     setOrder(null);
     setItems([]);
 
-    try {
-      const supabase = createClient();
-      const { data: ord, error: ordErr } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('order_number', num.trim().toUpperCase())
-        .single();
+    const result = await trackOrderAction(num.trim(), ph?.trim() || '');
 
-      if (ordErr || !ord) {
-        throw new Error('Order number not found. Please verify and try again.');
-      }
-
-      setOrder(ord);
-
-      const { data: ordItems, error: itemsErr } = await supabase
-        .from('order_items')
-        .select('*')
-        .eq('order_id', ord.id);
-
-      if (!itemsErr && ordItems) {
-        setItems(ordItems);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (!result.success) {
+      setError(result.message);
+    } else {
+      setOrder(result.order);
+      setItems(result.order?.order_items || []);
     }
+    setLoading(false);
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (!orderNumber.trim()) return;
-    router.push(`/order-tracking?order=${orderNumber.trim().toUpperCase()}`);
+    trackOrder(orderNumber, phone);
   };
 
   const statusSteps = ['Pending', 'Confirmed', 'Packed', 'Shipped', 'Delivered'];
@@ -73,18 +55,28 @@ function OrderTrackingContent() {
     <>
       {/* Search bar */}
       <div style={{ background: 'white', padding: '24px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)', marginBottom: '32px' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px' }}>
-          <input
-            type="text"
-            placeholder="ENTER ORDER NUMBER (e.g., AA-260718-ABCXYZ)"
-            value={orderNumber}
-            onChange={(e) => setOrderNumber(e.target.value)}
-            required
-            style={{ flex: 1, padding: '12px 16px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
-          />
-          <button type="submit" className="btn-gold" style={{ padding: '12px 24px' }} disabled={loading}>
-            {loading ? 'Tracking...' : 'Search Status'}
-          </button>
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              placeholder="Order ID (e.g., AA-260718-ABCXYZ)"
+              value={orderNumber}
+              onChange={(e) => setOrderNumber(e.target.value)}
+              required
+              style={{ flex: '2 1 200px', padding: '12px 16px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+            />
+            <input
+              type="tel"
+              placeholder="Registered phone number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              style={{ flex: '1 1 160px', padding: '12px 16px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+            />
+            <button type="submit" className="btn-gold" style={{ padding: '12px 24px', whiteSpace: 'nowrap' }} disabled={loading}>
+              {loading ? 'Tracking...' : 'Track Order'}
+            </button>
+          </div>
         </form>
         {error && <p style={{ color: 'var(--danger)', fontSize: '0.82rem', margin: '12px 0 0 0' }}>{error}</p>}
       </div>

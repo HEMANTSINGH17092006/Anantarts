@@ -11,6 +11,50 @@ import FrequentlyBoughtTogether from '@/components/product/FrequentlyBoughtToget
 
 export const revalidate = 60; // Dynamic pages revalidated hourly or by tag
 
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').replace(/\/$/, '');
+
+// Dynamic SEO Metadata per product page
+export async function generateMetadata({ params }) {
+  const resolvedParams = await params;
+  const product = await getProductBySlug(resolvedParams.slug);
+  if (!product) {
+    return {
+      title: 'Product Not Found | Anant Arts',
+      description: 'The requested idol could not be found.',
+    };
+  }
+
+  const activePrice = product.discount_price && product.discount_price > 0
+    ? product.discount_price
+    : product.price;
+
+  const title = product.seo_title || `${product.name} | Anant Arts`;
+  const description = product.seo_description ||
+    (product.description ? product.description.slice(0, 160) : `Buy ${product.name} — premium 24K gold electroplated divine idol.`);
+
+  const primaryImage = product.images?.[0]?.image_path || `${BASE_URL}/og-image.jpg`;
+  const canonicalUrl = `${BASE_URL}/product/${product.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      type: 'product',
+      images: [{ url: primaryImage.startsWith('http') ? primaryImage : `${BASE_URL}${primaryImage}`, width: 800, height: 800, alt: product.name }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [primaryImage.startsWith('http') ? primaryImage : `${BASE_URL}${primaryImage}`],
+    },
+  };
+}
+
 export default async function ProductDetailPage({ params }) {
   // Await params as required in Next.js 15+
   const resolvedParams = await params;
@@ -55,11 +99,71 @@ export default async function ProductDetailPage({ params }) {
     }
   }
 
-  const activePrice = product.discount_price && product.discount_price > 0 ? product.discount_price : product.price;
+  const canonicalUrl = `${BASE_URL}/product/${product.slug}`;
+  const primaryImage = product.images?.[0]?.image_path || '';
+  const avgRating = reviews?.length > 0
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
+
+  // Product JSON-LD Schema
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description || '',
+    sku: product.sku,
+    brand: { '@type': 'Brand', name: 'Anant Arts' },
+    image: primaryImage.startsWith('http') ? primaryImage : `${BASE_URL}${primaryImage}`,
+    url: canonicalUrl,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'INR',
+      price: activePrice,
+      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      availability: product.stock_quantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      seller: { '@type': 'Organization', name: 'Anant Arts', url: BASE_URL },
+    },
+    ...(avgRating && reviews?.length > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: avgRating,
+        reviewCount: reviews.length,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }),
+    ...(product.material && { material: product.material }),
+  };
+
+  // BreadcrumbList JSON-LD Schema
+  const breadcrumbItems = [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+    { '@type': 'ListItem', position: 2, name: 'Shop', item: `${BASE_URL}/shop` },
+  ];
+  if (product.categories) {
+    breadcrumbItems.push({
+      '@type': 'ListItem',
+      position: 3,
+      name: product.categories.name,
+      item: `${BASE_URL}/shop?category=${product.categories.slug}`,
+    });
+    breadcrumbItems.push({ '@type': 'ListItem', position: 4, name: product.name, item: canonicalUrl });
+  } else {
+    breadcrumbItems.push({ '@type': 'ListItem', position: 3, name: product.name, item: canonicalUrl });
+  }
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems,
+  };
 
   return (
     <div style={{ background: 'var(--bg-cream)', padding: '4rem 0' }}>
+      {/* Structured Data */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <RecentlyViewedLogger product={product} />
+
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         
         {/* Breadcrumb */}

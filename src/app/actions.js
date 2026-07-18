@@ -25,6 +25,39 @@ async function setSessionCookie(user) {
   });
 }
 
+// Helper to verify user permissions for server-side mutations
+async function checkAuthRole(allowedRoles = ['admin', 'super_admin']) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  if (!token) {
+    throw new Error('Unauthenticated admin session.');
+  }
+
+  try {
+    const { payload } = await jose.jwtVerify(token, JWT_SECRET_KEY);
+    if (!allowedRoles.includes(payload.role)) {
+      throw new Error(`Unauthorized role: ${payload.role}`);
+    }
+    return payload;
+  } catch (err) {
+    throw new Error('Invalid or expired admin session.');
+  }
+}
+
+// Log audit events securely in the database
+async function logAudit(adminEmail, action, details) {
+  try {
+    const supabase = createAdminClient();
+    await supabase.from('audit_logs').insert({
+      admin_email: adminEmail,
+      action,
+      details: typeof details === 'object' ? JSON.stringify(details) : details
+    });
+  } catch (err) {
+    console.error('Audit logging failed:', err);
+  }
+}
+
 // 1. Admin Authentication Actions
 export async function adminLogin(email, password) {
   try {
@@ -33,7 +66,7 @@ export async function adminLogin(email, password) {
       .from('users')
       .select('*')
       .eq('email', email)
-      .eq('role', 'admin')
+      .in('role', ['admin', 'super_admin', 'manager', 'content_editor'])
       .single();
 
     if (error || !user) {
@@ -93,10 +126,14 @@ async function uploadImageToSupabase(file) {
 // 2. Product Management Actions
 export async function deleteProduct(id) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'manager']);
     const supabase = createAdminClient();
+    
+    const { data: prod } = await supabase.from('products').select('name, sku').eq('id', id).single();
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) throw error;
 
+    await logAudit(admin.email, 'DELETE_PRODUCT', { id, name: prod?.name, sku: prod?.sku });
     revalidateTag('products');
     return { success: true };
   } catch (err) {
@@ -106,6 +143,7 @@ export async function deleteProduct(id) {
 
 export async function duplicateProduct(id) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'manager']);
     const supabase = createAdminClient();
     
     // Get product details
@@ -157,6 +195,7 @@ export async function duplicateProduct(id) {
       await supabase.from('product_images').insert(imagesToInsert);
     }
 
+    await logAudit(admin.email, 'DUPLICATE_PRODUCT', { originalId: id, newId: newProd.id, name: prod.name });
     revalidateTag('products');
     return { success: true };
   } catch (err) {
@@ -166,6 +205,7 @@ export async function duplicateProduct(id) {
 
 export async function addOrUpdateProduct(formData) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
     const supabase = createAdminClient();
     const id = formData.get('id');
     const name = formData.get('name');
@@ -182,6 +222,14 @@ export async function addOrUpdateProduct(formData) {
     const short_description = formData.get('short_description');
     const tagsArray = formData.get('tags') ? formData.get('tags').split(',').map(t => t.trim()) : [];
     
+    // Extra options
+    const is_bestseller = formData.get('is_bestseller') === '1' ? 1 : 0;
+    const is_new_arrival = formData.get('is_new_arrival') === '1' ? 1 : 0;
+    const is_featured = formData.get('is_featured') === '1' ? 1 : 0;
+    const video_url = formData.get('video_url') || null;
+    const seo_title = formData.get('seo_title') || null;
+    const seo_description = formData.get('seo_description') || null;
+
     // Handle image file uploads
     const primaryImageFile = formData.get('primary_image');
     let primaryImageUrl = formData.get('existing_primary_image');
@@ -210,7 +258,13 @@ export async function addOrUpdateProduct(formData) {
           stock_quantity,
           is_published,
           tags: JSON.stringify(tagsArray),
-          short_description
+          short_description,
+          is_bestseller,
+          is_new_arrival,
+          is_featured,
+          video_url,
+          seo_title,
+          seo_description
         })
         .eq('id', id)
         .select('*')
@@ -235,7 +289,13 @@ export async function addOrUpdateProduct(formData) {
           stock_quantity,
           is_published,
           tags: JSON.stringify(tagsArray),
-          short_description
+          short_description,
+          is_bestseller,
+          is_new_arrival,
+          is_featured,
+          video_url,
+          seo_title,
+          seo_description
         })
         .select('*')
         .single();
@@ -274,6 +334,7 @@ export async function addOrUpdateProduct(formData) {
       }
     }
 
+    await logAudit(admin.email, id ? 'UPDATE_PRODUCT' : 'CREATE_PRODUCT', { id: product.id, name, sku });
     revalidateTag('products');
     return { success: true, product };
   } catch (err) {
@@ -285,6 +346,7 @@ export async function addOrUpdateProduct(formData) {
 // 3. Category Management Actions
 export async function addOrUpdateCategory(formData) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
     const supabase = createAdminClient();
     const id = formData.get('id');
     const name = formData.get('name');
@@ -311,6 +373,7 @@ export async function addOrUpdateCategory(formData) {
       if (error) throw error;
     }
 
+    await logAudit(admin.email, id ? 'UPDATE_CATEGORY' : 'CREATE_CATEGORY', { id, name });
     revalidateTag('categories');
     return { success: true };
   } catch (err) {
@@ -320,10 +383,12 @@ export async function addOrUpdateCategory(formData) {
 
 export async function deleteCategory(id) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'manager']);
     const supabase = createAdminClient();
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) throw error;
 
+    await logAudit(admin.email, 'DELETE_CATEGORY', { id });
     revalidateTag('categories');
     return { success: true };
   } catch (err) {
@@ -334,6 +399,7 @@ export async function deleteCategory(id) {
 // 4. Coupon Management Actions
 export async function addOrUpdateCoupon(couponData) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin']);
     const supabase = createAdminClient();
     const { id, code, discount_type, discount_value, min_order_amount, usage_limit, start_date, end_date, is_active } = couponData;
 
@@ -350,6 +416,7 @@ export async function addOrUpdateCoupon(couponData) {
       if (error) throw error;
     }
 
+    await logAudit(admin.email, id ? 'UPDATE_COUPON' : 'CREATE_COUPON', { code });
     return { success: true };
   } catch (err) {
     return { success: false, message: err.message };
@@ -358,9 +425,11 @@ export async function addOrUpdateCoupon(couponData) {
 
 export async function deleteCoupon(id) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin']);
     const supabase = createAdminClient();
     const { error } = await supabase.from('coupons').delete().eq('id', id);
     if (error) throw error;
+    await logAudit(admin.email, 'DELETE_COUPON', { id });
     return { success: true };
   } catch (err) {
     return { success: false, message: err.message };
@@ -370,6 +439,7 @@ export async function deleteCoupon(id) {
 // 5. Website Content / Settings Updates
 export async function updateWebsiteSettings(settingsObj) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin']);
     const supabase = createAdminClient();
     
     for (const [key, value] of Object.entries(settingsObj)) {
@@ -379,6 +449,7 @@ export async function updateWebsiteSettings(settingsObj) {
       if (error) throw error;
     }
 
+    await logAudit(admin.email, 'UPDATE_SETTINGS', Object.keys(settingsObj));
     revalidateTag('settings');
     return { success: true };
   } catch (err) {
@@ -389,6 +460,7 @@ export async function updateWebsiteSettings(settingsObj) {
 // 6. Order Status Updates
 export async function updateOrderStatus(orderId, status, trackingNumber = '') {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'manager']);
     const supabase = createAdminClient();
     const updates = { order_status: status };
     if (trackingNumber) {
@@ -405,6 +477,7 @@ export async function updateOrderStatus(orderId, status, trackingNumber = '') {
       .eq('id', orderId);
 
     if (error) throw error;
+    await logAudit(admin.email, 'UPDATE_ORDER_STATUS', { orderId, status, trackingNumber });
     return { success: true };
   } catch (err) {
     return { success: false, message: err.message };
@@ -414,6 +487,7 @@ export async function updateOrderStatus(orderId, status, trackingNumber = '') {
 // 7. Blog CRUD Actions
 export async function addOrUpdateBlog(formData) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'content_editor']);
     const supabase = createAdminClient();
     const id = formData.get('id');
     const title = formData.get('title');
@@ -421,6 +495,11 @@ export async function addOrUpdateBlog(formData) {
     const short_desc = formData.get('short_desc');
     const is_published = formData.get('is_published') === '1' ? 1 : 0;
     const blogSlug = slugify(title);
+    
+    // Scheduled publish date and SEO options
+    const publish_date = formData.get('publish_date') || new Date().toISOString();
+    const seo_title = formData.get('seo_title') || null;
+    const seo_description = formData.get('seo_description') || null;
 
     const imageFile = formData.get('featured_image');
     let imageUrl = formData.get('existing_image');
@@ -431,16 +510,17 @@ export async function addOrUpdateBlog(formData) {
     if (id) {
       const { error } = await supabase
         .from('blogs')
-        .update({ title, slug: blogSlug, content, short_desc, featured_image: imageUrl, is_published, publish_date: new Date() })
+        .update({ title, slug: blogSlug, content, short_desc, featured_image: imageUrl, is_published, publish_date, seo_title, seo_description })
         .eq('id', id);
       if (error) throw error;
     } else {
       const { error } = await supabase
         .from('blogs')
-        .insert({ title, slug: blogSlug, content, short_desc, featured_image: imageUrl, is_published, publish_date: new Date() });
+        .insert({ title, slug: blogSlug, content, short_desc, featured_image: imageUrl, is_published, publish_date, seo_title, seo_description });
       if (error) throw error;
     }
 
+    await logAudit(admin.email, id ? 'UPDATE_BLOG' : 'CREATE_BLOG', { title, slug: blogSlug });
     revalidateTag('blogs');
     return { success: true };
   } catch (err) {
@@ -450,10 +530,12 @@ export async function addOrUpdateBlog(formData) {
 
 export async function deleteBlog(id) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin']);
     const supabase = createAdminClient();
     const { error } = await supabase.from('blogs').delete().eq('id', id);
     if (error) throw error;
 
+    await logAudit(admin.email, 'DELETE_BLOG', { id });
     revalidateTag('blogs');
     return { success: true };
   } catch (err) {
@@ -464,6 +546,7 @@ export async function deleteBlog(id) {
 // 8. Bulk CSV Import
 export async function bulkImportProducts(productsList) {
   try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'manager']);
     const supabase = createAdminClient();
     
     for (const prod of productsList) {
@@ -513,6 +596,7 @@ export async function bulkImportProducts(productsList) {
       }
     }
 
+    await logAudit(admin.email, 'BULK_IMPORT_PRODUCTS', { count: productsList.length });
     revalidateTag('products');
     return { success: true };
   } catch (err) {
@@ -542,5 +626,167 @@ export async function submitConsultation(data) {
   } catch (err) {
     console.error('Submit consultation error:', err);
     return { success: false, message: err.message };
+  }
+}
+
+// 10. Flash Sales Actions
+export async function addOrUpdateFlashSale(saleData) {
+  try {
+    const admin = await checkAuthRole(['super_admin', 'admin']);
+    const supabase = createAdminClient();
+    const { id, title, discount_percentage, start_date, end_date, is_active } = saleData;
+
+    if (id) {
+      const { error } = await supabase
+        .from('flash_sales')
+        .update({ title, discount_percentage, start_date, end_date, is_active })
+        .eq('id', id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('flash_sales')
+        .insert({ title, discount_percentage, start_date, end_date, is_active });
+      if (error) throw error;
+    }
+
+    await logAudit(admin.email, id ? 'UPDATE_FLASH_SALE' : 'CREATE_FLASH_SALE', { title });
+    return { success: true };
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+export async function deleteFlashSale(id) {
+  try {
+    const admin = await checkAuthRole(['super_admin', 'admin']);
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('flash_sales').delete().eq('id', id);
+    if (error) throw error;
+
+    await logAudit(admin.email, 'DELETE_FLASH_SALE', { id });
+    return { success: true };
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+// ======================================================
+// PUBLIC SERVER ACTIONS (no auth required)
+// ======================================================
+
+/**
+ * trackOrderAction — Securely looks up an order by ID + phone number
+ * Replaces direct client-side Supabase query in order-tracking page.
+ * @param {string} orderId - Customer's order ID
+ * @param {string} phone - Customer's phone number for verification
+ */
+export async function trackOrderAction(orderId, phone) {
+  try {
+    if (!orderId || !phone) {
+      return { success: false, message: 'Order ID and phone number are required.' };
+    }
+
+    const supabase = createAdminClient();
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select(`
+        id, status, total_amount, payment_status, payment_method,
+        tracking_number, shipping_carrier, notes, created_at,
+        shipping_name, shipping_address, shipping_city, shipping_state, shipping_pincode,
+        order_items (
+          quantity, price_at_purchase,
+          products ( name, images:product_images(image_path) )
+        )
+      `)
+      .eq('id', orderId)
+      .eq('shipping_phone', phone.replace(/\s+/g, ''))
+      .single();
+
+    if (error || !order) {
+      return { success: false, message: 'Order not found. Please check your Order ID and phone number.' };
+    }
+
+    return { success: true, order };
+  } catch (err) {
+    console.error('[trackOrderAction] Error:', err.message);
+    return { success: false, message: 'An error occurred while tracking your order. Please try again.' };
+  }
+}
+
+/**
+ * submitContactInquiry — Saves a customer contact form submission
+ * Replaces direct client-side Supabase call in the contact page.
+ * @param {Object} formData - { name, email, phone, subject, message }
+ */
+export async function submitContactInquiry({ name, email, phone, subject, message }) {
+  try {
+    if (!name || !email || !message) {
+      return { success: false, message: 'Name, email, and message are required.' };
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { success: false, message: 'Please provide a valid email address.' };
+    }
+
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('consultations').insert({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone?.trim() || null,
+      service: subject?.trim() || 'General Inquiry',
+      message: message.trim(),
+      inquiry_type: 'contact',
+      status: 'new',
+    });
+
+    if (error) throw error;
+
+    return { success: true, message: 'Thank you for contacting us! We will get back to you within 24 hours.' };
+  } catch (err) {
+    console.error('[submitContactInquiry] Error:', err.message);
+    return { success: false, message: 'Could not submit your inquiry. Please try again or WhatsApp us directly.' };
+  }
+}
+
+/**
+ * submitCorporateInquiry — Saves a corporate/bulk gift inquiry
+ * Replaces direct client-side Supabase call in the corporate-gifts page.
+ * @param {Object} formData - { name, email, phone, company, quantity, requirements }
+ */
+export async function submitCorporateInquiry({ name, email, phone, company, quantity, requirements }) {
+  try {
+    if (!name || !email) {
+      return { success: false, message: 'Name and email are required.' };
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { success: false, message: 'Please provide a valid email address.' };
+    }
+
+    const supabase = createAdminClient();
+    const message = [
+      company ? `Company: ${company}` : '',
+      quantity ? `Quantity: ${quantity}` : '',
+      requirements ? `Requirements: ${requirements}` : '',
+    ].filter(Boolean).join('\n');
+
+    const { error } = await supabase.from('consultations').insert({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone?.trim() || null,
+      service: 'Corporate Gift Order',
+      message,
+      inquiry_type: 'corporate_gift',
+      status: 'new',
+    });
+
+    if (error) throw error;
+
+    return { success: true, message: 'Thank you for your corporate inquiry! Our team will contact you within 24 hours.' };
+  } catch (err) {
+    console.error('[submitCorporateInquiry] Error:', err.message);
+    return { success: false, message: 'Could not submit your inquiry. Please try again or call us directly.' };
   }
 }

@@ -25,6 +25,12 @@ export default function ProductManager({ initialProducts = [], categories = [] }
   const [categoryId, setCategoryId] = useState('');
   const [isPublished, setIsPublished] = useState(true);
   const [tags, setTags] = useState('');
+  const [isBestseller, setIsBestseller] = useState(false);
+  const [isNewArrival, setIsNewArrival] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
   const [shortDesc, setShortDesc] = useState('');
   const [description, setDescription] = useState('');
   
@@ -67,6 +73,12 @@ export default function ProductManager({ initialProducts = [], categories = [] }
     setDescription('');
     setPrimaryImage(null);
     setAdditionalImages([]);
+    setIsBestseller(false);
+    setIsNewArrival(false);
+    setIsFeatured(false);
+    setVideoUrl('');
+    setSeoTitle('');
+    setSeoDescription('');
     setFormOpen(true);
   };
 
@@ -98,6 +110,12 @@ export default function ProductManager({ initialProducts = [], categories = [] }
     setDescription(p.description || '');
     setPrimaryImage(null);
     setAdditionalImages([]);
+    setIsBestseller(p.is_bestseller === 1);
+    setIsNewArrival(p.is_new_arrival === 1);
+    setIsFeatured(p.is_featured === 1);
+    setVideoUrl(p.video_url || '');
+    setSeoTitle(p.seo_title || '');
+    setSeoDescription(p.seo_description || '');
     setFormOpen(true);
   };
 
@@ -121,6 +139,12 @@ export default function ProductManager({ initialProducts = [], categories = [] }
     formData.append('tags', tags);
     formData.append('short_description', shortDesc);
     formData.append('description', description);
+    formData.append('is_bestseller', isBestseller ? '1' : '0');
+    formData.append('is_new_arrival', isNewArrival ? '1' : '0');
+    formData.append('is_featured', isFeatured ? '1' : '0');
+    formData.append('video_url', videoUrl);
+    formData.append('seo_title', seoTitle);
+    formData.append('seo_description', seoDescription);
 
     if (primaryImage) {
       formData.append('primary_image', primaryImage);
@@ -489,8 +513,39 @@ export default function ProductManager({ initialProducts = [], categories = [] }
                 <textarea rows="4" value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}></textarea>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input type="checkbox" id="published-chk" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} style={{ accentColor: 'var(--primary-gold)' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" id="bestseller-chk" checked={isBestseller} onChange={(e) => setIsBestseller(e.target.checked)} style={{ accentColor: 'var(--primary-gold)', cursor: 'pointer' }} />
+                  <label htmlFor="bestseller-chk" style={{ fontSize: '0.8rem', cursor: 'pointer' }}>Mark Best Seller</label>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" id="newarrival-chk" checked={isNewArrival} onChange={(e) => setIsNewArrival(e.target.checked)} style={{ accentColor: 'var(--primary-gold)', cursor: 'pointer' }} />
+                  <label htmlFor="newarrival-chk" style={{ fontSize: '0.8rem', cursor: 'pointer' }}>Mark New Arrival</label>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="checkbox" id="featured-chk" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} style={{ accentColor: 'var(--primary-gold)', cursor: 'pointer' }} />
+                  <label htmlFor="featured-chk" style={{ fontSize: '0.8rem', cursor: 'pointer' }}>Mark Featured</label>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Product Demonstration Video URL</label>
+                <input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Meta Title Tag (SEO)</label>
+                  <input type="text" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="Luxury Ganesha Idol | Anant Arts" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Meta Description Tag (SEO)</label>
+                  <input type="text" value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="Buy exquisite 24k gold plated Ganesha..." style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '16px' }}>
+                <input type="checkbox" id="published-chk" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} style={{ accentColor: 'var(--primary-gold)', cursor: 'pointer' }} />
                 <label htmlFor="published-chk" style={{ fontSize: '0.85rem', cursor: 'pointer' }}><strong>Publish immediately</strong> (Make visible on live catalog)</label>
               </div>
 

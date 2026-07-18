@@ -384,8 +384,10 @@ button { cursor: pointer; font-family: var(--font-body); }
 }
 .product-price .original {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: #aaa;
   text-decoration: line-through;
+  text-decoration-color: #e53935;
+  text-decoration-thickness: 1.5px;
 }
 .product-price .discount {
   font-size: 0.75rem;
@@ -991,6 +993,46 @@ button { cursor: pointer; font-family: var(--font-body); }
   margin-bottom: 1rem;
 }
 
+/* ==================== PRICE DISPLAY ==================== */
+.cart-item-price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.price-active {
+  font-weight: 700;
+  color: var(--primary-gold-hover);
+  font-size: 0.95rem;
+}
+.price-original {
+  font-size: 0.82rem;
+  color: #999;
+  text-decoration: line-through;
+  text-decoration-color: #e53935;
+  text-decoration-thickness: 1.5px;
+}
+/* Product card original price — used in shop/category pages */
+.product-old-price,
+.old-price {
+  font-size: 0.82rem;
+  color: #999;
+  text-decoration: line-through;
+  text-decoration-color: #e53935;
+  text-decoration-thickness: 1.5px;
+  margin-left: 4px;
+}
+/* Checkout order summary original price */
+.checkout-price-original {
+  font-size: 0.78rem;
+  color: #999;
+  text-decoration: line-through;
+  text-decoration-color: #e53935;
+  text-decoration-thickness: 1.5px;
+  margin-left: 4px;
+}
+
 /* ==================== BLOG CARDS ==================== */
 .blog-grid {
   display: grid;
@@ -1255,5 +1297,26 @@ footer {
   gap: 1rem;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==================== RESPONSIVE LAYOUT UTILITIES ==================== */
+.responsive-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.responsive-section {
+  padding: 2rem 0;
+}
+
+@media (min-width: 768px) {
+  .responsive-container {
+    padding: 0 2rem;
+  }
+  .responsive-section {
+    padding: 4rem 0;
+  }
 }
 

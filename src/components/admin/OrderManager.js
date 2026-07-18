@@ -18,6 +18,29 @@ export default function OrderManager({ initialOrders = [] }) {
   const [updating, setUpdating] = useState(false);
   const [alert, setAlert] = useState({ type: '', message: '' });
 
+  const handleExportCSV = () => {
+    const headers = ['Order Number', 'Date', 'Customer Name', 'Customer Email', 'Customer Phone', 'Total Amount', 'Status', 'Payment Method'];
+    const rows = filteredOrders.map(o => [
+      o.order_number,
+      new Date(o.created_at).toLocaleDateString('en-IN'),
+      o.customer_name,
+      o.customer_email,
+      o.customer_phone,
+      o.total_amount,
+      o.order_status,
+      o.payment_method
+    ]);
+    const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `anant_arts_orders_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const showAlert = (type, message) => {
     setAlert({ type, message });
     setTimeout(() => setAlert({ type: '', message: '' }), 5000);
@@ -198,11 +221,14 @@ export default function OrderManager({ initialOrders = [] }) {
       )}
 
       {/* Header bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.75rem', margin: 0 }}>Order Management</h1>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Verify shipments, print invoices, and update status logs</span>
         </div>
+        <button onClick={handleExportCSV} className="btn-outline-gold" style={{ fontSize: '0.8rem', padding: '10px 16px' }}>
+          <i className="fas fa-file-export" style={{ marginRight: '6px' }}></i> Export Orders CSV
+        </button>
       </div>
 
       {/* Tabs */}

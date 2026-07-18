@@ -43,6 +43,7 @@ export default function Header({ settings = {}, onCartClick }) {
               <li><Link href="/consultation" onClick={() => setMobileOpen(false)} style={{ color: 'var(--primary-gold)', fontWeight: '600' }}><i className="fas fa-gem" style={{ fontSize: '0.75rem', marginRight: '4px' }}></i> Vastu Consultation</Link></li>
               <li><Link href="/blog" onClick={() => setMobileOpen(false)}>Artisan Blogs</Link></li>
               <li><Link href="/about" onClick={() => setMobileOpen(false)}>Our Story</Link></li>
+              <li><Link href="/my-orders" onClick={() => setMobileOpen(false)}>My Orders</Link></li>
               <li><Link href="/contact" onClick={() => setMobileOpen(false)}>Contact</Link></li>
             </ul>
           </nav>

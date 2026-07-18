@@ -16,6 +16,9 @@ export default function BlogManager({ initialBlogs = [] }) {
   const [content, setContent] = useState('');
   const [isPublished, setIsPublished] = useState(true);
   const [imageFile, setImageFile] = useState(null);
+  const [publishDate, setPublishDate] = useState('');
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ type: '', message: '' });
@@ -32,6 +35,9 @@ export default function BlogManager({ initialBlogs = [] }) {
     setContent('');
     setIsPublished(true);
     setImageFile(null);
+    setPublishDate(new Date().toISOString().slice(0, 16));
+    setSeoTitle('');
+    setSeoDescription('');
     setFormOpen(true);
   };
 
@@ -42,6 +48,9 @@ export default function BlogManager({ initialBlogs = [] }) {
     setContent(b.content || '');
     setIsPublished(b.is_published === 1);
     setImageFile(null);
+    setPublishDate(b.publish_date ? new Date(b.publish_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16));
+    setSeoTitle(b.seo_title || '');
+    setSeoDescription(b.seo_description || '');
     setFormOpen(true);
   };
 
@@ -69,6 +78,9 @@ export default function BlogManager({ initialBlogs = [] }) {
     formData.append('short_desc', shortDesc);
     formData.append('content', content);
     formData.append('is_published', isPublished ? '1' : '0');
+    formData.append('publish_date', publishDate);
+    formData.append('seo_title', seoTitle);
+    formData.append('seo_description', seoDescription);
 
     if (imageFile) {
       formData.append('featured_image', imageFile);
@@ -184,11 +196,27 @@ export default function BlogManager({ initialBlogs = [] }) {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Article Content Body (supports HTML blocks) *</label>
-                <textarea rows="10" required value={content} onChange={(e) => setContent(e.target.value)} placeholder="<p>Write your detailed blog text here...</p>" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '0.8rem' }}></textarea>
+                <textarea rows="8" required value={content} onChange={(e) => setContent(e.target.value)} placeholder="<p>Write your detailed blog text here...</p>" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '0.8rem' }}></textarea>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input type="checkbox" id="pub-chk" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} style={{ accentColor: 'var(--primary-gold)' }} />
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Scheduled Publication Date/Time</label>
+                <input type="datetime-local" value={publishDate} onChange={(e) => setPublishDate(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Meta Title (SEO)</label>
+                  <input type="text" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="SEO optimization title" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Meta Description (SEO)</label>
+                  <input type="text" value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="SEO optimization description" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '12px' }}>
+                <input type="checkbox" id="pub-chk" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} style={{ accentColor: 'var(--primary-gold)', cursor: 'pointer' }} />
                 <label htmlFor="pub-chk" style={{ fontSize: '0.85rem', cursor: 'pointer' }}><strong>Publish article</strong> (Make visible on client blog lists)</label>
               </div>
 

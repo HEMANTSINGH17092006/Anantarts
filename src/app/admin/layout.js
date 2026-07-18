@@ -20,7 +20,8 @@ export default function AdminLayout({ children }) {
     { href: '/admin/products', label: 'Products', icon: 'fa-box' },
     { href: '/admin/categories', label: 'Categories', icon: 'fa-folder' },
     { href: '/admin/orders', label: 'Orders', icon: 'fa-shopping-cart' },
-    { href: '/admin/coupons', label: 'Coupons', icon: 'fa-ticket-alt' },
+    { href: '/admin/customers', label: 'Customers', icon: 'fa-users' },
+    { href: '/admin/coupons', label: 'Marketing & Coupons', icon: 'fa-ticket-alt' },
     { href: '/admin/content', label: 'Content & Banners', icon: 'fa-sliders-h' },
     { href: '/admin/blogs', label: 'Blogs', icon: 'fa-pencil-alt' }
   ];

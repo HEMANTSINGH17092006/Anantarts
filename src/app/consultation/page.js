@@ -16,24 +16,41 @@ export default function ConsultationPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear field error when user types
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' });
+    }
+  };
+
+  const validate = () => {
+    let tempErrors = {};
+    if (!formData.name.trim()) {
+      tempErrors.name = 'Full Name is required.';
+    }
+    if (!formData.phone.trim()) {
+      tempErrors.phone = 'Phone number is required.';
+    } else if (!/^\+?[0-9\s\-]{8,15}$/.test(formData.phone.trim())) {
+      tempErrors.phone = 'Please enter a valid phone number.';
+    }
+    setErrors(tempErrors);
+    return Object.keys(tempErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    if (!formData.name || !formData.phone) {
-      setError('Please fill in your name and contact number.');
-      setLoading(false);
+    if (!validate()) {
+      setError('Please fix the errors in the consultation form.');
       return;
     }
+    setLoading(true);
+    setError('');
 
     try {
       const res = await submitConsultation(formData);
@@ -138,9 +155,9 @@ export default function ConsultationPage() {
                   value={formData.name} 
                   onChange={handleChange}
                   placeholder="e.g. Rajesh Kumar" 
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--primary-gold-border)', fontSize: '0.88rem' }}
-                  required
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: errors.name ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.88rem' }}
                 />
+                {errors.name && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.name}</span>}
               </div>
 
               <div>
@@ -153,9 +170,9 @@ export default function ConsultationPage() {
                   value={formData.phone} 
                   onChange={handleChange}
                   placeholder="e.g. +91 99999 99999" 
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--primary-gold-border)', fontSize: '0.88rem' }}
-                  required
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: errors.phone ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.88rem' }}
                 />
+                {errors.phone && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.phone}</span>}
               </div>
 
               <div>

@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { submitContactInquiry } from '@/app/actions';
 
 export default function ContactPage() {
   const [phone, setPhone] = useState('+91 72758 19354');
-  const [email, setEmail] = useState('care@anantarts.com');
+  const [email, setEmail] = useState('care@anantarts.in');
   const [address, setAddress] = useState('Bhoirwadi, Dombivli East, Maharashtra, India');
   const [whatsapp, setWhatsapp] = useState('917275819354');
 
@@ -16,64 +16,73 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
 
   // Fetch settings dynamically on mount
   useEffect(() => {
     async function loadSettings() {
       try {
-        const supabase = createClient();
-        const { data } = await supabase.from('website_settings').select('*');
-        if (data) {
-          const s = {};
-          data.forEach(r => { s[r.key] = r.value; });
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const s = await res.json();
           if (s.contact_phone) setPhone(s.contact_phone);
           if (s.contact_email) setEmail(s.contact_email);
           if (s.contact_address) setAddress(s.contact_address);
           if (s.whatsapp_number) setWhatsapp(s.whatsapp_number);
         }
       } catch (err) {
-        console.error(err);
+        console.error('Settings fetch failed, using defaults.', err);
       }
     }
     loadSettings();
   }, []);
 
+  const validate = () => {
+    let tempErrors = {};
+    if (!name.trim()) tempErrors.name = 'Your Name is required.';
+    
+    if (!formEmail.trim()) {
+      tempErrors.email = 'Email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEmail.trim())) {
+      tempErrors.email = 'Please enter a valid email.';
+    }
+
+    if (!subject.trim()) tempErrors.subject = 'Subject is required.';
+    if (!message.trim()) tempErrors.message = 'Inquiry Message cannot be empty.';
+
+    setErrors(tempErrors);
+    return Object.keys(tempErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !formEmail || !subject || !message) {
-      setError('Please fill in all required fields.');
+    if (!validate()) {
+      setError('Please fix the errors in the contact form.');
       return;
     }
     setError('');
     setSuccess('');
     setLoading(true);
 
-    try {
-      const supabase = createClient();
-      
-      const inquiryMessage = `📧 General Inquiry from ${name} (${formEmail}) on Subject: "${subject}". Msg: "${message}"`;
-      
-      const { error: dbErr } = await supabase
-        .from('notifications')
-        .insert({
-          message: inquiryMessage,
-          is_read: 0,
-          type: 'info',
-          link: '/admin'
-        });
+    const result = await submitContactInquiry({
+      name,
+      email: formEmail,
+      phone: '',
+      subject,
+      message,
+    });
 
-      if (dbErr) throw new Error('Failed to register inquiry.');
-      
-      setSuccess('Your message has been sent successfully. Our support team will get back to you shortly.');
+    if (result.success) {
+      setSuccess(result.message);
       setName('');
       setFormEmail('');
       setSubject('');
       setMessage('');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setErrors({});
+    } else {
+      setError(result.message);
     }
+    setLoading(false);
   };
 
   return (

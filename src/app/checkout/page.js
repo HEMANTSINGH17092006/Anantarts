@@ -39,6 +39,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
 
   // Load Razorpay Checkout script on mount
   useEffect(() => {
@@ -111,10 +112,42 @@ export default function CheckoutPage() {
     }
   };
 
+  const validate = () => {
+    let tempErrors = {};
+    if (!name.trim()) tempErrors.name = 'Name is required.';
+    
+    if (!email.trim()) {
+      tempErrors.email = 'Email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      tempErrors.email = 'Please enter a valid email.';
+    }
+
+    if (!phone.trim()) {
+      tempErrors.phone = 'Phone number is required.';
+    } else if (!/^\+?[0-9\s\-]{8,15}$/.test(phone.trim())) {
+      tempErrors.phone = 'Please enter a valid phone number.';
+    }
+
+    if (!address.trim()) tempErrors.address = 'Address cannot be empty.';
+    if (!city.trim()) tempErrors.city = 'City is required.';
+    if (!state.trim()) tempErrors.state = 'State is required.';
+
+    if (!zip.trim()) {
+      tempErrors.zip = 'ZIP code is required.';
+    } else if (!/^[0-9]{5,6}$/.test(zip.trim())) {
+      tempErrors.zip = 'Please enter a valid pincode.';
+    }
+
+    if (!paymentMethod) tempErrors.paymentMethod = 'Please select a payment method.';
+
+    setErrors(tempErrors);
+    return Object.keys(tempErrors).length === 0;
+  };
+
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !phone || !address || !city || !state || !zip) {
-      setError('Please fill in all required shipping details.');
+    if (!validate()) {
+      setError('Please fix the errors in the shipping form.');
       return;
     }
     setError('');
@@ -124,9 +157,9 @@ export default function CheckoutPage() {
 
     if (paymentMethod === 'razorpay') {
       setLoading(true);
-      // Load Razorpay Sandbox checkout popup
+      // Load Razorpay checkout popup — uses env variable for live/test key
       const options = {
-        key: 'rzp_test_sandboxKeyId', // Test key for sandbox mode
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_sandboxKeyId',
         amount: Math.round(total * 100), // in paise
         currency: 'INR',
         name: 'Anant Arts',
@@ -221,12 +254,12 @@ export default function CheckoutPage() {
                 <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Full Name *</label>
                 <input
                   type="text"
-                  required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Hemant Singh"
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.name ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
+                {errors.name && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.name}</span>}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', flexWrap: 'wrap' }}>
@@ -234,23 +267,23 @@ export default function CheckoutPage() {
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Email Address *</label>
                   <input
                     type="email"
-                    required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="e.g. customer@example.com"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.email ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
+                  {errors.email && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.email}</span>}
                 </div>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Phone Number *</label>
                   <input
                     type="tel"
-                    required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="e.g. +91 98765 43210"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.phone ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
+                  {errors.phone && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.phone}</span>}
                 </div>
               </div>
 
@@ -258,12 +291,12 @@ export default function CheckoutPage() {
                 <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>Street Address *</label>
                 <input
                   type="text"
-                  required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="House No, Building name, Street name, Locality"
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.address ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                 />
+                {errors.address && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.address}</span>}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', flexWrap: 'wrap' }}>
@@ -271,34 +304,34 @@ export default function CheckoutPage() {
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>City *</label>
                   <input
                     type="text"
-                    required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="City"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.city ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
+                  {errors.city && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.city}</span>}
                 </div>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>State *</label>
                   <input
                     type="text"
-                    required
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     placeholder="State"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.state ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
+                  {errors.state && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.state}</span>}
                 </div>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: '500', display: 'block', marginBottom: '6px' }}>ZIP Code *</label>
                   <input
                     type="text"
-                    required
                     value={zip}
                     onChange={(e) => setZip(e.target.value)}
                     placeholder="e.g. 421201"
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '4px', border: errors.zip ? '1.5px solid var(--danger)' : '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
                   />
+                  {errors.zip && <span style={{ color: 'var(--danger)', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>{errors.zip}</span>}
                 </div>
               </div>
 

@@ -11,7 +11,17 @@ export default async function AdminCouponsPage() {
     .select('*')
     .order('created_at', { ascending: false });
 
+  const { data: flashSales = [] } = await supabase
+    .from('flash_sales')
+    .select('*')
+    .order('id', { ascending: false });
+
+  const { data: subscribers = [] } = await supabase
+    .from('newsletter_subscribers')
+    .select('*')
+    .order('subscribed_at', { ascending: false });
+
   return (
-    <CouponManager coupons={coupons} />
+    <CouponManager coupons={coupons} flashSales={flashSales} subscribers={subscribers} />
   );
 }

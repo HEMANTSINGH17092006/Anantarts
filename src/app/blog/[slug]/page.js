@@ -3,6 +3,49 @@ import { getBlogBySlug } from '@/lib/db-helpers';
 
 export const revalidate = 3600; // Cache individual blogs for 1 hour
 
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').replace(/\/$/, '');
+
+// Dynamic SEO Metadata per blog post
+export async function generateMetadata({ params }) {
+  const resolvedParams = await params;
+  const blog = await getBlogBySlug(resolvedParams.slug);
+  if (!blog) {
+    return {
+      title: 'Article Not Found | Anant Arts',
+      description: 'The requested blog article could not be found.',
+    };
+  }
+
+  const title = blog.seo_title || `${blog.title} | Anant Arts Blog`;
+  const description = blog.seo_description || blog.short_desc || `Read our article: ${blog.title}`;
+  const canonicalUrl = `${BASE_URL}/blog/${blog.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      type: 'article',
+      publishedTime: blog.publish_date || blog.created_at,
+      authors: ['Anant Arts'],
+      images: blog.featured_image
+        ? [{ url: blog.featured_image.startsWith('http') ? blog.featured_image : `${BASE_URL}${blog.featured_image}`, width: 1200, height: 630, alt: blog.title }]
+        : [{ url: `${BASE_URL}/og-image.jpg`, width: 1200, height: 630, alt: blog.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: blog.featured_image
+        ? [blog.featured_image.startsWith('http') ? blog.featured_image : `${BASE_URL}${blog.featured_image}`]
+        : [`${BASE_URL}/og-image.jpg`],
+    },
+  };
+}
+
 export default async function BlogDetailPage({ params }) {
   // Await params as required in Next.js 15+
   const resolvedParams = await params;
@@ -23,8 +66,58 @@ export default async function BlogDetailPage({ params }) {
     );
   }
 
+  const canonicalUrl = `${BASE_URL}/blog/${blog.slug}`;
+
+  // Article JSON-LD Schema
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: blog.title,
+    description: blog.short_desc || '',
+    url: canonicalUrl,
+    datePublished: blog.publish_date || blog.created_at,
+    dateModified: blog.updated_at || blog.publish_date || blog.created_at,
+    author: {
+      '@type': 'Organization',
+      name: 'Anant Arts',
+      url: BASE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Anant Arts',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${BASE_URL}/og-image.jpg`,
+      },
+    },
+    ...(blog.featured_image && {
+      image: {
+        '@type': 'ImageObject',
+        url: blog.featured_image.startsWith('http') ? blog.featured_image : `${BASE_URL}${blog.featured_image}`,
+      },
+    }),
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Blogs', item: `${BASE_URL}/blog` },
+      { '@type': 'ListItem', position: 3, name: blog.title, item: canonicalUrl },
+    ],
+  };
+
   return (
     <div style={{ background: 'var(--bg-cream)', padding: '4rem 0' }}>
+      {/* Structured Data */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
       <article style={{ maxWidth: '800px', margin: '0 auto', padding: '0 2rem' }}>
         
         {/* Breadcrumb */}

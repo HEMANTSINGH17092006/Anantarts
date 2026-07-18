@@ -357,6 +357,30 @@ async function initDb() {
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_email TEXT,
+      action TEXT NOT NULL,
+      details TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS flash_sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      discount_percentage REAL DEFAULT 0,
+      start_date DATETIME,
+      end_date DATETIME,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Run schema expansions / column additions
@@ -371,6 +395,19 @@ async function initDb() {
 
   await addColumn('categories', 'type', "TEXT DEFAULT 'deity'");
   await addColumn('orders', 'tracking_number', 'TEXT');
+  
+  await addColumn('banners', 'video_url', 'TEXT');
+  await addColumn('blogs', 'seo_title', 'TEXT');
+  await addColumn('blogs', 'seo_description', 'TEXT');
+
+  // Performance Indexes
+  await dbExec(`
+    CREATE INDEX IF NOT EXISTS idx_products_category ON products (category_id);
+    CREATE INDEX IF NOT EXISTS idx_product_images_prod ON product_images (product_id);
+    CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id);
+    CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
+    CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items (product_id);
+  `);
 
   console.log('Database tables verified/created successfully.');
 
@@ -380,15 +417,15 @@ async function initDb() {
 
 async function seedDefaultData() {
   // 1. Seed default Admin User
-  const adminEmail = 'admin@anantarts.com';
+  const adminEmail = 'admin@anantarts.in';
   const adminUser = await dbGet('SELECT * FROM users WHERE email = ?', [adminEmail]);
   if (!adminUser) {
     const passwordHash = bcrypt.hashSync('admin123', 10);
     await dbRun(
       'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-      ['Anant Arts Admin', adminEmail, passwordHash, 'admin']
+      ['Anant Arts Admin', adminEmail, passwordHash, 'super_admin']
     );
-    console.log('Default admin seeded: admin@anantarts.com / admin123');
+    console.log('Default admin seeded: admin@anantarts.in / admin123');
   }
 
   // 2. Seed default Categories
@@ -572,15 +609,25 @@ async function seedDefaultData() {
       { key: 'site_name', value: 'Anant Arts' },
       { key: 'site_tagline', value: 'Bringing Divine Art to Every Home' },
       { key: 'whatsapp_number', value: '917275819354' },
-      { key: 'contact_email', value: 'hemant4507vns@gmail.com' },
+      { key: 'contact_email', value: 'care@anantarts.in' },
+      { key: 'support_email', value: 'support@anantarts.in' },
+      { key: 'orders_email', value: 'orders@anantarts.in' },
       { key: 'contact_phone', value: '+91 72758 19354' },
       { key: 'contact_address', value: 'Bhoirwadi, Dombivli East, Maharashtra' },
       { key: 'razorpay_key_id', value: '' },
+      { key: 'ga_measurement_id', value: '' },
+      { key: 'clarity_project_id', value: '' },
+      { key: 'gsc_verification', value: '' },
+      { key: 'seo_title', value: 'Anant Arts — Premium Electroplated Hindu God Idols | 24K Gold & Silver' },
+      { key: 'seo_description', value: 'Anant Arts offers luxury electroplated idols of Hindu gods and goddesses. Handcrafted with 24K Gold, Sterling Silver, and Copper plating. Bringing Divine Art to Every Home.' },
       { key: 'social_links', value: JSON.stringify({ instagram: 'https://instagram.com/anantarts', facebook: 'https://facebook.com/anantarts', youtube: 'https://youtube.com/anantarts' }) },
-      { key: 'about_us_text', value: 'Anant Arts is a premium Indian brand specializing in manufacturing high-end electroplated idols of Hindu gods and goddesses. Based in New Delhi, we blend centuries-old craftsmanship with modern electroplating technology (using 24K gold, fine silver, and copper) to create timeless spiritual masterworks for your home and offices. Each sculpture is lacquered to protect its shine and ensure lifelong durability.' },
+      { key: 'about_us_text', value: 'Anant Arts is a premium Indian brand specializing in manufacturing high-end electroplated idols of Hindu gods and goddesses. Based in Dombivli East, Maharashtra, we blend centuries-old craftsmanship with modern electroplating technology (using 24K gold, fine silver, and copper) to create timeless spiritual masterworks for your home and offices. Each sculpture is lacquered to protect its shine and ensure lifelong durability.' },
       { key: 'shipping_policy', value: 'We offer free insured shipping all over India on orders above ₹10,000. All idols are securely packed in premium multi-layered bubble packaging and wooden crates (where necessary) to prevent damage. Standard delivery takes 3-7 business days.' },
       { key: 'return_policy', value: 'Because each idol is custom electroplated and highly delicate, we accept returns only in case of transit damages. Please record an unboxing video upon receiving the package. If any damage is noticed, notify us within 24 hours with the video for a free replacement.' },
-      { key: 'privacy_policy', value: 'Anant Arts values your privacy. We store customer emails, shipping details, and purchase records securely. We do not share customer information with third parties. Online payments are securely processed through Razorpay Sandbox and UPI networks.' }
+      { key: 'refund_policy', value: 'Refunds are issued only for confirmed transit-damaged orders. Once our team reviews the unboxing video and confirms the damage, a full refund or free replacement will be processed within 7-10 business days. For COD orders, refund will be done via bank transfer. Please contact orders@anantarts.in to initiate a refund claim.' },
+      { key: 'privacy_policy', value: 'Anant Arts values your privacy. We store customer emails, shipping details, and purchase records securely in our encrypted Supabase database. We do not share customer information with third parties. Online payments are securely processed through Razorpay. You may contact support@anantarts.in for any privacy-related inquiries.' },
+      { key: 'terms_conditions', value: 'By placing an order on anantarts.in, you agree to our terms. All prices are in Indian Rupees (INR) inclusive of applicable taxes. We reserve the right to cancel orders in case of payment failures or stock unavailability. Custom orders are non-refundable unless damaged in transit. Delivery estimates are indicative. For queries, contact support@anantarts.in.' },
+      { key: 'faqs_json', value: JSON.stringify([]) }
     ];
 
     for (const setting of defaultSettings) {
@@ -589,8 +636,8 @@ async function seedDefaultData() {
     console.log('Default settings seeded.');
   }
 
-  // Force update default contact email to branded email
-  await dbRun("UPDATE website_settings SET value = 'care@anantarts.com' WHERE key = 'contact_email' AND value = 'hemant4507vns@gmail.com'");
+  // Force update default contact email to branded production email
+  await dbRun("UPDATE website_settings SET value = 'care@anantarts.in' WHERE key = 'contact_email' AND value IN ('hemant4507vns@gmail.com', 'care@anantarts.com')");
 }
 
 module.exports = {

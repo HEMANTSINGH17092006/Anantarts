@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { submitCorporateInquiry } from '@/app/actions';
 
 export default function CorporateGiftsPage() {
   const [name, setName] = useState('');
@@ -23,35 +23,27 @@ export default function CorporateGiftsPage() {
     setSuccess('');
     setLoading(true);
 
-    try {
-      const supabase = createClient();
-      
-      // Submit a notification in the DB to alert the admin dashboard
-      const notificationMessage = `💼 Corporate Gift Inquiry: ${name} from ${company} requested approx ${quantity} units. Contact: ${phone} / ${email}. Msg: "${message}"`;
-      
-      const { error: dbErr } = await supabase
-        .from('notifications')
-        .insert({
-          message: notificationMessage,
-          is_read: 0,
-          type: 'info',
-          link: '/admin'
-        });
+    const result = await submitCorporateInquiry({
+      name,
+      email,
+      phone,
+      company,
+      quantity,
+      requirements: message,
+    });
 
-      if (dbErr) throw new Error('Failed to register inquiry.');
-      
-      setSuccess('Your corporate gifting inquiry has been registered successfully. Our business team will contact you within 24 hours.');
+    if (result.success) {
+      setSuccess(result.message);
       setName('');
       setCompany('');
       setEmail('');
       setPhone('');
       setQuantity('50');
       setMessage('');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.message);
     }
+    setLoading(false);
   };
 
   return (
