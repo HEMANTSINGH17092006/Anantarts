@@ -13,6 +13,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check which page is currently active and run page-specific logic
     if (document.getElementById('home-page')) {
       await initHomePage();
+      initHeroParticles();
+      initStatsCounters();
+      initExitIntent();
+      initRecentlyPurchased();
+      
+      // Auto show newsletter popup after 8s
+      setTimeout(() => {
+        if (!sessionStorage.getItem('newsletterShown')) {
+          togglePopupModal('newsletter-modal', true);
+          sessionStorage.setItem('newsletterShown', 'true');
+        }
+      }, 8000);
     } else if (document.getElementById('shop-page')) {
       await initShopPage();
     } else if (document.getElementById('product-page')) {
@@ -27,16 +39,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// 2. Common Layout Injector
+// 2. Common Layout Injector (Updated for Premium Redesign)
 async function injectCommonLayout() {
   const siteName = websiteSettings.site_name || 'Anant Arts';
   const tagline = websiteSettings.site_tagline || 'Bringing Divine Art to Every Home';
-  const phone = websiteSettings.contact_phone || '+91 98765 43210';
+  const phone = websiteSettings.contact_phone || '+91 72758 19354';
   const email = websiteSettings.contact_email || 'care@anantarts.com';
-  const address = websiteSettings.contact_address || 'New Delhi, India';
-  const waNumber = websiteSettings.whatsapp_number || '919876543210';
+  const address = websiteSettings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
+  const waNumber = websiteSettings.whatsapp_number || '917275819354';
   
-  let social = { instagram: '#', facebook: '#', youtube: '#' };
+  let social = { instagram: 'https://instagram.com/anantarts', facebook: 'https://facebook.com/anantarts', youtube: 'https://youtube.com/anantarts', pinterest: 'https://pinterest.com/anantarts' };
   try {
     if (websiteSettings.social_links) {
       social = JSON.parse(websiteSettings.social_links);
@@ -46,21 +58,34 @@ async function injectCommonLayout() {
   // Inject Header
   const headerContainer = document.getElementById('main-header');
   if (headerContainer) {
+    const currentPath = window.location.pathname;
+    const isHome = currentPath.includes('index.html') || currentPath.endsWith('/') ? 'class="active"' : '';
+    const isShop = currentPath.includes('shop.html') ? 'class="active"' : '';
+    const isCorp = currentPath.includes('corporate-gifts.html') ? 'class="active"' : '';
+    const isBlog = currentPath.includes('blog') ? 'class="active"' : '';
+    const isAbout = currentPath.includes('about-us.html') ? 'class="active"' : '';
+    const isContact = currentPath.includes('contact-us.html') ? 'class="active"' : '';
+    const isTrack = currentPath.includes('order-tracking.html') ? 'class="active"' : '';
+
     headerContainer.innerHTML = `
       <div class="nav-container">
-        <a href="index.html" class="logo-group" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
-          <img src="/uploads/logo.png" alt="Anant Arts Logo" style="height:45px; width:45px; border-radius:50%; border:2px solid var(--primary-gold); object-fit:cover; box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);">
-          <div style="display:flex; flex-direction:column; justify-content:center;">
-            <span class="logo">${siteName}</span>
-            <span class="tagline">${tagline}</span>
+        <a href="index.html" class="logo-group">
+          <img src="uploads/logo.png" alt="Anant Arts Logo" class="logo-img">
+          <div class="logo-text">
+            <span class="logo-brand">${siteName}</span>
+            <span class="logo-tagline">${tagline}</span>
           </div>
         </a>
         <nav>
           <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="shop.html">Shop Idols</a></li>
-            <li><a href="order-tracking.html">Track Order</a></li>
-            <li><a href="admin.html" target="_blank">Admin</a></li>
+            <li ${isHome}><a href="index.html">Home</a></li>
+            <li ${isShop}><a href="shop.html">Shop</a></li>
+            <li ${isShop}><a href="shop.html?category=lord-ganesha">Shop By Deity</a></li>
+            <li ${isCorp}><a href="corporate-gifts.html">Corporate Gifts</a></li>
+            <li ${isBlog}><a href="blogs.html">Blogs</a></li>
+            <li ${isAbout}><a href="about-us.html">About Us</a></li>
+            <li ${isContact}><a href="contact-us.html">Contact Us</a></li>
+            <li ${isTrack}><a href="order-tracking.html">Track Order</a></li>
           </ul>
         </nav>
         <div class="nav-icons">
@@ -71,6 +96,7 @@ async function injectCommonLayout() {
           <div class="nav-icon" id="cart-trigger" title="Cart" onclick="toggleCartDrawer(true)">
             <i class="fas fa-shopping-bag"></i><span class="icon-badge" id="cart-count">0</span>
           </div>
+          <div class="mobile-nav-toggle" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></div>
         </div>
       </div>
     `;
@@ -128,35 +154,58 @@ async function injectCommonLayout() {
       <div class="footer-container">
         <div class="footer-column">
           <h3>Anant Arts</h3>
-          <p>${websiteSettings.about_us_text ? websiteSettings.about_us_text.substring(0, 160) + '...' : tagline}</p>
+          <p>Premium Indian brand blending traditional temple sculpting with modern electroplating technology (24K Gold, Silver, Copper) to craft everlasting spiritual sculptures.</p>
           <div class="social-icons">
             <a href="${social.instagram}" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
             <a href="${social.facebook}" target="_blank" class="social-icon"><i class="fab fa-facebook-f"></i></a>
             <a href="${social.youtube}" target="_blank" class="social-icon"><i class="fab fa-youtube"></i></a>
+            <a href="${social.pinterest || '#'}" target="_blank" class="social-icon"><i class="fab fa-pinterest"></i></a>
           </div>
         </div>
         <div class="footer-column">
-          <h3>Customer Service</h3>
+          <h3>Quick Links</h3>
           <ul class="footer-links">
-            <li><a href="shop.html">Browse All Idols</a></li>
-            <li><a href="order-tracking.html">Track Your Order</a></li>
-            <li><a href="#" onclick="showPolicyModal('shipping')">Shipping Policy</a></li>
-            <li><a href="#" onclick="showPolicyModal('return')">Returns & Replacement</a></li>
-            <li><a href="#" onclick="showPolicyModal('privacy')">Privacy Policy</a></li>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="shop.html">Shop All Idols</a></li>
+            <li><a href="corporate-gifts.html">Corporate Gifts</a></li>
+            <li><a href="blogs.html">Artisan Blogs</a></li>
+            <li><a href="about-us.html">Our Story</a></li>
+            <li><a href="contact-us.html">Contact Support</a></li>
           </ul>
         </div>
         <div class="footer-column">
-          <h3>Contact Details</h3>
-          <p><i class="fas fa-phone-alt"></i> ${phone}</p>
-          <p><i class="fas fa-envelope"></i> ${email}</p>
-          <p><i class="fas fa-map-marker-alt"></i> ${address}</p>
+          <h3>Policies</h3>
+          <ul class="footer-links">
+            <li><a href="shipping-policy.html">Shipping Policy</a></li>
+            <li><a href="return-policy.html">Return & Refund Policy</a></li>
+            <li><a href="privacy-policy.html">Privacy Policy</a></li>
+            <li><a href="terms.html">Terms & Conditions</a></li>
+            <li><a href="faq.html">FAQ Helpdesk</a></li>
+            <li><a href="order-tracking.html">Track Shipment</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Customer Support</h3>
+          <p><i class="fas fa-phone-alt" style="color:var(--primary-gold); margin-right:8px;"></i> Call Support: ${phone}</p>
+          <p><i class="fas fa-envelope" style="color:var(--primary-gold); margin-right:8px;"></i> Email: ${email}</p>
+          <p><i class="fab fa-whatsapp" style="color:#25D366; margin-right:8px;"></i> WhatsApp: +${waNumber}</p>
+          <p><i class="fas fa-map-marker-alt" style="color:var(--primary-gold); margin-right:8px;"></i> ${address}</p>
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; ${new Date().getFullYear()} Anant Arts. All Rights Reserved. Crafted with Divine Devotion.</p>
-        <p>Luxury Electroplated Hindu Idols</p>
+        <p>&copy; ${new Date().getFullYear()} Anant Arts. All Rights Reserved. Crafted with Devotion.</p>
+        <p>Luxury Electroplated Hindu Idols | Brand of Divine luxury</p>
       </div>
     `;
+  }
+
+  // Create Toast Container if missing
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
   }
 
   // Listen to cart update event to hydrate list
@@ -171,13 +220,14 @@ async function injectCommonLayout() {
 function toggleCartDrawer(open) {
   const drawer = document.getElementById('cart-drawer');
   const overlay = document.getElementById('cart-overlay');
+  if (!drawer) return;
   if (open) {
     drawer.classList.add('open');
-    overlay.classList.add('open');
+    if (overlay) overlay.classList.add('open');
     renderCartDrawer();
   } else {
     drawer.classList.remove('open');
-    overlay.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
   }
 }
 
@@ -201,19 +251,19 @@ function renderCartDrawer() {
   }
 
   container.innerHTML = cart.map(item => `
-    <div class="cart-item">
-      <div class="cart-item-img">
-        <img src="${item.image}" alt="${item.name}">
+    <div class="cart-item" style="display:flex; gap:12px; margin-bottom:1rem; border-bottom:1px dashed rgba(0,0,0,0.05); padding-bottom:1rem;">
+      <div class="cart-item-img" style="width:60px; height:60px; border-radius:4px; overflow:hidden;">
+        <img src="${item.image}" alt="${item.name}" style="width:100%; height:100%; object-fit:cover;">
       </div>
-      <div class="cart-item-details">
-        <span class="cart-item-title">${item.name}</span>
-        <span class="cart-item-price">₹${item.price.toLocaleString()}</span>
-        <div class="cart-item-qty">
-          <button class="qty-btn" onclick="Cart.updateQty(${item.id}, ${item.qty - 1})">-</button>
+      <div class="cart-item-details" style="flex-grow:1; display:flex; flex-direction:column; justify-content:space-between;">
+        <span class="cart-item-title" style="font-size:0.85rem; font-weight:600; color:var(--text-dark); display:block;">${item.name}</span>
+        <span class="cart-item-price" style="font-size:0.9rem; color:var(--primary-gold-hover); font-weight:700;">₹${item.price.toLocaleString()}</span>
+        <div class="cart-item-qty" style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+          <button class="qty-btn" style="border:1px solid #CCC; padding:2px 8px; cursor:pointer;" onclick="Cart.updateQty(${item.id}, ${item.qty - 1})">-</button>
           <span class="qty-val">${item.qty}</span>
-          <button class="qty-btn" onclick="Cart.updateQty(${item.id}, ${item.qty + 1})">+</button>
+          <button class="qty-btn" style="border:1px solid #CCC; padding:2px 8px; cursor:pointer;" onclick="Cart.updateQty(${item.id}, ${item.qty + 1})">+</button>
         </div>
-        <span class="cart-item-remove" onclick="Cart.removeItem(${item.id})">Remove</span>
+        <span class="cart-item-remove" style="font-size:0.75rem; color:#999; cursor:pointer; margin-top:4px; text-decoration:underline;" onclick="Cart.removeItem(${item.id})">Remove</span>
       </div>
     </div>
   `).join('');
@@ -253,12 +303,10 @@ function showPolicyModal(type) {
   modal.style.zIndex = '4000';
   modal.innerHTML = `
     <div class="admin-modal-content" style="max-width:550px;">
-      <div class="admin-modal-header">
-        <h3>${title}</h3>
-        <span class="cart-close" onclick="this.closest('.admin-modal').remove()">&times;</span>
-      </div>
-      <div class="admin-modal-body">
-        <p style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; color: #444;">${body}</p>
+      <span class="modal-close-btn" onclick="this.closest('.admin-modal').remove()">&times;</span>
+      <h3 style="font-family:var(--font-heading); color:var(--text-dark); margin-bottom:1.5rem; text-align:left;">${title}</h3>
+      <div class="admin-modal-body" style="text-align:left;">
+        <p style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.7; color: #555;">${body}</p>
       </div>
     </div>
   `;
@@ -618,6 +666,11 @@ async function initProductPage() {
 
     // Setup interactive Zoom
     setupImageZoom(mainImg);
+
+    // Setup 360 viewer if images exist
+    if (images && images.length > 0) {
+      setup360Viewer(images);
+    }
 
     // Reviews list
     await loadProductReviews(currentProduct.id);
@@ -1171,5 +1224,211 @@ function debounce(func, wait) {
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
+  };
+}
+
+// ==================== REDESIGN UTILITY HELPERS ====================
+
+window.slideCarousel = function(carouselId, direction) {
+  const container = document.getElementById(carouselId);
+  if (!container) return;
+  const scrollAmount = 320;
+  container.scrollBy({ left: scrollAmount * direction, behavior: 'smooth' });
+};
+
+window.togglePopupModal = function(modalId, show) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    if (show) modal.classList.add('open');
+    else modal.classList.remove('open');
+  }
+};
+
+window.handleNewsletterSubmit = async function(e, modalId) {
+  e.preventDefault();
+  const emailInput = e.target.querySelector('input[type="email"]');
+  if (!emailInput) return;
+  const email = emailInput.value;
+
+  try {
+    const res = await API.request('/api/newsletter/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    showToast(`✨ ${res.message || 'Thank you for subscribing! Check your inbox for the 10% discount coupon.'}`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Subscription failed.', 'error');
+  }
+
+  if (modalId) togglePopupModal(modalId, false);
+  else togglePopupModal('newsletter-modal', false);
+  e.target.reset();
+};
+
+window.toggleMobileMenu = function() {
+  const nav = document.querySelector('nav');
+  if (nav) {
+    nav.style.display = nav.style.display === 'block' ? 'none' : 'block';
+    nav.style.position = 'absolute';
+    nav.style.top = '100%';
+    nav.style.left = '0';
+    nav.style.width = '100%';
+    nav.style.background = 'var(--bg-dark-slate)';
+    nav.style.borderBottom = '2px solid var(--primary-gold)';
+    nav.style.padding = '1.5rem';
+    nav.style.zIndex = '500';
+    nav.querySelector('ul').style.flexDirection = 'column';
+    nav.querySelector('ul').style.alignItems = 'flex-start';
+    nav.querySelector('ul').style.gap = '1rem';
+    nav.querySelectorAll('a').forEach(a => a.style.color = '#FFF');
+  }
+};
+
+function initHeroParticles() {
+  const canvas = document.getElementById('particles-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  
+  function resize() {
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = canvas.parentElement.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = Math.random() * 2 + 1;
+      this.speedY = -(Math.random() * 0.4 + 0.1);
+      this.speedX = Math.random() * 0.3 - 0.15;
+      this.alpha = Math.random() * 0.4 + 0.2;
+    }
+    update() {
+      this.y += this.speedY;
+      this.x += this.speedX;
+      if (this.y < 0) {
+        this.y = canvas.height;
+        this.x = Math.random() * canvas.width;
+      }
+    }
+    draw() {
+      ctx.fillStyle = `rgba(212, 175, 55, ${this.alpha})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  for (let i = 0; i < 40; i++) {
+    particles.push(new Particle());
+  }
+  
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.update();
+      p.draw();
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+function initStatsCounters() {
+  const counters = [
+    { id: 'stat-customers', target: 5000, suffix: '+' },
+    { id: 'stat-cities', target: 250, suffix: '+' }
+  ];
+  counters.forEach(c => {
+    const el = document.getElementById(c.id);
+    if (!el) return;
+    let count = 0;
+    const speed = c.target / 60;
+    const timer = setInterval(() => {
+      count += speed;
+      if (count >= c.target) {
+        el.textContent = c.target + c.suffix;
+        clearInterval(timer);
+      } else {
+        el.textContent = Math.floor(count) + c.suffix;
+      }
+    }, 20);
+  });
+}
+
+function initExitIntent() {
+  if (sessionStorage.getItem('exitIntentShown')) return;
+  document.addEventListener('mouseleave', (e) => {
+    if (e.clientY < 0) {
+      togglePopupModal('exit-intent-modal', true);
+      sessionStorage.setItem('exitIntentShown', 'true');
+    }
+  });
+}
+
+function initRecentlyPurchased() {
+  const samplePurchases = [
+    { name: 'Divine 24K Gold Electroplated Ganesha Idol', buyer: 'Ramesh from Mumbai', time: '5 mins ago', img: 'uploads/ganesha-gold-1.jpg' },
+    { name: 'Lord Krishna Flute Playing Elegant Idol', buyer: 'Sita from Delhi', time: '12 mins ago', img: 'uploads/krishna-gold-1.jpg' },
+    { name: 'Goddess Lakshmi Ashta-Lakshmi Blessing Idol', buyer: 'Arjun from Bangalore', time: '20 mins ago', img: 'uploads/lakshmi-gold-1.jpg' },
+    { name: 'Meditating Lord Shiva Antique Bronze & Gold Idol', buyer: 'Karan from Dombivli', time: '1 hour ago', img: 'uploads/shiva-gold-1.jpg' }
+  ];
+  
+  setTimeout(() => {
+    triggerPurchaseAlert();
+  }, 12000);
+  
+  function triggerPurchaseAlert() {
+    const alertEl = document.getElementById('purchased-alert');
+    if (alertEl) alertEl.remove();
+    
+    const item = samplePurchases[Math.floor(Math.random() * samplePurchases.length)];
+    const alertDiv = document.createElement('div');
+    alertDiv.id = 'purchased-alert';
+    alertDiv.className = 'purchased-alert';
+    alertDiv.innerHTML = `
+      <img src="${item.img}" alt="${item.name}" class="purchased-img">
+      <div class="purchased-info" style="text-align:left;">
+        <strong>${item.name}</strong>
+        <span>Purchased by ${item.buyer} - ${item.time}</span>
+      </div>
+      <span class="purchased-close" onclick="this.parentElement.remove()" style="margin-left:8px;">&times;</span>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    // Auto remove after 6s
+    setTimeout(() => {
+      const el = document.getElementById('purchased-alert');
+      if (el) el.remove();
+    }, 6000);
+    
+    // Schedule next alert in 35-50s
+    setTimeout(triggerPurchaseAlert, Math.random() * 15000 + 35000);
+  }
+}
+
+window.setup360Viewer = function(productImages) {
+  const viewerContainer = document.getElementById('p-360-viewer');
+  if (!viewerContainer || !productImages || productImages.length === 0) return;
+
+  // Render viewer controls
+  viewerContainer.innerHTML = `
+    <div style="position:relative; width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:#FFFBF7; border:1px solid var(--primary-gold-border); border-radius:var(--radius-md); overflow:hidden;">
+      <img id="p-360-image" src="${productImages[0].image_path}" style="max-height:100%; max-width:100%; object-fit:contain; transition: transform var(--transition-fast);">
+      <div style="position:absolute; bottom:15px; left:50%; transform:translateX(-50%); background:rgba(43,35,31,0.85); color:#FFF; font-size:0.75rem; padding:4px 12px; border-radius:var(--radius-full); display:flex; align-items:center; gap:6px; user-select:none; border:1px solid var(--primary-gold-border);">
+        <i class="fas fa-arrows-alt-h" style="color:var(--primary-gold);"></i> Click arrows to view 360°
+      </div>
+      <button onclick="rotate360Viewer(-1)" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); background:white; border:1px solid var(--primary-gold-border); border-radius:50%; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;"><i class="fas fa-chevron-left"></i></button>
+      <button onclick="rotate360Viewer(1)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:white; border:1px solid var(--primary-gold-border); border-radius:50%; width:36px; height:36px; cursor:pointer; display:flex; align-items:center; justify-content:center;"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  `;
+
+  let currentIndex = 0;
+  window.rotate360Viewer = function(direction) {
+    currentIndex = (currentIndex + direction + productImages.length) % productImages.length;
+    document.getElementById('p-360-image').src = productImages[currentIndex].image_path;
   };
 }

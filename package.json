@@ -1,25 +1,27 @@
 {
-  "name": "anant-arts",
-  "version": "1.0.0",
-  "description": "Premium e-commerce platform for Anant Arts",
-  "main": "server.js",
+  "name": "nextjs-temp",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "next dev",
+    "build": "node scripts/migrate.js && next build",
+    "start": "next start",
+    "deploy": "vercel --prod",
+    "lint": "eslint"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cookie-parser": "^1.4.6",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "pdfkit": "^0.15.0",
+    "jose": "^6.2.3",
+    "next": "16.2.10",
     "pg": "^8.22.0",
-    "sqlite3": "^5.1.7"
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "type": "commonjs"
+  "devDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10"
+  }
 }

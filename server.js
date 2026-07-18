@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
@@ -132,8 +133,16 @@ app.get('/api/testimonials', async (req, res) => {
 // ==================== CATEGORY API ====================
 
 app.get('/api/categories', async (req, res) => {
+  const type = req.query.type || '';
   try {
-    const rows = await dbAll('SELECT * FROM categories ORDER BY sort_order ASC');
+    let query = 'SELECT * FROM categories';
+    let params = [];
+    if (type) {
+      query += ' WHERE type = ?';
+      params.push(type);
+    }
+    query += ' ORDER BY sort_order ASC';
+    const rows = await dbAll(query, params);
     return res.json(rows);
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load categories.' });
@@ -390,30 +399,42 @@ app.post('/api/orders', async (req, res) => {
       }
     }
 
-    // 6. Trigger Admin WhatsApp Notification (CallMeBot API)
+    // 6. Trigger Admin WhatsApp Notification
     try {
       const apiKeyRow = await dbGet("SELECT value FROM website_settings WHERE key = 'whatsapp_admin_apikey'");
       const apiKey = apiKeyRow ? apiKeyRow.value : '';
+      const adminPhoneRow = await dbGet("SELECT value FROM website_settings WHERE key = 'whatsapp_number'");
+      const adminPhone = adminPhoneRow ? adminPhoneRow.value : '917275819354';
+
+      // Build notification text
+      const itemsList = items.map(i => `${i.product_name} (x${i.quantity})`).join(', ');
+      const messageText = `New Order Placed! 🎉\n\n` +
+                          `Order No: #${orderNumber}\n` +
+                          `Customer: ${customer_name}\n` +
+                          `Phone: ${customer_phone}\n` +
+                          `Total: Rs. ${total_amount.toLocaleString()}\n` +
+                          `Items: ${itemsList}\n\n` +
+                          `Login to your dashboard to process: http://localhost:3000/admin.html`;
+
       if (apiKey && apiKey.trim() !== '') {
-        const adminPhoneRow = await dbGet("SELECT value FROM website_settings WHERE key = 'whatsapp_number'");
-        const adminPhone = adminPhoneRow ? adminPhoneRow.value : '917275819354';
-        
-        // Build notification text
-        const itemsList = items.map(i => `${i.product_name} (x${i.quantity})`).join(', ');
-        const messageText = `New Order Placed! 🎉\n\n` +
-                            `Order No: #${orderNumber}\n` +
-                            `Customer: ${customer_name}\n` +
-                            `Phone: ${customer_phone}\n` +
-                            `Total: Rs. ${total_amount.toLocaleString()}\n` +
-                            `Items: ${itemsList}\n\n` +
-                            `Login to your dashboard to process: http://localhost:3000/admin.html`;
-        
         const gatewayUrl = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(adminPhone)}&text=${encodeURIComponent(messageText)}&apikey=${encodeURIComponent(apiKey)}`;
         
-        // Run fetch asynchronously (don't await, keeping checkouts instant)
-        fetch(gatewayUrl).catch(fetchErr => {
-          console.error('WhatsApp gateway send failed:', fetchErr);
+        console.log(`[WhatsApp Admin] Triggering CallMeBot notification to +${adminPhone}...`);
+        
+        https.get(gatewayUrl, (res) => {
+          let responseBody = '';
+          res.on('data', (chunk) => { responseBody += chunk; });
+          res.on('end', () => {
+            console.log(`[WhatsApp Admin] Gateway responded with status: ${res.statusCode}`);
+          });
+        }).on('error', (err) => {
+          console.error('[WhatsApp Admin] Gateway request failed:', err.message);
         });
+      } else {
+        console.log(`\n=================== WHATSAPP ADMIN NOTIFICATION SANDBOX ===================`);
+        console.log(`Recipient (Admin Phone): +${adminPhone}`);
+        console.log(`Message Content:\n${messageText}`);
+        console.log(`===========================================================================\n`);
       }
     } catch (wsErr) {
       console.error('Failed to process WhatsApp admin notification setup:', wsErr);
@@ -626,11 +647,15 @@ app.get('/api/admin/orders', authenticateAdmin, async (req, res) => {
 
 // Admin Update Order Status
 app.put('/api/admin/orders/:id/status', authenticateAdmin, async (req, res) => {
-  const { status } = req.body;
+  const { status, tracking_number } = req.body;
   if (!status) return res.status(400).json({ message: 'Status required.' });
 
   try {
-    await dbRun('UPDATE orders SET order_status = ? WHERE id = ?', [status, req.params.id]);
+    if (tracking_number !== undefined) {
+      await dbRun('UPDATE orders SET order_status = ?, tracking_number = ? WHERE id = ?', [status, tracking_number, req.params.id]);
+    } else {
+      await dbRun('UPDATE orders SET order_status = ? WHERE id = ?', [status, req.params.id]);
+    }
     return res.json({ message: 'Order status updated successfully.' });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to update order status.' });
@@ -692,7 +717,11 @@ app.delete('/api/admin/coupons/:id', authenticateAdmin, async (req, res) => {
 // ==================== ADMIN: PRODUCT CRUD APIS ====================
 
 app.post('/api/admin/products', authenticateAdmin, upload.array('images'), async (req, res) => {
-  const { name, price, discount_price, sku, category_id, material, dimensions, weight, stock_quantity, is_published, tags } = req.body;
+  const { 
+    name, price, discount_price, sku, category_id, material, dimensions, weight, 
+    stock_quantity, is_published, tags, description, short_description, deity_category, 
+    is_bestseller, is_new_arrival, is_featured, video_url, seo_title, seo_description 
+  } = req.body;
   
   if (!name || isNaN(price) || !sku) {
     return res.status(400).json({ message: 'Name, SKU and base price are required.' });
@@ -702,12 +731,19 @@ app.post('/api/admin/products', authenticateAdmin, upload.array('images'), async
 
   try {
     const prodRes = await dbRun(`
-      INSERT INTO products (name, slug, price, discount_price, sku, category_id, material, dimensions, weight, stock_quantity, is_published, tags, description)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO products (
+        name, slug, price, discount_price, sku, category_id, material, dimensions, 
+        weight, stock_quantity, is_published, tags, description, 
+        short_description, deity_category, is_bestseller, is_new_arrival, is_featured, 
+        video_url, seo_title, seo_description
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       name, slug, parseFloat(price), discount_price ? parseFloat(discount_price) : null, sku,
       category_id ? parseInt(category_id) : null, material, dimensions, weight ? parseFloat(weight) : null,
-      parseInt(stock_quantity || 0), parseInt(is_published || 1), tags || '[]', req.body.description || ''
+      parseInt(stock_quantity || 0), parseInt(is_published || 1), tags || '[]', description || '',
+      short_description || '', deity_category || '', parseInt(is_bestseller || 0), parseInt(is_new_arrival || 0), parseInt(is_featured || 0),
+      video_url || '', seo_title || '', seo_description || ''
     ]);
 
     const productId = prodRes.id;
@@ -732,7 +768,12 @@ app.post('/api/admin/products', authenticateAdmin, upload.array('images'), async
 
 app.put('/api/admin/products/:id', authenticateAdmin, upload.array('images'), async (req, res) => {
   const { id } = req.params;
-  const { name, price, discount_price, sku, category_id, material, dimensions, weight, stock_quantity, is_published, tags, existing_images } = req.body;
+  const { 
+    name, price, discount_price, sku, category_id, material, dimensions, weight, 
+    stock_quantity, is_published, tags, description, existing_images,
+    short_description, deity_category, is_bestseller, is_new_arrival, is_featured, 
+    video_url, seo_title, seo_description 
+  } = req.body;
 
   if (!name || isNaN(price) || !sku) {
     return res.status(400).json({ message: 'Name, SKU and base price are required.' });
@@ -744,12 +785,16 @@ app.put('/api/admin/products/:id', authenticateAdmin, upload.array('images'), as
       UPDATE products SET 
         name = ?, price = ?, discount_price = ?, sku = ?, category_id = ?, 
         material = ?, dimensions = ?, weight = ?, stock_quantity = ?, 
-        is_published = ?, tags = ?, description = ?
+        is_published = ?, tags = ?, description = ?,
+        short_description = ?, deity_category = ?, is_bestseller = ?, is_new_arrival = ?, is_featured = ?, 
+        video_url = ?, seo_title = ?, seo_description = ?
       WHERE id = ?
     `, [
       name, parseFloat(price), discount_price ? parseFloat(discount_price) : null, sku,
       category_id ? parseInt(category_id) : null, material, dimensions, weight ? parseFloat(weight) : null,
-      parseInt(stock_quantity || 0), parseInt(is_published || 1), tags || '[]', req.body.description || '', id
+      parseInt(stock_quantity || 0), parseInt(is_published || 1), tags || '[]', description || '',
+      short_description || '', deity_category || '', parseInt(is_bestseller || 0), parseInt(is_new_arrival || 0), parseInt(is_featured || 0),
+      video_url || '', seo_title || '', seo_description || '', id
     ]);
 
     // 2. Process image changes
@@ -808,12 +853,17 @@ app.post('/api/admin/products/:id/duplicate', authenticateAdmin, async (req, res
     const newSlug = original.slug + '-copy-' + Date.now().toString().slice(-4);
 
     const dupRes = await dbRun(`
-      INSERT INTO products (name, slug, description, category_id, price, discount_price, sku, material, dimensions, weight, stock_quantity, is_published, tags)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO products (
+        name, slug, description, short_description, category_id, deity_category, price, discount_price, sku, 
+        material, dimensions, weight, stock_quantity, is_published, tags, 
+        is_bestseller, is_new_arrival, is_featured, video_url, seo_title, seo_description
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
-      newName, newSlug, original.description, original.category_id, original.price,
+      newName, newSlug, original.description, original.short_description || '', original.category_id, original.deity_category || '', original.price,
       original.discount_price, newSku, original.material, original.dimensions, original.weight,
-      original.stock_quantity, original.is_published, original.tags
+      original.stock_quantity, original.is_published, original.tags,
+      original.is_bestseller || 0, original.is_new_arrival || 0, original.is_featured || 0, original.video_url || '', original.seo_title || '', original.seo_description || ''
     ]);
 
     const newProductId = dupRes.id;
@@ -862,7 +912,7 @@ app.delete('/api/admin/products/:id', authenticateAdmin, async (req, res) => {
 // ==================== ADMIN: CATEGORIES CRUD ====================
 
 app.post('/api/admin/categories', authenticateAdmin, upload.single('image'), async (req, res) => {
-  const { name, is_hidden } = req.body;
+  const { name, is_hidden, type } = req.body;
   if (!name) return res.status(400).json({ message: 'Category Name is required.' });
 
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -870,8 +920,8 @@ app.post('/api/admin/categories', authenticateAdmin, upload.single('image'), asy
 
   try {
     await dbRun(
-      'INSERT INTO categories (name, slug, image_path, is_hidden) VALUES (?, ?, ?, ?)',
-      [name, slug, image_path, parseInt(is_hidden || 0)]
+      'INSERT INTO categories (name, slug, image_path, is_hidden, type) VALUES (?, ?, ?, ?, ?)',
+      [name, slug, image_path, parseInt(is_hidden || 0), type || 'deity']
     );
     return res.status(201).json({ message: 'Category created.' });
   } catch (err) {
@@ -881,7 +931,7 @@ app.post('/api/admin/categories', authenticateAdmin, upload.single('image'), asy
 
 app.put('/api/admin/categories/:id', authenticateAdmin, upload.single('image'), async (req, res) => {
   const { id } = req.params;
-  const { name, is_hidden, existing_image } = req.body;
+  const { name, is_hidden, existing_image, type } = req.body;
 
   if (!name) return res.status(400).json({ message: 'Category Name is required.' });
 
@@ -899,8 +949,8 @@ app.put('/api/admin/categories/:id', authenticateAdmin, upload.single('image'), 
 
   try {
     await dbRun(
-      'UPDATE categories SET name = ?, image_path = ?, is_hidden = ? WHERE id = ?',
-      [name, image_path, parseInt(is_hidden || 0), id]
+      'UPDATE categories SET name = ?, image_path = ?, is_hidden = ?, type = ? WHERE id = ?',
+      [name, image_path, parseInt(is_hidden || 0), type || 'deity', id]
     );
     return res.json({ message: 'Category updated.' });
   } catch (err) {
@@ -989,6 +1039,14 @@ app.post('/api/admin/products/import', authenticateAdmin, upload.single('csvFile
     const idxDimensions = headers.indexOf('dimensions');
     const idxWeight = headers.indexOf('weight');
     const idxDesc = headers.indexOf('description');
+    const idxShortDesc = headers.indexOf('short_description');
+    const idxDeityCat = headers.indexOf('deity_category');
+    const idxBestseller = headers.indexOf('is_bestseller');
+    const idxNewArrival = headers.indexOf('is_new_arrival');
+    const idxFeatured = headers.indexOf('is_featured');
+    const idxVideo = headers.indexOf('video_url');
+    const idxSeoTitle = headers.indexOf('seo_title');
+    const idxSeoDesc = headers.indexOf('seo_description');
 
     if (idxSku === -1 || idxName === -1 || idxPrice === -1) {
       return res.status(400).json({ message: 'Missing required columns in CSV (sku, name, price).' });
@@ -1009,6 +1067,14 @@ app.post('/api/admin/products/import', authenticateAdmin, upload.single('csvFile
       const dimensions = idxDimensions !== -1 ? values[idxDimensions] : '';
       const weight = idxWeight !== -1 && values[idxWeight] ? parseFloat(values[idxWeight]) : null;
       const description = idxDesc !== -1 ? values[idxDesc] : '';
+      const short_description = idxShortDesc !== -1 ? values[idxShortDesc] : '';
+      const deity_category = idxDeityCat !== -1 ? values[idxDeityCat] : '';
+      const is_bestseller = idxBestseller !== -1 && values[idxBestseller] ? parseInt(values[idxBestseller]) : 0;
+      const is_new_arrival = idxNewArrival !== -1 && values[idxNewArrival] ? parseInt(values[idxNewArrival]) : 0;
+      const is_featured = idxFeatured !== -1 && values[idxFeatured] ? parseInt(values[idxFeatured]) : 0;
+      const video_url = idxVideo !== -1 ? values[idxVideo] : '';
+      const seo_title = idxSeoTitle !== -1 ? values[idxSeoTitle] : '';
+      const seo_description = idxSeoDesc !== -1 ? values[idxSeoDesc] : '';
 
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString().slice(-3);
 
@@ -1019,14 +1085,26 @@ app.post('/api/admin/products/import', authenticateAdmin, upload.single('csvFile
         await dbRun(`
           UPDATE products SET 
             name = ?, price = ?, discount_price = ?, stock_quantity = ?, 
-            material = ?, dimensions = ?, weight = ?, description = ?
+            material = ?, dimensions = ?, weight = ?, description = ?,
+            short_description = ?, deity_category = ?, is_bestseller = ?, is_new_arrival = ?, is_featured = ?, 
+            video_url = ?, seo_title = ?, seo_description = ?
           WHERE id = ?
-        `, [name, price, discount_price, stock_quantity, material, dimensions, weight, description, existing.id]);
+        `, [
+          name, price, discount_price, stock_quantity, material, dimensions, weight, description,
+          short_description, deity_category, is_bestseller, is_new_arrival, is_featured,
+          video_url, seo_title, seo_description, existing.id
+        ]);
       } else {
         await dbRun(`
-          INSERT INTO products (name, slug, price, discount_price, sku, stock_quantity, material, dimensions, weight, description)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [name, slug, price, discount_price, sku, stock_quantity, material, dimensions, weight, description]);
+          INSERT INTO products (
+            name, slug, price, discount_price, sku, stock_quantity, material, dimensions, weight, description,
+            short_description, deity_category, is_bestseller, is_new_arrival, is_featured, video_url, seo_title, seo_description
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          name, slug, price, discount_price, sku, stock_quantity, material, dimensions, weight, description,
+          short_description, deity_category, is_bestseller, is_new_arrival, is_featured, video_url, seo_title, seo_description
+        ]);
       }
       insertCount++;
     }
@@ -1049,16 +1127,21 @@ app.get('/api/admin/products/export', authenticateAdmin, async (req, res) => {
     const products = await dbAll('SELECT * FROM products');
     
     // Construct CSV content string
-    let csv = 'sku,name,price,discount_price,stock_quantity,material,dimensions,weight,description\n';
+    let csv = 'sku,name,price,discount_price,stock_quantity,material,dimensions,weight,description,short_description,deity_category,is_bestseller,is_new_arrival,is_featured,video_url,seo_title,seo_description\n';
     
     products.forEach(p => {
       // Escape text commas and quotes
       const escName = `"${(p.name || '').replace(/"/g, '""')}"`;
       const escDesc = `"${(p.description || '').replace(/"/g, '""')}"`;
+      const escShortDesc = `"${(p.short_description || '').replace(/"/g, '""')}"`;
       const escMat = `"${(p.material || '').replace(/"/g, '""')}"`;
       const escDim = `"${(p.dimensions || '').replace(/"/g, '""')}"`;
+      const escDeity = `"${(p.deity_category || '').replace(/"/g, '""')}"`;
+      const escVideo = `"${(p.video_url || '').replace(/"/g, '""')}"`;
+      const escSeoTitle = `"${(p.seo_title || '').replace(/"/g, '""')}"`;
+      const escSeoDesc = `"${(p.seo_description || '').replace(/"/g, '""')}"`;
       
-      csv += `${p.sku || ''},${escName},${p.price},${p.discount_price || ''},${p.stock_quantity},${escMat},${escDim},${p.weight || ''},${escDesc}\n`;
+      csv += `${p.sku || ''},${escName},${p.price},${p.discount_price || ''},${p.stock_quantity},${escMat},${escDim},${p.weight || ''},${escDesc},${escShortDesc},${escDeity},${p.is_bestseller || 0},${p.is_new_arrival || 0},${p.is_featured || 0},${escVideo},${escSeoTitle},${escSeoDesc}\n`;
     });
 
     res.setHeader('Content-Type', 'text/csv');
@@ -1113,6 +1196,190 @@ app.post('/api/admin/restore', authenticateAdmin, upload.single('dbFile'), async
     // Re-establish connection just in case
     reconnectDb();
     return res.status(500).json({ message: `Database restoration failed: ${err.message}` });
+  }
+});
+
+// ==================== NEW CUSTOMER MANAGEMENT APIs ====================
+
+app.get('/api/admin/customers', authenticateAdmin, async (req, res) => {
+  const search = req.query.search || '';
+  try {
+    let query = `
+      SELECT 
+        customer_name, 
+        customer_email, 
+        customer_phone, 
+        COUNT(id) as orders_count, 
+        SUM(total_amount) as total_spent 
+      FROM orders 
+      WHERE customer_name LIKE ? OR customer_email LIKE ? OR customer_phone LIKE ?
+      GROUP BY customer_email, customer_name, customer_phone
+    `;
+    const searchParam = `%${search}%`;
+    const rows = await dbAll(query, [searchParam, searchParam, searchParam]);
+    return res.json(rows);
+  } catch (err) {
+    console.error("SQL Error in /api/admin/customers:", err);
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/customers/:email/orders', authenticateAdmin, async (req, res) => {
+  const { email } = req.params;
+  try {
+    const rows = await dbAll('SELECT * FROM orders WHERE customer_email = ? ORDER BY id DESC', [email]);
+    return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/customers/export', authenticateAdmin, async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        customer_name, 
+        customer_email, 
+        customer_phone, 
+        COUNT(id) as orders_count, 
+        SUM(total_amount) as total_spent 
+      FROM orders 
+      GROUP BY customer_email, customer_name, customer_phone
+    `;
+    const rows = await dbAll(query);
+    let csv = 'Customer Name,Customer Email,Customer Phone,Orders Count,Total Spent (INR)\n';
+    rows.forEach(r => {
+      csv += `"${r.customer_name.replace(/"/g, '""')}","${r.customer_email.replace(/"/g, '""')}","${r.customer_phone}",${r.orders_count},${r.total_spent}\n`;
+    });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=customers_export.csv');
+    return res.send(csv);
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
+});
+
+// ==================== NEW BLOG MANAGEMENT APIs ====================
+
+app.get('/api/admin/blogs', async (req, res) => {
+  try {
+    const rows = await dbAll('SELECT blogs.*, categories.name as category_name FROM blogs LEFT JOIN categories ON blogs.category_id = categories.id ORDER BY publish_date DESC');
+    return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/admin/blogs', authenticateAdmin, upload.single('featured_image'), async (req, res) => {
+  const { title, content, short_desc, category_id, publish_date, is_published } = req.body;
+  if (!title || !content) {
+    return res.status(400).json({ message: 'Title and content are required.' });
+  }
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const featured_image = req.file ? `/uploads/${req.file.filename}` : null;
+  const pDate = publish_date || new Date().toISOString();
+  
+  try {
+    await dbRun(
+      'INSERT INTO blogs (title, slug, content, short_desc, featured_image, category_id, publish_date, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, slug, content, short_desc, featured_image, category_id ? parseInt(category_id) : null, pDate, is_published === 'false' ? 0 : 1]
+    );
+    return res.status(201).json({ message: 'Blog post created successfully.' });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/admin/blogs/:id', authenticateAdmin, upload.single('featured_image'), async (req, res) => {
+  const { id } = req.params;
+  const { title, content, short_desc, category_id, publish_date, is_published } = req.body;
+  if (!title || !content) {
+    return res.status(400).json({ message: 'Title and content are required.' });
+  }
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  
+  try {
+    let query = 'UPDATE blogs SET title = ?, slug = ?, content = ?, short_desc = ?, category_id = ?, publish_date = ?, is_published = ?';
+    let params = [title, slug, content, short_desc, category_id ? parseInt(category_id) : null, publish_date, is_published === 'false' ? 0 : 1];
+    
+    if (req.file) {
+      query += ', featured_image = ?';
+      params.push(`/uploads/${req.file.filename}`);
+    }
+    query += ' WHERE id = ?';
+    params.push(parseInt(id));
+    
+    await dbRun(query, params);
+    return res.json({ message: 'Blog post updated successfully.' });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+app.delete('/api/admin/blogs/:id', authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await dbRun('DELETE FROM blogs WHERE id = ?', [parseInt(id)]);
+    return res.json({ message: 'Blog post deleted successfully.' });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+// ==================== NEW MARKETING & NEWSLETTER APIs ====================
+
+app.post('/api/newsletter/subscribe', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'Email is required.' });
+  try {
+    await dbRun('INSERT INTO newsletter_subscribers (email) VALUES (?)', [email.trim().toLowerCase()]);
+    return res.json({ message: 'Subscribed successfully!' });
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) {
+      return res.json({ message: 'You are already subscribed!' });
+    }
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/subscribers', authenticateAdmin, async (req, res) => {
+  try {
+    const rows = await dbAll('SELECT * FROM newsletter_subscribers ORDER BY id DESC');
+    return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/subscribers/export', authenticateAdmin, async (req, res) => {
+  try {
+    const rows = await dbAll('SELECT email, subscribed_at FROM newsletter_subscribers ORDER BY id DESC');
+    let csv = 'Email Address,Subscription Date\n';
+    rows.forEach(r => {
+      csv += `${r.email},${new Date(r.subscribed_at).toLocaleString()}\n`;
+    });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=newsletter_subscribers.csv');
+    return res.send(csv);
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
+});
+
+// ==================== EXCEL/CSV EXPORT FOR ORDERS ====================
+
+app.get('/api/admin/orders/export', authenticateAdmin, async (req, res) => {
+  try {
+    const rows = await dbAll('SELECT * FROM orders ORDER BY id DESC');
+    let csv = 'Order ID,Customer Name,Email,Phone,Shipping Address,Billing Address,Subtotal,Discount,Total Paid,Payment Method,Payment Status,Order Status,Date Placed,Tracking Number\n';
+    rows.forEach(r => {
+      csv += `"${r.order_number}","${r.customer_name.replace(/"/g, '""')}","${r.customer_email}","${r.customer_phone}","${r.shipping_address.replace(/"/g, '""')}","${r.billing_address.replace(/"/g, '""')}",${r.subtotal},${r.discount_amount},${r.total_amount},"${r.payment_method}","${r.payment_status}","${r.order_status}","${new Date(r.created_at).toLocaleString()}","${r.tracking_number || ''}"\n`;
+    });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=orders_export.csv');
+    return res.send(csv);
+  } catch (err) {
+    return res.status(500).send(err.message);
   }
 });
 

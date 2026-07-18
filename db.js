@@ -155,6 +155,20 @@ async function closeDb() {
   }
 }
 
+async function addColumn(tableName, columnName, columnType) {
+  try {
+    if (isPostgres) {
+      const pgSql = translateQuery(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`);
+      await pool.query(pgSql);
+    } else {
+      await dbExec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`);
+    }
+    console.log(`[Migration] Column ${columnName} successfully added to ${tableName}.`);
+  } catch (err) {
+    // Ignore duplicate column errors
+  }
+}
+
 async function initDb() {
   // Create tables in order
   await dbExec(`
@@ -301,7 +315,49 @@ async function initDb() {
       link TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS blogs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      content TEXT NOT NULL,
+      short_desc TEXT,
+      featured_image TEXT,
+      category_id INTEGER,
+      publish_date DATETIME,
+      is_published INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS flash_sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      discount_percentage REAL NOT NULL,
+      start_date DATETIME,
+      end_date DATETIME,
+      is_active INTEGER DEFAULT 1
+    );
   `);
+
+  // Run schema expansions / column additions
+  await addColumn('products', 'short_description', 'TEXT');
+  await addColumn('products', 'deity_category', 'TEXT');
+  await addColumn('products', 'is_bestseller', 'INTEGER DEFAULT 0');
+  await addColumn('products', 'is_new_arrival', 'INTEGER DEFAULT 0');
+  await addColumn('products', 'is_featured', 'INTEGER DEFAULT 0');
+  await addColumn('products', 'video_url', 'TEXT');
+  await addColumn('products', 'seo_title', 'TEXT');
+  await addColumn('products', 'seo_description', 'TEXT');
+
+  await addColumn('categories', 'type', "TEXT DEFAULT 'deity'");
+  await addColumn('orders', 'tracking_number', 'TEXT');
 
   console.log('Database tables verified/created successfully.');
 

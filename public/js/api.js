@@ -42,8 +42,9 @@ const API = {
   },
 
   // Category APIs
-  async getCategories() {
-    return this.request('/api/categories');
+  async getCategories(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return this.request(`/api/categories?${queryString}`);
   },
 
   // Product APIs
@@ -117,10 +118,10 @@ const API = {
       return API.request('/api/admin/orders');
     },
 
-    async updateOrderStatus(orderId, status) {
+    async updateOrderStatus(orderId, payload) {
       return API.request(`/api/admin/orders/${orderId}/status`, {
         method: 'PUT',
-        body: JSON.stringify({ status })
+        body: JSON.stringify(payload)
       });
     },
 
@@ -211,6 +212,34 @@ const API = {
         method: 'POST',
         body: formData
       });
+    },
+
+    async getBlogs() {
+      return API.request('/api/admin/blogs');
+    },
+
+    async addBlog(formData) {
+      return API.request('/api/admin/blogs', {
+        method: 'POST',
+        body: formData
+      });
+    },
+
+    async updateBlog(id, formData) {
+      return API.request(`/api/admin/blogs/${id}`, {
+        method: 'PUT',
+        body: formData
+      });
+    },
+
+    async deleteBlog(id) {
+      return API.request(`/api/admin/blogs/${id}`, {
+        method: 'DELETE'
+      });
+    },
+
+    async getSubscribers() {
+      return API.request('/api/admin/subscribers');
     }
   }
 };

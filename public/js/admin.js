@@ -106,8 +106,13 @@ async function switchTab(tabId) {
     await loadAdminCategories();
   } else if (tabId === 'orders') {
     await loadAdminOrders();
+  } else if (tabId === 'customers') {
+    await loadAdminCustomers();
+  } else if (tabId === 'blogs') {
+    await loadAdminBlogs();
   } else if (tabId === 'coupons') {
     await loadAdminCoupons();
+    await loadAdminSubscribers();
   } else if (tabId === 'settings') {
     await loadAdminSettings();
   }
@@ -221,20 +226,41 @@ function renderSalesChart(monthlySalesData) {
 
 // 4. Tab: Product CRUD Logic
 let allCategoriesList = [];
+window.filterAdminProducts = function() {
+  loadAdminProducts();
+};
+
 async function loadAdminProducts() {
   try {
     // Pre-cache categories for form dropdown selects
     allCategoriesList = await API.getCategories();
 
+    // Dynamically hydrate filter categories dropdown if empty
+    const filterSelect = document.getElementById('admin-prod-cat-filter');
+    if (filterSelect && filterSelect.options.length <= 1) {
+      filterSelect.innerHTML = '<option value="">All Categories</option>' +
+        allCategoriesList.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
     const products = await API.getProducts({ all: true });
     const tbody = document.getElementById('admin-products-list');
     
-    if (products.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No products created yet.</td></tr>';
+    // Read filter inputs
+    const searchVal = (document.getElementById('admin-prod-search').value || '').toLowerCase();
+    const catVal = document.getElementById('admin-prod-cat-filter').value;
+
+    const filtered = products.filter(p => {
+      const nameMatch = !searchVal || (p.name || '').toLowerCase().includes(searchVal) || (p.sku || '').toLowerCase().includes(searchVal);
+      const catMatch = !catVal || p.category_id == catVal;
+      return nameMatch && catMatch;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No products match the filters.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = products.map(p => `
+    tbody.innerHTML = filtered.map(p => `
       <tr>
         <td><img src="${p.image_path || '/uploads/placeholder.jpg'}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"></td>
         <td><strong>${p.sku || 'N/A'}</strong></td>
@@ -307,13 +333,17 @@ async function openProductEditModal(id) {
     document.getElementById('prod-published').checked = !!product.is_published;
     document.getElementById('prod-desc').value = product.description;
 
-    // Load tags checkboxes
-    let tagsList = [];
-    try { tagsList = JSON.parse(product.tags || '[]'); } catch(e){}
-    document.getElementById('tag-featured').checked = tagsList.includes('Featured');
-    document.getElementById('tag-bestseller').checked = tagsList.includes('Best Seller');
-    document.getElementById('tag-new').checked = tagsList.includes('New Arrival');
-    document.getElementById('tag-special').checked = tagsList.includes('Festival Special');
+    // Prepopulate new columns
+    document.getElementById('prod-short-desc').value = product.short_description || '';
+    document.getElementById('prod-deity-cat').value = product.deity_category || '';
+    document.getElementById('prod-video').value = product.video_url || '';
+    document.getElementById('prod-seo-title').value = product.seo_title || '';
+    document.getElementById('prod-seo-desc').value = product.seo_description || '';
+
+    // Badges checkboxes
+    document.getElementById('tag-bestseller').checked = !!product.is_bestseller;
+    document.getElementById('tag-new').checked = !!product.is_new_arrival;
+    document.getElementById('tag-featured').checked = !!product.is_featured;
 
     // Get current product images and show preview
     const detail = await API.getProductBySlug(product.slug);
@@ -351,12 +381,23 @@ async function handleProductFormSubmit(e) {
   formData.append('is_published', document.getElementById('prod-published').checked ? '1' : '0');
   formData.append('description', document.getElementById('prod-desc').value);
 
-  // Gather tags list
+  // New fields
+  formData.append('short_description', document.getElementById('prod-short-desc').value);
+  formData.append('deity_category', document.getElementById('prod-deity-cat').value);
+  formData.append('video_url', document.getElementById('prod-video').value);
+  formData.append('seo_title', document.getElementById('prod-seo-title').value);
+  formData.append('seo_description', document.getElementById('prod-seo-desc').value);
+
+  // Badges
+  formData.append('is_bestseller', document.getElementById('tag-bestseller').checked ? '1' : '0');
+  formData.append('is_new_arrival', document.getElementById('tag-new').checked ? '1' : '0');
+  formData.append('is_featured', document.getElementById('tag-featured').checked ? '1' : '0');
+
+  // Gather tags list for backward compatibility
   const tags = [];
   if (document.getElementById('tag-featured').checked) tags.push('Featured');
   if (document.getElementById('tag-bestseller').checked) tags.push('Best Seller');
   if (document.getElementById('tag-new').checked) tags.push('New Arrival');
-  if (document.getElementById('tag-special').checked) tags.push('Festival Special');
   formData.append('tags', JSON.stringify(tags));
 
   // Gather remaining existing images
@@ -437,11 +478,12 @@ async function handleCSVImport(e) {
 // 5. Tab: Category Management
 async function loadAdminCategories() {
   try {
-    const categories = await API.getCategories();
+    const filterType = document.getElementById('cat-type-filter').value || 'deity';
+    const categories = await API.getCategories({ type: filterType });
     const tbody = document.getElementById('admin-categories-list');
     
     if (categories.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No categories configured yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No categories configured in this directory.</td></tr>';
       return;
     }
 
@@ -450,6 +492,7 @@ async function loadAdminCategories() {
         <td><img src="${c.image_path || '/uploads/placeholder.jpg'}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"></td>
         <td><strong>${c.name}</strong></td>
         <td><code>${c.slug}</code></td>
+        <td><span style="text-transform: capitalize;">${c.type || 'deity'}</span></td>
         <td>
           <span class="status-badge ${c.is_hidden ? 'status-pending' : 'status-delivered'}">
             ${c.is_hidden ? 'Hidden' : 'Visible'}
@@ -475,6 +518,9 @@ function openCategoryCreateModal() {
   document.getElementById('category-modal-title').textContent = 'Add Category';
   document.getElementById('category-preview').innerHTML = '';
   uploadedFilesList = [];
+  
+  const filterType = document.getElementById('cat-type-filter').value;
+  document.getElementById('cat-type').value = filterType || 'deity';
 
   document.getElementById('category-modal').classList.add('open');
 }
@@ -493,6 +539,7 @@ async function openCategoryEditModal(id) {
 
     document.getElementById('cat-name').value = cat.name;
     document.getElementById('cat-hidden').checked = !!cat.is_hidden;
+    document.getElementById('cat-type').value = cat.type || 'deity';
 
     const previewContainer = document.getElementById('category-preview');
     if (cat.image_path) {
@@ -521,8 +568,8 @@ async function handleCategoryFormSubmit(e) {
   const formData = new FormData();
   formData.append('name', document.getElementById('cat-name').value);
   formData.append('is_hidden', document.getElementById('cat-hidden').checked ? '1' : '0');
+  formData.append('type', document.getElementById('cat-type').value);
 
-  // Gather existing image
   let existingPath = '';
   const existingEl = document.querySelector('#category-preview .upload-preview-item[data-existing="true"]');
   if (existingEl) {
@@ -530,7 +577,6 @@ async function handleCategoryFormSubmit(e) {
   }
   formData.append('existing_image', existingPath);
 
-  // New upload file
   if (uploadedFilesList.length > 0) {
     formData.append('image', uploadedFilesList[0]);
   }
@@ -563,13 +609,27 @@ async function deleteCategory(id) {
 }
 
 // 6. Tab: Order Status & Updates
+let currentOrderStatusFilter = 'All';
+window.filterOrdersByStatus = function(status) {
+  currentOrderStatusFilter = status;
+  document.querySelectorAll('#order-status-filters button').forEach(b => {
+    if (b.textContent.trim().startsWith(status)) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+  loadAdminOrders();
+};
+
 async function loadAdminOrders() {
   try {
-    const orders = await API.admin.getOrders();
+    let orders = await API.admin.getOrders();
     const tbody = document.getElementById('admin-orders-list');
     
+    if (currentOrderStatusFilter !== 'All') {
+      orders = orders.filter(o => o.order_status === currentOrderStatusFilter);
+    }
+    
     if (orders.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No orders recorded yet.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No ${currentOrderStatusFilter} orders recorded yet.</td></tr>`;
       return;
     }
 
@@ -578,7 +638,7 @@ async function loadAdminOrders() {
         <td><strong>#${o.order_number}</strong></td>
         <td>
           <div style="font-weight:600;">${o.customer_name}</div>
-          <div style="font-size:0.8rem; color:#666;">${o.customer_phone}</div>
+          <div style="font-size:0.8rem; color:#666;">${o.customer_email} | ${o.customer_phone}</div>
         </td>
         <td>${new Date(o.created_at).toLocaleDateString()}</td>
         <td><strong>₹${o.total_amount.toLocaleString()}</strong></td>
@@ -588,16 +648,18 @@ async function loadAdminOrders() {
           </span>
         </td>
         <td>
-          <select class="admin-form-input" style="width:130px; padding:0.25rem;" onchange="updateOrderStatus(${o.id}, this.value)">
+          <select class="admin-form-input" style="width:130px; padding:0.25rem; margin-bottom:5px;" onchange="updateOrderStatus(${o.id}, this.value)">
             <option value="Pending" ${o.order_status === 'Pending' ? 'selected' : ''}>Pending</option>
             <option value="Confirmed" ${o.order_status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
             <option value="Packed" ${o.order_status === 'Packed' ? 'selected' : ''}>Packed</option>
             <option value="Shipped" ${o.order_status === 'Shipped' ? 'selected' : ''}>Shipped</option>
             <option value="Delivered" ${o.order_status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+            <option value="Cancelled" ${o.order_status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
           </select>
+          <input type="text" placeholder="Tracking ID" value="${o.tracking_number || ''}" class="admin-form-input" style="font-size:0.75rem; padding:2px 6px; width:130px;" onblur="updateOrderTracking(${o.id}, '${o.order_status}', this.value)">
         </td>
         <td>
-          <div style="display:flex; gap:0.5rem;">
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
             <a href="/api/orders/${o.id}/invoice" target="_blank" class="btn-admin" style="padding:4px 8px; font-size:0.75rem;">Invoice 📄</a>
             <button class="btn-admin btn-admin-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="sendWhatsAppUpdate(${o.id})">WhatsApp 💬</button>
             <button class="btn-admin btn-admin-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="printShippingLabel(${o.id})">Label 🏷️</button>
@@ -612,12 +674,22 @@ async function loadAdminOrders() {
 
 async function updateOrderStatus(orderId, status) {
   try {
-    await API.admin.updateOrderStatus(orderId, status);
+    await API.admin.updateOrderStatus(orderId, { status });
     showToast(`Order status updated to "${status}".`, 'success');
+    await loadAdminOrders();
   } catch (err) {
     showToast('Failed to change status.', 'error');
   }
 }
+
+window.updateOrderTracking = async function(orderId, status, trackingNumber) {
+  try {
+    await API.admin.updateOrderStatus(orderId, { status, tracking_number: trackingNumber });
+    showToast('Tracking number updated successfully.', 'success');
+  } catch (err) {
+    showToast('Failed to save tracking number.', 'error');
+  }
+};
 
 async function sendWhatsAppUpdate(orderId) {
   try {
@@ -746,6 +818,17 @@ async function loadAdminSettings() {
     document.getElementById('set-return-policy').value = settings.return_policy || '';
     document.getElementById('set-privacy-policy').value = settings.privacy_policy || '';
 
+    // Homepage Copy
+    document.getElementById('set-announcement').value = settings.announcement_text || '';
+    document.getElementById('set-hero-title').value = settings.hero_title || '';
+    document.getElementById('set-hero-sub').value = settings.hero_subtitle || '';
+
+    // Flash Sale Options
+    document.getElementById('set-flash-label').value = settings.flash_sale_label || '';
+    document.getElementById('set-flash-discount').value = settings.flash_sale_discount || '';
+    document.getElementById('set-flash-end').value = settings.flash_sale_end || '';
+    document.getElementById('set-flash-active').checked = settings.flash_sale_active === '1';
+
     // Load social links
     try {
       const social = JSON.parse(settings.social_links || '{}');
@@ -781,6 +864,9 @@ async function handleSettingsFormSubmit(e) {
     shipping_policy: document.getElementById('set-shipping-policy').value,
     return_policy: document.getElementById('set-return-policy').value,
     privacy_policy: document.getElementById('set-privacy-policy').value,
+    announcement_text: document.getElementById('set-announcement').value,
+    hero_title: document.getElementById('set-hero-title').value,
+    hero_subtitle: document.getElementById('set-hero-sub').value,
     social_links
   };
 
@@ -901,3 +987,374 @@ function removePendingImage(button, fileName) {
 function closeAdminModal(modalId) {
   document.getElementById(modalId).classList.remove('open');
 }
+
+// ==================== NEW CUSTOMER MANAGEMENT ====================
+async function loadAdminCustomers() {
+  try {
+    const searchVal = document.getElementById('admin-cust-search').value || '';
+    const customers = await API.admin.getCustomers();
+    const tbody = document.getElementById('admin-customers-list');
+    
+    const filtered = customers.filter(c => {
+      const name = (c.customer_name || '').toLowerCase();
+      const email = (c.customer_email || '').toLowerCase();
+      const phone = (c.customer_phone || '').toLowerCase();
+      const q = searchVal.toLowerCase();
+      return name.includes(q) || email.includes(q) || phone.includes(q);
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No customers matched the search query.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(c => `
+      <tr>
+        <td><strong>${c.customer_name}</strong></td>
+        <td><code>${c.customer_email}</code></td>
+        <td>${c.customer_phone || 'N/A'}</td>
+        <td>${c.orders_count} orders</td>
+        <td><strong>₹${(c.total_spent || 0).toLocaleString()}</strong></td>
+        <td>
+          <button class="btn-admin" onclick="viewCustomerOrders('${c.customer_email}', '${c.customer_name}')">View Orders</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.error("loadAdminCustomers Error:", err);
+    showToast('Failed to load customers.', 'error');
+  }
+}
+
+window.viewCustomerOrders = async function(email, name) {
+  try {
+    const orders = await API.admin.getOrders();
+    const filtered = orders.filter(o => o.customer_email === email);
+    const count = filtered.length;
+    const spent = filtered.reduce((sum, o) => sum + o.total_amount, 0);
+    alert(`Customer: ${name}\nTotal Orders: ${count}\nTotal Value: ₹${spent.toLocaleString()}`);
+  } catch (err) {
+    showToast('Failed to fetch customer orders.', 'error');
+  }
+};
+
+// ==================== NEW BLOG MANAGEMENT ====================
+let allBlogCategories = [];
+async function loadAdminBlogs() {
+  try {
+    allBlogCategories = await API.getCategories({ type: 'blog' });
+    const blogs = await API.admin.getBlogs();
+    const tbody = document.getElementById('admin-blogs-list');
+    
+    if (blogs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No blog articles published yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = blogs.map(b => `
+      <tr>
+        <td><img src="${b.featured_image || '/uploads/placeholder.jpg'}" style="width:50px; height:35px; object-fit:cover; border-radius:4px;"></td>
+        <td><strong>${b.title}</strong></td>
+        <td>${b.category_name || 'General'}</td>
+        <td>${new Date(b.publish_date).toLocaleString()}</td>
+        <td>
+          <span class="status-badge ${b.is_published ? 'status-delivered' : 'status-pending'}">
+            ${b.is_published ? 'Published' : 'Draft'}
+          </span>
+        </td>
+        <td>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn-admin" onclick="openBlogEditModal(${b.id})">Edit</button>
+            <button class="btn-admin btn-admin-danger" onclick="deleteBlog(${b.id})">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    showToast('Failed to load blog articles.', 'error');
+  }
+}
+
+window.openBlogCreateModal = function() {
+  const form = document.getElementById('blog-form');
+  form.reset();
+  document.getElementById('blog-id').value = '';
+  document.getElementById('blog-modal-title').textContent = 'Write Blog Post';
+  
+  const select = document.getElementById('blog-category');
+  select.innerHTML = '<option value="">Select Category</option>' +
+    allBlogCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+  document.getElementById('blog-preview').innerHTML = '';
+  uploadedFilesList = [];
+  
+  document.getElementById('blog-modal').classList.add('open');
+};
+
+window.openBlogEditModal = async function(id) {
+  try {
+    const blogs = await API.admin.getBlogs();
+    const blog = blogs.find(b => b.id === id);
+    if (!blog) return;
+
+    const form = document.getElementById('blog-form');
+    form.reset();
+
+    document.getElementById('blog-id').value = blog.id;
+    document.getElementById('blog-modal-title').textContent = 'Edit Blog Post';
+
+    const select = document.getElementById('blog-category');
+    select.innerHTML = '<option value="">Select Category</option>' +
+      allBlogCategories.map(c => `<option value="${c.id}" ${c.id === blog.category_id ? 'selected' : ''}>${c.name}</option>`).join('');
+
+    document.getElementById('blog-title').value = blog.title;
+    document.getElementById('blog-short-desc').value = blog.short_desc || '';
+    document.getElementById('blog-content').value = blog.content;
+    document.getElementById('blog-published').checked = !!blog.is_published;
+    
+    if (blog.publish_date) {
+      const date = new Date(blog.publish_date);
+      const formatted = date.toISOString().slice(0, 16);
+      document.getElementById('blog-publish-date').value = formatted;
+    }
+
+    const preview = document.getElementById('blog-preview');
+    if (blog.featured_image) {
+      preview.innerHTML = `
+        <div class="upload-preview-item" data-existing="true" data-path="${blog.featured_image}">
+          <img src="${blog.featured_image}" class="upload-preview-img">
+          <span class="upload-preview-remove" onclick="removeExistingImage(this)">&times;</span>
+        </div>
+      `;
+    } else {
+      preview.innerHTML = '';
+    }
+
+    uploadedFilesList = [];
+    document.getElementById('blog-modal').classList.add('open');
+  } catch (err) {
+    showToast('Failed to load article.', 'error');
+  }
+};
+
+window.handleBlogFormSubmit = async function(e) {
+  e.preventDefault();
+  const id = document.getElementById('blog-id').value;
+  
+  const formData = new FormData();
+  formData.append('title', document.getElementById('blog-title').value);
+  formData.append('short_desc', document.getElementById('blog-short-desc').value);
+  formData.append('content', document.getElementById('blog-content').value);
+  formData.append('category_id', document.getElementById('blog-category').value);
+  formData.append('publish_date', document.getElementById('blog-publish-date').value);
+  formData.append('is_published', document.getElementById('blog-published').checked ? 'true' : 'false');
+
+  if (uploadedFilesList.length > 0) {
+    formData.append('featured_image', uploadedFilesList[0]);
+  }
+
+  try {
+    if (id) {
+      await API.admin.updateBlog(id, formData);
+      showToast('Blog article updated successfully.', 'success');
+    } else {
+      await API.admin.addBlog(formData);
+      showToast('New blog article published.', 'success');
+    }
+    closeAdminModal('blog-modal');
+    await loadAdminBlogs();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+window.deleteBlog = async function(id) {
+  if (confirm('Permanently delete this blog article?')) {
+    try {
+      await API.admin.deleteBlog(id);
+      showToast('Article deleted.', 'warning');
+      await loadAdminBlogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+};
+
+// ==================== NEW MARKETING & SUBSCRIBERS ====================
+async function loadAdminSubscribers() {
+  try {
+    const subs = await API.admin.getSubscribers();
+    const tbody = document.getElementById('admin-subscribers-list');
+    if (subs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No email opt-in subscribers yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = subs.map(s => `
+      <tr>
+        <td><code>${s.email}</code></td>
+        <td>${new Date(s.subscribed_at).toLocaleString()}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    showToast('Failed to load email subscribers.', 'error');
+  }
+}
+
+window.saveMarketingSettings = async function(e) {
+  e.preventDefault();
+  const label = document.getElementById('set-flash-label').value;
+  const discount = document.getElementById('set-flash-discount').value;
+  const end = document.getElementById('set-flash-end').value;
+  const active = document.getElementById('set-flash-active').checked ? '1' : '0';
+
+  try {
+    await API.admin.updateSettings({
+      flash_sale_label: label,
+      flash_sale_discount: discount,
+      flash_sale_end: end,
+      flash_sale_active: active
+    });
+    showToast('Flash sale countdown configurations saved successfully.', 'success');
+  } catch (err) {
+    showToast('Failed to save countdown configurations.', 'error');
+  }
+};
+
+// ==================== CUSTOM CONTENT MANAGERS: FAQs & TESTIMONIALS ====================
+let localFAQsList = [];
+window.openFAQManagerModal = async function() {
+  try {
+    const settings = await API.getSettings();
+    try {
+      localFAQsList = JSON.parse(settings.faq_list || '[]');
+    } catch(e) {
+      localFAQsList = [];
+    }
+    renderFAQEditorRows();
+    document.getElementById('faq-modal').classList.add('open');
+  } catch (err) {
+    showToast('Failed to fetch settings database.', 'error');
+  }
+};
+
+function renderFAQEditorRows() {
+  const container = document.getElementById('faq-list-container');
+  if (localFAQsList.length === 0) {
+    container.innerHTML = '<div style="color:#888; text-align:center; padding:1.5rem;">No FAQs defined. Click button below to add one.</div>';
+    return;
+  }
+  container.innerHTML = localFAQsList.map((faq, idx) => `
+    <div style="background:#FFF8F0; border:1px solid var(--primary-gold-border); padding:12px; border-radius:4px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong>Question Row #${idx + 1}</strong>
+        <button type="button" class="btn-admin btn-admin-danger" style="padding:2px 8px; font-size:0.75rem;" onclick="removeFAQRow(${idx})">Remove</button>
+      </div>
+      <input type="text" placeholder="Question Text" value="${faq.q || ''}" class="admin-form-input" style="background:white;" onchange="updateFAQVal(${idx}, 'q', this.value)">
+      <textarea placeholder="Answer Text" class="admin-form-input" rows="2" style="background:white;" onchange="updateFAQVal(${idx}, 'a', this.value)">${faq.a || ''}</textarea>
+    </div>
+  `).join('');
+}
+
+window.addFAQRow = function() {
+  localFAQsList.push({ q: '', a: '' });
+  renderFAQEditorRows();
+};
+
+window.removeFAQRow = function(idx) {
+  localFAQsList.splice(idx, 1);
+  renderFAQEditorRows();
+};
+
+window.updateFAQVal = function(idx, key, val) {
+  localFAQsList[idx][key] = val;
+};
+
+window.saveStoreFAQs = async function() {
+  try {
+    await API.admin.updateSettings({
+      faq_list: JSON.stringify(localFAQsList.filter(f => f.q.trim() && f.a.trim()))
+    });
+    showToast('FAQs list updated successfully.', 'success');
+    closeAdminModal('faq-modal');
+  } catch (err) {
+    showToast('Failed to save FAQs list.', 'error');
+  }
+};
+
+let localTestimonialsList = [];
+window.openTestimonialManagerModal = async function() {
+  try {
+    const settings = await API.getSettings();
+    try {
+      localTestimonialsList = JSON.parse(settings.testimonials_list || '[]');
+    } catch(e) {
+      localTestimonialsList = [];
+    }
+    renderTestimonialsEditorRows();
+    document.getElementById('testimonial-modal').classList.add('open');
+  } catch (err) {
+    showToast('Failed to fetch settings database.', 'error');
+  }
+};
+
+function renderTestimonialsEditorRows() {
+  const container = document.getElementById('testimonial-list-container');
+  if (localTestimonialsList.length === 0) {
+    container.innerHTML = '<div style="color:#888; text-align:center; padding:1.5rem;">No testimonials found. Click button below to add one.</div>';
+    return;
+  }
+  container.innerHTML = localTestimonialsList.map((t, idx) => `
+    <div style="background:#FFF8F0; border:1px solid var(--primary-gold-border); padding:12px; border-radius:4px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong>Review Row #${idx + 1}</strong>
+        <button type="button" class="btn-admin btn-admin-danger" style="padding:2px 8px; font-size:0.75rem;" onclick="removeTestimonialRow(${idx})">Remove</button>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <input type="text" placeholder="Devotee Name" value="${t.name || ''}" class="admin-form-input" style="background:white; flex:1;" onchange="updateTestimonialVal(${idx}, 'name', this.value)">
+        <input type="text" placeholder="Designation/Location" value="${t.title || ''}" class="admin-form-input" style="background:white; flex:1;" onchange="updateTestimonialVal(${idx}, 'title', this.value)">
+      </div>
+      <textarea placeholder="Feedback Comment" class="admin-form-input" rows="2" style="background:white;" onchange="updateTestimonialVal(${idx}, 'text', this.value)">${t.text || ''}</textarea>
+    </div>
+  `).join('');
+}
+
+window.addTestimonialRow = function() {
+  localTestimonialsList.push({ name: '', title: '', text: '' });
+  renderTestimonialsEditorRows();
+};
+
+window.removeTestimonialRow = function(idx) {
+  localTestimonialsList.splice(idx, 1);
+  renderTestimonialsEditorRows();
+};
+
+window.updateTestimonialVal = function(idx, key, val) {
+  localTestimonialsList[idx][key] = val;
+};
+
+window.saveStoreTestimonials = async function() {
+  try {
+    await API.admin.updateSettings({
+      testimonials_list: JSON.stringify(localTestimonialsList.filter(t => t.name.trim() && t.text.trim()))
+    });
+    showToast('Homepage Testimonials saved successfully.', 'success');
+    closeAdminModal('testimonial-modal');
+  } catch (err) {
+    showToast('Failed to save testimonials list.', 'error');
+  }
+};
+
+window.handleLogout = async function() {
+  try {
+    await API.logout();
+    window.location.reload();
+  } catch (err) {
+    showToast('Logout failed.', 'error');
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupDragUpload('product-dragzone', 'product-file-input', 'product-preview');
+  setupDragUpload('category-dragzone', 'category-file-input', 'category-preview');
+  setupDragUpload('blog-dragzone', 'blog-file-input', 'blog-preview');
+});
