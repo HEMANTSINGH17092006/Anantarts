@@ -17,6 +17,9 @@ export async function GET() {
       contact_address: settings.contact_address,
       whatsapp_number: settings.whatsapp_number,
       social_links: settings.social_links,
+      whatsapp_admin_number: settings.whatsapp_admin_number,
+      whatsapp_message_template: settings.whatsapp_message_template,
+      whatsapp_notifications_enabled: settings.whatsapp_notifications_enabled,
     };
 
     return Response.json(publicSettings, {

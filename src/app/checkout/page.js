@@ -15,6 +15,18 @@ const INDIAN_STATES = [
   "Ladakh", "Lakshadweep", "Puducherry"
 ];
 
+function WhatsAppAutoOpen({ url }) {
+  useEffect(() => {
+    if (url) {
+      const timer = setTimeout(() => {
+        window.open(url, '_blank');
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [url]);
+  return null;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const {
@@ -88,6 +100,15 @@ export default function CheckoutPage() {
   const [couponSuccess, setCouponSuccess] = useState('');
   const [applying, setApplying] = useState(false);
 
+  const [settings, setSettings] = useState({});
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => setSettings(data))
+      .catch(err => console.error('Failed to fetch settings', err));
+  }, []);
+
   // Load Razorpay Checkout script on mount
   useEffect(() => {
     const script = document.createElement('script');
@@ -100,14 +121,76 @@ export default function CheckoutPage() {
   }, []);
 
   if (orderSuccess) {
+    const adminNumber = settings.whatsapp_admin_number || '917275819354';
+    const template = settings.whatsapp_message_template || "🛒 *New Order Received – Anant Arts*\n\nOrder ID: {{order_id}}\n\nCustomer Name: {{customer_name}}\nMobile Number: {{customer_phone}}\nEmail: {{customer_email}}\n\nProducts Ordered:\n{{product_list}}\n\nTotal Amount: ₹{{order_total}}\n\nPayment Method: {{payment_method}}\nPayment Status: {{payment_status}}\n\nDelivery Address:\n{{full_address}}\n\nOrder Date:\n{{order_date}}\n\nView Order:\n{{admin_order_link}}\n\nPlease process this order as soon as possible.";
+
+    const productListStr = (orderSuccess.items || []).map((item, index) => {
+      return `${index + 1}. ${item.product_name || item.name} × ${item.quantity}`;
+    }).join('\n');
+
+    const templateData = {
+      order_id: orderSuccess.order_number,
+      customer_name: orderSuccess.customer_name,
+      customer_phone: orderSuccess.customer_phone || phone,
+      customer_email: orderSuccess.customer_email || email,
+      product_list: productListStr,
+      order_total: orderSuccess.total_amount,
+      payment_method: orderSuccess.payment_method,
+      payment_status: orderSuccess.payment_status,
+      full_address: orderSuccess.shipping_address,
+      order_date: new Date(orderSuccess.created_at || Date.now()).toLocaleString('en-IN'),
+      admin_order_link: typeof window !== 'undefined' ? `${window.location.origin}/admin/orders` : ''
+    };
+
+    let parsed = template;
+    for (const [key, value] of Object.entries(templateData)) {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      parsed = parsed.replace(regex, value || '');
+    }
+
+    let toNum = adminNumber.replace(/\D/g, '');
+    if (toNum.length === 10) toNum = '91' + toNum;
+    const waLink = `https://wa.me/${toNum}?text=${encodeURIComponent(parsed)}`;
+
     return (
       <div style={{ background: 'var(--bg-cream)', padding: '5rem 0', textAlign: 'center' }}>
+        <WhatsAppAutoOpen url={waLink} />
         <div style={{ maxWidth: '600px', margin: '0 auto', padding: '32px', background: 'white', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
           <div style={{ fontSize: '4.5rem', color: 'var(--success)', marginBottom: '16px' }}>✔️</div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', marginBottom: '8px' }}>Order Placed Successfully!</h2>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
             Thank you for your patronage. Your order has been registered under order number: <strong style={{ color: 'var(--text-dark)' }}>{orderSuccess.order_number}</strong>.
           </p>
+
+          {/* WhatsApp Direct Action Button */}
+          <div style={{ background: '#E8F5E9', border: '1px solid #C8E6C9', padding: '20px', borderRadius: '6px', marginBottom: '24px' }}>
+            <h4 style={{ color: '#2E7D32', fontSize: '1rem', fontWeight: '700', marginBottom: '8px' }}>🚀 Action Required: Complete Order via WhatsApp</h4>
+            <p style={{ fontSize: '0.78rem', color: '#4E7D48', marginBottom: '16px', lineHeight: '1.4' }}>
+              Please send a quick WhatsApp message to confirm your order with us. Click the button below to pre-fill your order details.
+            </p>
+            <a 
+              href={waLink} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-gold" 
+              style={{ 
+                background: '#25D366', 
+                borderColor: '#128C7E', 
+                color: 'white', 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                padding: '12px 24px', 
+                fontSize: '0.88rem', 
+                fontWeight: '700',
+                boxShadow: '0 4px 6px rgba(37, 211, 102, 0.2)' 
+              }}
+            >
+              <i className="fab fa-whatsapp" style={{ fontSize: '1.2rem' }}></i>
+              Send Confirmation to WhatsApp
+            </a>
+          </div>
+
           <div style={{ background: 'var(--bg-cream)', padding: '16px', borderRadius: '4px', textAlign: 'left', fontSize: '0.82rem', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div><strong>Recipient:</strong> {orderSuccess.customer_name}</div>
             <div><strong>Email:</strong> {orderSuccess.customer_email}</div>
@@ -115,6 +198,7 @@ export default function CheckoutPage() {
             <div><strong>Total Paid:</strong> {formatPrice(orderSuccess.total_amount)}</div>
             <div><strong>Payment Method:</strong> {orderSuccess.payment_method.toUpperCase()}</div>
           </div>
+          
           <div style={{ display: 'flex', gap: '12px' }}>
             <Link href={`/order-tracking?order=${orderSuccess.order_number}`} className="btn-gold" style={{ flex: 1, justifyContent: 'center' }}>
               Track Shipment
@@ -315,8 +399,8 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error completing checkout');
 
+      setOrderSuccess({ ...data.order, items: cart });
       clearCart();
-      setOrderSuccess(data.order);
     } catch (err) {
       setError(err.message);
     } finally {
