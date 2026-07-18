@@ -312,10 +312,10 @@ export default async function Home() {
         gap: '1rem'
       }}>
         {[
-          { title: 'Sacred Wax Molding', desc: 'Rajasthan artisans molding pure beeswax templates.', img: '/uploads/artisan-mold.jpg' },
-          { title: 'Fine Brass Casting', desc: 'Pouring molten premium bell-metal brass into sacred molds.', img: '/uploads/artisan-cast.jpg' },
-          { title: 'Chiseling Detail', desc: 'Hand engraving the complex features and textures of deities.', img: '/uploads/artisan-chisel.jpg' },
-          { title: '24K Electroplating Rigor', desc: 'Submerging under high voltage currents to fuse gold sheets.', img: '/uploads/artisan-electroplate.jpg' }
+          { title: 'Sacred Wax Molding', desc: 'Rajasthan artisans molding pure beeswax templates.', img: '/uploads/artisan-mold.png' },
+          { title: 'Fine Brass Casting', desc: 'Pouring molten premium bell-metal brass into sacred molds.', img: '/uploads/artisan-cast.png' },
+          { title: 'Chiseling Detail', desc: 'Hand engraving the complex features and textures of deities.', img: '/uploads/artisan-chisel.png' },
+          { title: '24K Electroplating Rigor', desc: 'Submerging under high voltage currents to fuse gold sheets.', img: '/uploads/artisan-electroplate.png' }
         ].map((gal, idx) => (
           <div key={idx} style={{ 
             borderRadius: '6px', 
