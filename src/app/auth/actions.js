@@ -58,9 +58,20 @@ export async function sendOtp(identifier) {
     if (isEmail) {
       await sendEmail({
         to: identifier,
-        subject: 'Your Anant Arts Login OTP',
-        html: `<p>Your One Time Password (OTP) to login is: <strong style="font-size:24px;">${otp}</strong></p><p>This OTP is valid for 5 minutes.</p>`,
-        text: `Your OTP is ${otp}`
+        subject: `Anant Arts Verification Code: ${otp}`,
+        html: `
+          <h2 style="color: #333333; margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Verification Code</h2>
+          <p style="margin: 0 0 24px 0; color: #555555; font-size: 14px; line-height: 1.5;">
+            Use the verification code below to complete your login or registration on Anant Arts. This code is valid for 5 minutes.
+          </p>
+          <div style="background-color: #F9F9F9; border: 1px solid #EAEAEA; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 24px;">
+            <span style="font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #D4AF37;">${otp}</span>
+          </div>
+          <p style="margin: 0; color: #888888; font-size: 12px; line-height: 1.5;">
+            If you did not request this code, you can safely ignore this email.
+          </p>
+        `,
+        text: `Your Anant Arts verification code is: ${otp}. This code is valid for 5 minutes.`
       });
     } else {
       // In a real app, integrate Twilio/Fast2SMS here.
@@ -156,5 +167,35 @@ export async function getSessionCustomer() {
     return payload;
   } catch (err) {
     return null; // Invalid token
+  }
+}
+
+export async function updateCustomerProfile(newName) {
+  try {
+    const customer = await getSessionCustomer();
+    if (!customer) return { success: false, message: 'Not authenticated.' };
+
+    const cleanName = (newName || '').trim();
+    if (cleanName.length < 3 || cleanName.length > 50) {
+      return { success: false, message: 'Name must be between 3 and 50 characters.' };
+    }
+
+    const supabase = createAdminClient();
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update({ name: cleanName })
+      .eq('id', customer.id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    // Update the session cookie
+    await setCustomerSessionCookie(updatedUser);
+
+    return { success: true, message: 'Profile updated successfully.' };
+  } catch (err) {
+    console.error('updateCustomerProfile error:', err);
+    return { success: false, message: 'Failed to update profile.' };
   }
 }
