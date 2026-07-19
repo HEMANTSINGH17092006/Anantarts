@@ -9,6 +9,8 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +18,7 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
 
-    const res = await adminLogin(email, password);
+    const res = await adminLogin(email, password, rememberMe);
     setLoading(false);
 
     if (res.success) {
@@ -60,7 +62,7 @@ export default function AdminLoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@anantarts.com"
+              placeholder="admin@anantarts.in"
               style={{
                 width: '100%',
                 padding: '10px 14px',
@@ -73,22 +75,72 @@ export default function AdminLoginPage() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '500', marginBottom: '6px' }}>Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.82rem', fontWeight: '500', margin: 0 }}>Password</label>
+              <button 
+                type="button"
+                onClick={() => alert("To reset your admin password, please contact the Super Admin (admin@anantarts.in) directly.")}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: 'var(--primary-gold-hover)', 
+                  fontSize: '0.78rem', 
+                  fontWeight: '500', 
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                Forgot Password?
+              </button>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={{
+                  width: '100%',
+                  padding: '10px 40px 10px 14px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--primary-gold-border)',
+                  fontSize: '0.88rem',
+                  outline: 'none'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  padding: 0
+                }}
+              >
+                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '4px',
-                border: '1px solid var(--primary-gold-border)',
-                fontSize: '0.88rem',
-                outline: 'none'
-              }}
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              style={{ accentColor: 'var(--primary-gold)', cursor: 'pointer', width: '16px', height: '16px' }}
             />
+            <label htmlFor="rememberMe" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+              Remember Me (Stay signed in for 30 days)
+            </label>
           </div>
 
           {error && (

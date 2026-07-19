@@ -4,7 +4,7 @@ import * as jose from 'jose';
 const JWT_SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'anant_arts_divine_key_999');
 const PRODUCTION_DOMAIN = 'anantarts.in';
 
-export async function middleware(request) {
+export async function proxy(request) {
   const pathname = request.nextUrl.pathname;
   const { headers } = request;
 
@@ -42,18 +42,52 @@ export async function middleware(request) {
     }
 
     try {
-      // Verify JWT token is valid and role is permitted
+      // Verify JWT token is valid
       const { payload } = await jose.jwtVerify(token, JWT_SECRET_KEY);
+      
       const adminRoles = ['admin', 'super_admin', 'manager', 'content_editor'];
       if (!adminRoles.includes(payload.role)) {
-        throw new Error('Not authorized admin role');
+        // Authenticated but not an admin -> redirect to homepage
+        return NextResponse.redirect(new URL('/', request.url));
       }
+      
       // Valid admin token — proceed to admin dashboard
       return NextResponse.next();
     } catch (err) {
       // Invalid or expired token — clear cookie and redirect to login
       const response = NextResponse.redirect(new URL('/admin/login', request.url));
       response.cookies.delete('token');
+      return response;
+    }
+  }
+
+  // =============================================
+  // 3. CUSTOMER ROUTE PROTECTION
+  // Protect /checkout, /account
+  // =============================================
+  const customerProtectedRoutes = ['/checkout', '/account'];
+  const isCustomerRoute = customerProtectedRoutes.some(route => pathname.startsWith(route));
+
+  if (isCustomerRoute) {
+    const customerTokenCookie = request.cookies.get('customer_token');
+    const customerToken = customerTokenCookie?.value;
+
+    if (!customerToken) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+      // Verify JWT token is valid
+      await jose.jwtVerify(customerToken, JWT_SECRET_KEY);
+      return NextResponse.next();
+    } catch (err) {
+      // Invalid or expired token
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('next', pathname);
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete('customer_token');
       return response;
     }
   }

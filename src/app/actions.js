@@ -6,27 +6,33 @@ import bcrypt from 'bcryptjs';
 import * as jose from 'jose';
 import { cookies } from 'next/headers';
 import { slugify } from '@/lib/utils';
+import { sendEmail } from '@/lib/email';
+import { sendAdminB2bNotification } from '@/lib/whatsapp';
+
 
 const JWT_SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'anant_arts_divine_key_999');
 
 // Helper to secure sessions with JWT cookies
-async function setSessionCookie(user) {
-  const token = await new jose.SignJWT({ id: user.id, email: user.email, name: user.name, role: user.role })
+async function setSessionCookie(user, rememberMe = false) {
+  const expiry = rememberMe ? '30d' : '24h';
+  const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days or 24 hours
+
+  const token = await new jose.SignJWT({ id: user.id, email: user.email, name: user.email.split('@')[0], role: user.role })
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('24h')
+    .setExpirationTime(expiry)
     .sign(JWT_SECRET_KEY);
 
   const cookieStore = await cookies();
   cookieStore.set('token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24, // 24 hours
+    maxAge,
     path: '/',
   });
 }
 
 // Helper to verify user permissions for server-side mutations
-async function checkAuthRole(allowedRoles = ['admin', 'super_admin']) {
+export async function checkAuthRole(allowedRoles = ['admin', 'super_admin']) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   if (!token) {
@@ -59,14 +65,14 @@ async function logAudit(adminEmail, action, details) {
 }
 
 // 1. Admin Authentication Actions
-export async function adminLogin(email, password) {
+export async function adminLogin(email, password, rememberMe = false) {
   try {
     const supabase = createAdminClient();
     const { data: user, error } = await supabase
-      .from('users')
+      .from('admins')
       .select('*')
       .eq('email', email)
-      .in('role', ['admin', 'super_admin', 'manager', 'content_editor'])
+      .eq('is_active', true)
       .single();
 
     if (error || !user) {
@@ -78,7 +84,7 @@ export async function adminLogin(email, password) {
       return { success: false, message: 'Invalid admin credentials.' };
     }
 
-    await setSessionCookie(user);
+    await setSessionCookie(user, rememberMe);
     return { success: true };
   } catch (err) {
     console.error('Login action error:', err);
@@ -135,6 +141,8 @@ export async function deleteProduct(id) {
 
     await logAudit(admin.email, 'DELETE_PRODUCT', { id, name: prod?.name, sku: prod?.sku });
     revalidateTag('products');
+    revalidatePath('/shop');
+    revalidatePath('/');
     return { success: true };
   } catch (err) {
     return { success: false, message: err.message };
@@ -202,6 +210,8 @@ export async function duplicateProduct(id) {
 
     await logAudit(admin.email, 'DUPLICATE_PRODUCT', { originalId: id, newId: newProd.id, name: prod.name });
     revalidateTag('products');
+    revalidatePath('/shop');
+    revalidatePath('/');
     return { success: true };
   } catch (err) {
     return { success: false, message: err.message };
@@ -358,6 +368,8 @@ export async function addOrUpdateProduct(formData) {
 
     await logAudit(admin.email, id ? 'UPDATE_PRODUCT' : 'CREATE_PRODUCT', { id: product.id, name, sku });
     revalidateTag('products');
+    revalidatePath('/shop');
+    revalidatePath('/');
     return { success: true, product };
   } catch (err) {
     console.error(err);
@@ -838,7 +850,9 @@ export async function submitB2bEnquiry(prevState, formData) {
     }
 
     const supabase = createAdminClient();
-    const { error } = await supabase.from('b2b_enquiries').insert({
+    
+    // Insert into database
+    const { data: enquiry, error } = await supabase.from('b2b_enquiries').insert({
       name,
       email,
       phone,
@@ -846,11 +860,150 @@ export async function submitB2bEnquiry(prevState, formData) {
       quantity,
       product_interest,
       message
-    });
+    }).select('*').single();
 
     if (error) throw error;
 
-    return { success: true, message: 'Thank you! Your bulk/corporate enquiry has been received. Our team will contact you in 24 hours.' };
+    // Fetch site settings for notifications
+    let settings = {};
+    try {
+      const { data: settingsData } = await supabase.from('website_settings').select('*');
+      if (settingsData) {
+        settingsData.forEach(r => { settings[r.key] = r.value; });
+      }
+    } catch (e) {
+      console.error('[submitB2bEnquiry] Settings load failed:', e.message);
+    }
+
+    const adminEmail = settings.contact_email || 'anantarts39@gmail.com';
+    const adminWhatsApp = settings.whatsapp_admin_number || '917275819354';
+
+    // 1. Send WhatsApp Notification to Admin (using WhatsApp Cloud API)
+    try {
+      if (settings.whatsapp_notifications_enabled === '1') {
+        // Run in background without awaiting to keep response fast
+        sendAdminB2bNotification(enquiry, settings).catch(e => console.error('[submitB2bEnquiry] WhatsApp API error:', e.message));
+      }
+    } catch (e) {
+      console.error('[submitB2bEnquiry] Failed to queue WhatsApp notification:', e.message);
+    }
+
+    // 2. Send Emails (Admin Notification and Client Confirmation)
+    try {
+      // Admin Notification Email
+      const adminMailSubject = `💼 New B2B Enquiry: ${quantity}x ${product_interest} from ${name}`;
+      const adminMailHtml = `
+        <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px; border: 1px solid #d4af37; border-radius: 8px;">
+          <h2 style="color: #800020; border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-top: 0;">New Bulk / B2B Enquiry</h2>
+          <p>You have received a new business lead from the website B2B Enquiry Form:</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <tr>
+              <td style="padding: 8px; font-weight: bold; width: 150px; border-bottom: 1px solid #eee;">Full Name:</td>
+              <td style="padding: 8px; border-bottom: 1px solid #eee;">${name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #eee;">Business Email:</td>
+              <td style="padding: 8px; border-bottom: 1px solid #eee;"><a href="mailto:${email}">${email}</a></td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #eee;">Phone Number:</td>
+              <td style="padding: 8px; border-bottom: 1px solid #eee;"><a href="tel:${phone}">${phone}</a></td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #eee;">Company Name:</td>
+              <td style="padding: 8px; border-bottom: 1px solid #eee;">${company || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #eee;">Estimated Quantity:</td>
+              <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${quantity} units</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #eee;">Product Interest:</td>
+              <td style="padding: 8px; border-bottom: 1px solid #eee;">${product_interest}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold; vertical-align: top; border-bottom: 1px solid #eee;">Requirements:</td>
+              <td style="padding: 8px; border-bottom: 1px solid #eee; white-space: pre-wrap;">${message || 'No additional requirements provided.'}</td>
+            </tr>
+          </table>
+          <p style="margin-top: 25px; font-size: 0.85em; color: #666; text-align: center;">
+            This email was automatically generated by the Anant Arts server.
+          </p>
+        </div>
+      `;
+      const adminMailText = `New B2B Enquiry:\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nCompany: ${company || 'N/A'}\nQuantity: ${quantity}\nProduct Interest: ${product_interest}\nMessage: ${message}`;
+      
+      sendEmail({
+        to: adminEmail,
+        subject: adminMailSubject,
+        html: adminMailHtml,
+        text: adminMailText
+      }).catch(e => console.error('[submitB2bEnquiry] Admin email error:', e.message));
+
+      // Client Confirmation Email
+      const clientMailSubject = `We have received your B2B Enquiry - Anant Arts`;
+      const clientMailHtml = `
+        <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px; border: 1px solid #d4af37; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #800020; margin: 0; font-size: 24px;">ANANT ARTS</h1>
+            <p style="color: #d4af37; font-size: 14px; font-style: italic; margin: 4px 0 0 0;">Divine Art for Every Space</p>
+          </div>
+          <h3 style="color: #333; margin-top: 0;">Dear ${name},</h3>
+          <p>Thank you for reaching out to Anant Arts with your B2B/Bulk order inquiry.</p>
+          <p>Our sales team has received your request and is currently compiling the custom catalogs, pricing, and volume discount details tailored to your needs. A representative will contact you via email or phone within 24 hours.</p>
+          
+          <div style="background-color: #faf9f6; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 3px solid #d4af37;">
+            <h4 style="margin: 0 0 8px 0; color: #800020;">Summary of Your Inquiry:</h4>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.6; font-size: 14px;">
+              <li><strong>Product Category:</strong> ${product_interest}</li>
+              <li><strong>Estimated Volume:</strong> ${quantity} units</li>
+              <li><strong>Company:</strong> ${company || 'N/A'}</li>
+            </ul>
+          </div>
+          
+          <p>If you have any urgent changes or questions, please feel free to reply directly to this email or chat with us on WhatsApp.</p>
+          <p style="margin-bottom: 0;">Warm regards,</p>
+          <p style="font-weight: bold; color: #800020; margin-top: 4px;">Anant Arts Patron Support Team</p>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="font-size: 11px; color: #999; text-align: center; margin: 0;">
+            Jaipur Studio | Dombivli (Mumbai) | <a href="https://anantarts.in" style="color: #d4af37; text-decoration: none;">www.anantarts.in</a>
+          </p>
+        </div>
+      `;
+      const clientMailText = `Dear ${name},\n\nThank you for reaching out to Anant Arts. We have received your B2B Enquiry for ${quantity}x ${product_interest}. Our team will contact you within 24 hours.\n\nBest regards,\nAnant Arts Patron Support Team`;
+
+      sendEmail({
+        to: email,
+        subject: clientMailSubject,
+        html: clientMailHtml,
+        text: clientMailText
+      }).catch(e => console.error('[submitB2bEnquiry] Client email error:', e.message));
+
+    } catch (e) {
+      console.error('[submitB2bEnquiry] Failed to process email notifications:', e.message);
+    }
+
+    // 3. Generate WhatsApp redirect link for the user
+    let toNum = adminWhatsApp.replace(/\D/g, '');
+    if (toNum.length === 10) toNum = '91' + toNum;
+    
+    const waText = `Hi Anant Arts Team,\n\nI just submitted a B2B Enquiry. Here are my details:\n\n` +
+      `👤 *Name:* ${name}\n` +
+      `🏢 *Company:* ${company || 'N/A'}\n` +
+      `📧 *Email:* ${email}\n` +
+      `📞 *Phone:* ${phone}\n` +
+      `🔢 *Quantity:* ${quantity}\n` +
+      `🏷️ *Product Category:* ${product_interest}\n` +
+      `📝 *Message:* ${message || 'None'}\n\n` +
+      `Please contact me with a custom catalog and pricing.`;
+
+    const whatsappRedirectUrl = `https://wa.me/${toNum}?text=${encodeURIComponent(waText)}`;
+
+    return { 
+      success: true, 
+      message: 'Thank you! Your bulk/corporate enquiry has been received. Our team will contact you in 24 hours.',
+      whatsappRedirectUrl
+    };
   } catch (err) {
     console.error('[submitB2bEnquiry] Error:', err.message);
     return { success: false, message: 'Could not submit your enquiry. Please try again or contact us on WhatsApp.' };
@@ -872,5 +1025,130 @@ export async function updateSettings(settingsArray) {
   } catch (err) {
     console.error('updateSettings error:', err);
     return { success: false, message: 'Failed to update settings.' };
+  }
+}
+
+export async function createAdminAction(email, password, role) {
+  try {
+    const caller = await checkAuthRole(['super_admin']);
+    const supabase = createAdminClient();
+    const password_hash = bcrypt.hashSync(password, 10);
+
+    const { error } = await supabase.from('admins').insert({
+      email,
+      password_hash,
+      role,
+      is_active: true
+    });
+    if (error) throw error;
+
+    await logAudit(caller.email, 'CREATE_ADMIN', { email, role });
+    revalidatePath('/admin/settings');
+    return { success: true };
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+export async function toggleAdminStatusAction(adminId, isActive) {
+  try {
+    const caller = await checkAuthRole(['super_admin']);
+    const supabase = createAdminClient();
+
+    const { error } = await supabase
+      .from('admins')
+      .update({ is_active: isActive })
+      .eq('id', adminId);
+    if (error) throw error;
+
+    await logAudit(caller.email, 'TOGGLE_ADMIN_STATUS', { adminId, isActive });
+    revalidatePath('/admin/settings');
+    return { success: true };
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+export async function deleteAdminAction(adminId) {
+  try {
+    const caller = await checkAuthRole(['super_admin']);
+    const supabase = createAdminClient();
+
+    const { error } = await supabase.from('admins').delete().eq('id', adminId);
+    if (error) throw error;
+
+    await logAudit(caller.email, 'DELETE_ADMIN', { adminId });
+    revalidatePath('/admin/settings');
+    return { success: true };
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+export async function getAdminSessionAction() {
+  try {
+    const session = await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
+    return { success: true, user: session };
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+export async function getTrendingAndSuggestionsAction(searchQuery = '') {
+  try {
+    const supabase = createAdminClient();
+    
+    // Fetch trending products (published and limited to 6)
+    const { data: trendingRaw } = await supabase
+      .from('products')
+      .select(`
+        id, name, slug, price, discount_price, is_published,
+        product_images(image_path, is_primary)
+      `)
+      .eq('is_published', 1)
+      .limit(6);
+      
+    const trending = (trendingRaw || []).map(p => {
+      const primaryImg = p.product_images?.find(img => img.is_primary === 1) || p.product_images?.[0];
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        price: p.price,
+        discount_price: p.discount_price,
+        image_path: primaryImg?.image_path || '/images/placeholder.jpg'
+      };
+    });
+
+    let suggestions = [];
+    if (searchQuery.trim().length >= 1) {
+      const q = searchQuery.toLowerCase().trim();
+      const { data: suggestionsRaw } = await supabase
+        .from('products')
+        .select(`
+          id, name, slug, price, discount_price, is_published,
+          product_images(image_path, is_primary)
+        `)
+        .eq('is_published', 1)
+        .ilike('name', `%${q}%`)
+        .limit(6);
+
+      suggestions = (suggestionsRaw || []).map(p => {
+        const primaryImg = p.product_images?.find(img => img.is_primary === 1) || p.product_images?.[0];
+        return {
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          price: p.price,
+          discount_price: p.discount_price,
+          image_path: primaryImg?.image_path || '/images/placeholder.jpg'
+        };
+      });
+    }
+
+    return { success: true, trending, suggestions };
+  } catch (err) {
+    console.error('getTrendingAndSuggestionsAction error:', err);
+    return { success: false, trending: [], suggestions: [] };
   }
 }

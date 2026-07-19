@@ -128,3 +128,56 @@ export async function sendAdminOrderNotification(order, items, settings) {
     console.error('Failed to send admin WhatsApp notification:', err);
   }
 }
+
+/**
+ * Notify admin of a new B2B / Bulk enquiry via WhatsApp.
+ */
+export async function sendAdminB2bNotification(enquiry, settings) {
+  try {
+    const isEnabled = settings.whatsapp_notifications_enabled === '1';
+    const adminNumber = settings.whatsapp_admin_number;
+
+    if (!isEnabled || !adminNumber) {
+      return { success: false, error: 'WhatsApp notifications disabled or admin number not set.' };
+    }
+
+    const messageBody = `💼 *New B2B Enquiry Received – Anant Arts*\n\n` +
+      `👤 *Name:* ${enquiry.name}\n` +
+      `📧 *Email:* ${enquiry.email}\n` +
+      `📞 *Phone:* ${enquiry.phone}\n` +
+      `🏢 *Company:* ${enquiry.company || 'N/A'}\n` +
+      `🔢 *Quantity:* ${enquiry.quantity}\n` +
+      `🏷️ *Product Category:* ${enquiry.product_interest || 'General'}\n` +
+      `📝 *Message:* ${enquiry.message || 'None'}\n\n` +
+      `📅 *Date:* ${new Date(enquiry.created_at || Date.now()).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`;
+
+    let toNum = adminNumber.replace(/\D/g, '');
+    if (toNum.length === 10) toNum = '91' + toNum;
+
+    // Use dummy order number 'B2B-ENQ' for database log schema compliance
+    const dummyOrderNum = `B2B-ENQ-${Date.now().toString().slice(-6)}`;
+    
+    const supabase = createAdminClient();
+    const { data: logEntry } = await supabase.from('whatsapp_logs').insert({
+      order_number: dummyOrderNum,
+      phone_number: toNum,
+      status: 'Retrying',
+      message: messageBody
+    }).select('id').single();
+
+    const result = await sendWhatsAppMessage(toNum, messageBody, 1);
+
+    if (logEntry) {
+      await supabase.from('whatsapp_logs').update({
+        status: result.success ? 'Sent' : 'Failed',
+        message: result.success ? messageBody : `ERROR: ${result.error}\n\n${messageBody}`
+      }).eq('id', logEntry.id);
+    }
+
+    return result;
+  } catch (err) {
+    console.error('Failed to send admin WhatsApp B2B notification:', err);
+    return { success: false, error: err.message };
+  }
+}
+

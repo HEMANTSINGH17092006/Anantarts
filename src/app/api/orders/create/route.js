@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { sendAdminOrderNotification } from '@/lib/whatsapp';
+import { getSessionCustomer } from '../../../auth/actions';
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
@@ -39,7 +40,8 @@ export async function POST(req) {
       payment_method,
       payment_status,
       payment_id,
-      items
+      items,
+      create_account
     } = body;
 
     // 1. Mandatory base fields presence check
@@ -95,6 +97,67 @@ export async function POST(req) {
 
     // Use service role admin client to bypass RLS and perform database insertions
     const supabase = createAdminClient();
+    
+    // Get authenticated customer session
+    const customer = await getSessionCustomer();
+    let user_id = null;
+    
+    if (customer) {
+      user_id = customer.id;
+      
+      // Save address if not already present
+      const { data: existingAddrs } = await supabase
+        .from('user_addresses')
+        .select('id')
+        .eq('user_id', customer.id);
+        
+      if (!existingAddrs || existingAddrs.length === 0) {
+        await supabase.from('user_addresses').insert({
+          user_id: customer.id,
+          name: sanitizedName,
+          phone: sanitizedPhone,
+          address: `${sanitizedStreet}${sanitizedLandmark ? ', ' + sanitizedLandmark : ''}`,
+          city: sanitizedCity,
+          state: sanitizedState,
+          pincode: sanitizedZip,
+          is_default: 1
+        });
+      }
+    } else if (create_account) {
+      // Guest requested account creation
+      let { data: existingUser } = await supabase.from('users').select('*').eq('email', sanitizedEmail).single();
+      
+      if (!existingUser) {
+        const { data: newUser, error: createErr } = await supabase.from('users').insert({
+          name: sanitizedName,
+          email: sanitizedEmail,
+          phone: sanitizedPhone,
+          role: 'customer'
+        }).select('*').single();
+        
+        if (!createErr) {
+          existingUser = newUser;
+        }
+      }
+
+      if (existingUser) {
+        user_id = existingUser.id;
+        
+        const { data: existingAddrs } = await supabase.from('user_addresses').select('id').eq('user_id', user_id);
+        if (!existingAddrs || existingAddrs.length === 0) {
+          await supabase.from('user_addresses').insert({
+            user_id: user_id,
+            name: sanitizedName,
+            phone: sanitizedPhone,
+            address: `${sanitizedStreet}${sanitizedLandmark ? ', ' + sanitizedLandmark : ''}`,
+            city: sanitizedCity,
+            state: sanitizedState,
+            pincode: sanitizedZip,
+            is_default: 1
+          });
+        }
+      }
+    }
 
     // 1. Verify stock availability for all products before creating the order
     for (const item of items) {
@@ -120,6 +183,7 @@ export async function POST(req) {
       .from('orders')
       .insert({
         order_number,
+        user_id, // Link to customer
         customer_name,
         customer_email,
         customer_phone,
@@ -133,7 +197,7 @@ export async function POST(req) {
         payment_method,
         payment_status: payment_status || 'Pending',
         order_status: 'Pending',
-        notes: payment_id ? `Payment Gateway Transaction ID: ${paymentId}` : ''
+        notes: payment_id ? `Payment Gateway Transaction ID: ${payment_id}` : ''
       })
       .select('*')
       .single();

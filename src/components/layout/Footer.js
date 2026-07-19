@@ -1,8 +1,18 @@
 'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useCart, useWishlist } from '../context/AppContext';
 
-export default function Footer({ settings = {}, onCartClick }) {
+export default function Footer({ 
+  settings = {}, 
+  onCartClick, 
+  onSearchClick, 
+  onWishlistClick,
+  cartOpen = false,
+  searchOpen = false,
+  wishlistOpen = false
+}) {
+  const pathname = usePathname();
   const contactAddress = settings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
   const contactPhone = settings.contact_phone || '+91 72758 19354';
   const contactEmail = settings.contact_email || 'anantarts39@gmail.com';
@@ -135,15 +145,23 @@ export default function Footer({ settings = {}, onCartClick }) {
 
       {/* Mobile Sticky Floating Dock */}
       <div className="mobile-action-dock">
-        <Link href="/" className="mobile-action-dock-item">
+        <Link href="/" className={`mobile-action-dock-item ${pathname === '/' && !searchOpen && !wishlistOpen && !cartOpen ? 'active' : ''}`}>
           <i className="fas fa-home"></i>
           <span>Home</span>
         </Link>
-        <Link href="/shop" className="mobile-action-dock-item">
+        <button 
+          onClick={onSearchClick} 
+          className={`mobile-action-dock-item ${searchOpen ? 'active' : ''}`}
+          style={{ background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}
+        >
           <i className="fas fa-search"></i>
           <span>Search</span>
-        </Link>
-        <Link href="/shop?wishlist=true" className="mobile-action-dock-item" style={{ position: 'relative' }}>
+        </button>
+        <button 
+          onClick={onWishlistClick} 
+          className={`mobile-action-dock-item ${wishlistOpen ? 'active' : ''}`}
+          style={{ background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', position: 'relative', padding: 0 }}
+        >
           <i className="fas fa-heart"></i>
           {wishlistCount > 0 && (
             <span style={{
@@ -157,8 +175,12 @@ export default function Footer({ settings = {}, onCartClick }) {
             </span>
           )}
           <span>Wishlist</span>
-        </Link>
-        <button onClick={onCartClick} className="mobile-action-dock-item" style={{ position: 'relative', background: 'none', border: 'none', color: 'inherit', width: '100%', fontFamily: 'inherit' }}>
+        </button>
+        <button 
+          onClick={onCartClick} 
+          className={`mobile-action-dock-item ${cartOpen ? 'active' : ''}`}
+          style={{ position: 'relative', background: 'none', border: 'none', color: 'inherit', width: '100%', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}
+        >
           <i className="fas fa-shopping-bag"></i>
           {cartCount > 0 && (
             <span style={{

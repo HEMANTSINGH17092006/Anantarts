@@ -16,6 +16,22 @@ export default function BulkEnquiryForm() {
   const [touched, setTouched] = useState({});
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [whatsappRedirectUrl, setWhatsappRedirectUrl] = useState('');
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    if (countdown <= 0 || !whatsappRedirectUrl) return;
+    const timer = setTimeout(() => {
+      setCountdown(prev => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, whatsappRedirectUrl]);
+
+  useEffect(() => {
+    if (countdown === 0 && whatsappRedirectUrl) {
+      window.open(whatsappRedirectUrl, '_blank');
+    }
+  }, [countdown, whatsappRedirectUrl]);
 
   // Inline Validators
   const validateName = (val) => val.trim().length >= 3 && val.trim().length <= 50 && /^[a-zA-Z\s]+$/.test(val.trim());
@@ -91,6 +107,10 @@ export default function BulkEnquiryForm() {
       const res = await submitB2bEnquiry(null, formData);
       if (res.success) {
         setSuccessMsg(res.message);
+        if (res.whatsappRedirectUrl) {
+          setWhatsappRedirectUrl(res.whatsappRedirectUrl);
+          setCountdown(5);
+        }
         setName('');
         setEmail('');
         setPhone('');
@@ -115,8 +135,52 @@ export default function BulkEnquiryForm() {
       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '24px', textAlign: 'center' }}>Custom packaging, logo engravings, and volume discounts available.</p>
 
       {successMsg && (
-        <div style={{ background: 'rgba(46,125,50,0.08)', color: 'var(--success)', border: '1px solid rgba(46,125,50,0.2)', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.88rem', textAlign: 'center', fontWeight: '500' }}>
-          ✓ {successMsg}
+        <div style={{ background: 'rgba(46,125,50,0.08)', color: 'var(--success)', border: '1px solid rgba(46,125,50,0.2)', padding: '24px', borderRadius: '10px', marginBottom: '24px', fontSize: '0.9rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>✓</div>
+          <div style={{ fontWeight: '600', marginBottom: '8px' }}>{successMsg}</div>
+          
+          {whatsappRedirectUrl && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid rgba(46,125,50,0.15)', paddingTop: '16px' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '12px' }}>
+                Would you like to connect with a B2B manager directly for an instant catalog and pricing?
+              </p>
+              
+              <a 
+                href={whatsappRedirectUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn-gold"
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  textDecoration: 'none', 
+                  backgroundColor: '#25D366', 
+                  color: 'white', 
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  fontWeight: '600',
+                  fontSize: '0.85rem',
+                  boxShadow: '0 4px 10px rgba(37, 211, 102, 0.25)',
+                  transition: 'all 0.2s',
+                  cursor: 'pointer'
+                }}
+              >
+                <i className="fab fa-whatsapp" style={{ fontSize: '1.1rem' }}></i> Connect on WhatsApp Instantly
+              </a>
+              
+              {countdown > 0 ? (
+                <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '10px', fontStyle: 'italic' }}>
+                  Opening WhatsApp automatically in {countdown} seconds...
+                </span>
+              ) : (
+                <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '10px', fontStyle: 'italic' }}>
+                  A copy of these enquiry details has also been emailed to your business address.
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 

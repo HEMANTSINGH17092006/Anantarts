@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useCart, useWishlist } from '../context/AppContext';
 
-export default function Header({ settings = {}, onCartClick }) {
+export default function Header({ settings = {}, onCartClick, onSearchClick, onWishlistClick }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
@@ -49,16 +49,16 @@ export default function Header({ settings = {}, onCartClick }) {
           </nav>
 
           <div className="header-actions">
-            <Link href="/shop" className="header-icon" aria-label="Search">
+            <button className="header-icon" onClick={onSearchClick} aria-label="Search" style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
               <i className="fas fa-search"></i>
-            </Link>
+            </button>
             <Link href="/account" className="header-icon" aria-label="My Account">
               <i className="fas fa-user-circle"></i>
             </Link>
-            <Link href="/shop?wishlist=true" className="header-icon" aria-label="Wishlist">
+            <button className="header-icon" onClick={onWishlistClick} aria-label="Wishlist" style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', position: 'relative' }}>
               <i className="far fa-heart"></i>
               {wishlistCount > 0 && <span className="cart-count" style={{ backgroundColor: 'var(--primary-gold)' }}>{wishlistCount}</span>}
-            </Link>
+            </button>
             <button className="header-icon" onClick={onCartClick} aria-label="Cart">
               <i className="fas fa-shopping-bag"></i>
               {cartCount > 0 && <span className="cart-count">{cartCount}</span>}

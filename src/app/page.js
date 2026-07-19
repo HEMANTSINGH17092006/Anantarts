@@ -40,7 +40,7 @@ export default async function Home() {
   return (
     <>
       {/* 1. PREMIUM HERO SECTION */}
-      <section className="hero-section" style={{ position: 'relative', height: '80vh', overflow: 'hidden' }}>
+      <section className="hero-section" style={{ position: 'relative', height: 'var(--hero-height)', overflow: 'hidden' }}>
         <div className="hero-bg" style={{ position: 'absolute', inset: 0, opacity: 0.5 }}>
           <video 
             src={heroBanner.video_url || "https://assets.mixkit.co/videos/preview/mixkit-gold-dust-particles-background-loop-41584-large.mp4"}
@@ -54,10 +54,10 @@ export default async function Home() {
         <div className="hero-overlay" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(30,26,23,0.3) 0%, rgba(30,26,23,0.85) 100%)' }} />
         <HeroParticles />
         <div className="hero-content" style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: '850px', margin: '0 auto', padding: '0 2rem' }}>
-          <h1 className="hero-title" style={{ fontSize: '3.2rem', color: 'var(--text-light)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)', lineHeight: '1.2' }}>
+          <h1 className="hero-title" style={{ fontSize: 'var(--hero-title-size)', color: 'var(--text-light)', marginBottom: 'var(--hero-title-margin)', fontFamily: 'var(--font-heading)', lineHeight: '1.2' }}>
             Timeless Electroplated Creations for Every Space
           </h1>
-          <p className="hero-subtitle" style={{ fontSize: '1.15rem', color: 'rgba(255,255,255,0.9)', marginBottom: '2.5rem', lineHeight: '1.6' }}>
+          <p className="hero-subtitle" style={{ fontSize: 'var(--hero-subtitle-size)', color: 'rgba(255,255,255,0.9)', marginBottom: 'var(--hero-subtitle-margin)', lineHeight: '1.6' }}>
             Discover premium electroplated décor, spiritual artifacts, luxury gifts, collectibles, and customized creations crafted with exceptional artistry.
           </p>
           <div className="hero-buttons" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -83,7 +83,7 @@ export default async function Home() {
       </div>
 
       {/* 2. EXPLORE CATEGORIES SECTION */}
-      <div id="categories-section" className="section-heading" style={{ marginTop: '5rem' }}>
+      <div id="categories-section" className="section-heading" style={{ marginTop: 'var(--section-margin-top)' }}>
         <h2>Explore Our Collections</h2>
         <div className="gold-line"></div>
         <p>Premium electroplated masterpieces curated for spiritual, home, and corporate spaces.</p>
@@ -110,13 +110,13 @@ export default async function Home() {
       </section>
 
       {/* 3. BEST SELLERS SECTION */}
-      <div className="section-heading" style={{ marginTop: '5rem' }}>
+      <div className="section-heading" style={{ marginTop: 'var(--section-margin-top)' }}>
         <h2>Best Sellers</h2>
         <div className="gold-line"></div>
         <p>Our most treasured and adored creations in homes and workplaces worldwide.</p>
       </div>
 
-      <section style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem' }}>
+      <section style={{ maxWidth: '1200px', margin: '0 auto var(--section-margin-bottom) auto', padding: '0 2rem' }}>
         <div className="products-grid" style={{ padding: 0 }}>
           {bestsellerProducts.slice(0, 4).map((product) => (
             <ProductCard key={product.id} product={product} />
@@ -125,7 +125,7 @@ export default async function Home() {
       </section>
 
       {/* 4. CORPORATE GIFTING SOLUTIONS */}
-      <div className="section-heading" style={{ marginTop: '5rem' }}>
+      <div className="section-heading" style={{ marginTop: 'var(--section-margin-top)' }}>
         <h2>Corporate Gifting Solutions</h2>
         <div className="gold-line"></div>
         <p>Make a lasting impression with premium electroplated business gifts.</p>
@@ -133,7 +133,7 @@ export default async function Home() {
 
       <section style={{ 
         maxWidth: '1200px', 
-        margin: '0 auto 5rem auto', 
+        margin: '0 auto var(--section-margin-bottom) auto', 
         padding: '0 2rem',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -164,19 +164,19 @@ export default async function Home() {
       <section style={{ 
         background: 'var(--luxury-gradient)', 
         color: 'white', 
-        padding: '5rem 2rem', 
+        padding: 'var(--section-padding-y) 2rem', 
         textAlign: 'center',
         borderTop: '1px solid var(--primary-gold-border)',
         borderBottom: '1px solid var(--primary-gold-border)',
-        marginBottom: '5rem',
+        marginBottom: 'var(--section-margin-bottom)',
         position: 'relative'
       }}>
         <div style={{ maxWidth: '850px', margin: '0 auto' }}>
           <span style={{ color: 'var(--primary-gold)', letterSpacing: '4px', textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: '600' }}>Customization Studio</span>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.6rem', margin: '1rem 0 1.5rem 0', color: 'white', lineHeight: '1.2' }}>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--studio-heading-size)', margin: '1rem 0 1.5rem 0', color: 'white', lineHeight: '1.2' }}>
             Custom Electroplated Products Crafted to Order
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: '1.8', marginBottom: '2.5rem', fontSize: '1rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: '1.8', marginBottom: '2.5rem', fontSize: 'var(--studio-body-size)' }}>
             Whether it is custom sized sculptures, personalized nameplates, or bespoke home accessories, Anant Arts provides high-grade electroplating customizations. Select your base material (brass, steel, composite), pick your plating finish (24K Gold, Pure Silver, Antique Bronze), and upload your dimensions.
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -198,13 +198,13 @@ export default async function Home() {
       <NewArrivalsCarousel products={newArrivalProducts} />
 
       {/* 7. WHY CHOOSE ANANT ARTS */}
-      <div className="section-heading" style={{ marginTop: '5rem' }}>
+      <div className="section-heading" style={{ marginTop: 'var(--section-margin-top)' }}>
         <h2>Why Choose Anant Arts</h2>
         <div className="gold-line"></div>
         <p>Experience premium craftsmanship designed to bring elegance and luxury to any space.</p>
       </div>
 
-      <section style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+      <section style={{ maxWidth: '1200px', margin: '0 auto var(--section-margin-bottom) auto', padding: '0 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
         {[
           { title: 'Premium Electroplating Finish', desc: 'Layered with pure 24K gold, silver, or bronze under precise electrical currents for absolute brilliance.', icon: '✨' },
           { title: 'Handcrafted Designs', desc: 'Intricately hand chiselled and cast by master traditional artisans preserving heritage structures.', icon: '🔨' },
@@ -233,13 +233,13 @@ export default async function Home() {
       </section>
 
       {/* 8. TESTIMONIALS SECTION */}
-      <div className="section-heading">
+      <div className="section-heading" style={{ marginTop: 'var(--section-margin-top)' }}>
         <h2>Customer Testimonials</h2>
         <div className="gold-line"></div>
         <p>Read inspiring experiences shared by our global patrons.</p>
       </div>
 
-      <section style={{ maxWidth: '1200px', margin: '0 auto 5rem auto', padding: '0 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+      <section style={{ maxWidth: '1200px', margin: '0 auto var(--section-margin-bottom) auto', padding: '0 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
         {testimonials.slice(0, 3).map((test) => (
           <div key={test.id} style={{ background: 'var(--bg-white)', padding: '32px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ display: 'flex', gap: '4px', color: 'var(--primary-gold)', marginBottom: '16px' }}>
@@ -269,12 +269,12 @@ export default async function Home() {
       </div>
 
       {/* FAQ PREVIEW SECTION */}
-      <div className="section-heading" style={{ marginTop: '5rem' }}>
+      <div className="section-heading" style={{ marginTop: 'var(--section-margin-top)' }}>
         <h2>Frequently Asked Questions</h2>
         <div className="gold-line"></div>
       </div>
 
-      <section style={{ maxWidth: '800px', margin: '0 auto 5rem auto', padding: '0 2rem' }}>
+      <section style={{ maxWidth: '800px', margin: '0 auto var(--section-margin-bottom) auto', padding: '0 2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{ background: 'white', padding: '20px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
             <h4 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '8px' }}>How do I clean my gold-plated artifacts?</h4>
@@ -291,7 +291,7 @@ export default async function Home() {
       </section>
 
       {/* JAIPUR ARTISAN STUDIO GALLERY */}
-      <div className="section-heading">
+      <div className="section-heading" style={{ marginTop: 'var(--section-margin-top)' }}>
         <h2>Artisan Studio Workshop</h2>
         <div className="gold-line"></div>
         <p>Sneak peek into our workshop lines, highlighting wax casting, gold electroplating, and detailed hand engraving.</p>
@@ -299,7 +299,7 @@ export default async function Home() {
 
       <section style={{ 
         maxWidth: '1200px', 
-        margin: '0 auto 5rem auto', 
+        margin: '0 auto var(--section-margin-bottom) auto', 
         padding: '0 2rem',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',

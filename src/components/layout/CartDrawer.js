@@ -195,14 +195,27 @@ export default function CartDrawer({ isOpen, onClose }) {
               </div>
 
               <div className="cart-drawer-checkout-btn">
+                {shipping > 0 ? (
+                  <div className="shipping-progress-container">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-dark)' }}>
+                      <span>Free Shipping Unlocks at {formatPrice(10000)}</span>
+                      <span>Add {formatPrice(10000 - subtotal)}</span>
+                    </div>
+                    <div className="shipping-progress-bar-bg">
+                      <div className="shipping-progress-bar-fill" style={{ width: `${Math.min(100, (subtotal / 10000) * 100)}%` }}></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="shipping-progress-container" style={{ background: 'rgba(46, 125, 50, 0.05)', borderColor: 'rgba(46, 125, 50, 0.2)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.75rem', fontWeight: '700', color: 'var(--success)' }}>
+                      <i className="fas fa-truck-fast"></i> You have unlocked FREE Shipping!
+                    </div>
+                  </div>
+                )}
+                
                 <Link href="/checkout" className="btn-gold" onClick={onClose} style={{ width: '100%', textDecoration: 'none' }}>
                   Secure Checkout <i className="fas fa-arrow-right" style={{ marginLeft: '8px' }}></i>
                 </Link>
-                {shipping > 0 && (
-                  <p className="free-shipping-threshold-alert" style={{ fontSize: '0.75rem', color: '#6B6B6B', textAlign: 'center', marginTop: '10px' }}>
-                    Add <strong>{formatPrice(10000 - subtotal)}</strong> more for <strong>FREE Shipping</strong>!
-                  </p>
-                )}
               </div>
             </div>
           </>

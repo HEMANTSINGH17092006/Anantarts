@@ -310,20 +310,34 @@ export default function MyOrdersPage() {
                       
                       {/* Products List & Status */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Status:</span>
-                          <span style={{
-                            padding: '3px 10px',
-                            borderRadius: '12px',
-                            fontSize: '0.72rem',
-                            fontWeight: '600',
-                            backgroundColor: order.order_status === 'Delivered' ? 'rgba(46,125,50,0.1)' : order.order_status === 'Cancelled' ? 'rgba(198,40,40,0.1)' : 'rgba(212,175,55,0.12)',
-                            color: order.order_status === 'Delivered' ? 'var(--success)' : order.order_status === 'Cancelled' ? 'var(--danger)' : 'var(--primary-gold-hover)',
-                            textTransform: 'uppercase'
-                          }}>
-                            {order.order_status}
-                          </span>
-                        </div>
+                        {/* Premium Order Progress Tracker */}
+                        {order.order_status !== 'Cancelled' ? (
+                          <div className="order-progress-tracker">
+                            {['Pending', 'Processing', 'Shipped', 'Delivered'].map((step, idx, arr) => {
+                              const statusOrder = ['Pending', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered'];
+                              const currentIndex = statusOrder.indexOf(order.order_status);
+                              const stepIndex = statusOrder.indexOf(step);
+                              
+                              let state = 'pending';
+                              if (currentIndex > stepIndex || order.order_status === 'Delivered') state = 'completed';
+                              else if (currentIndex === stepIndex || (step === 'Processing' && ['Confirmed', 'Packed'].includes(order.order_status))) state = 'current';
+
+                              return (
+                                <div key={step} className={`order-progress-step ${state}`}>
+                                  <div className="order-progress-dot"></div>
+                                  <span className="order-progress-label">{step}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Status:</span>
+                            <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '600', backgroundColor: 'rgba(198,40,40,0.1)', color: 'var(--danger)', textTransform: 'uppercase' }}>
+                              CANCELLED
+                            </span>
+                          </div>
+                        )}
 
                         {order.items?.map((item) => (
                           <div key={item.id} style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>

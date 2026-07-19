@@ -175,8 +175,9 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
+      email TEXT UNIQUE,
+      phone TEXT UNIQUE,
+      password_hash TEXT,
       role TEXT DEFAULT 'customer',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -402,6 +403,77 @@ async function initDb() {
       message TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS payment_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_type TEXT NOT NULL,
+      order_number TEXT,
+      razorpay_order_id TEXT,
+      razorpay_payment_id TEXT,
+      amount REAL,
+      status TEXT NOT NULL,
+      error_message TEXT,
+      error_stack TEXT,
+      customer_info TEXT,
+      raw_payload TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payment_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      payment_id TEXT,
+      order_id TEXT,
+      status TEXT,
+      error TEXT,
+      step_failed TEXT,
+      payload TEXT,
+      recovered INTEGER DEFAULT 0,
+      recovery_notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS background_jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      payload TEXT,
+      status TEXT DEFAULT 'pending',
+      attempts INTEGER DEFAULT 0,
+      error_message TEXT,
+      run_after DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS inventory_locks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_number TEXT NOT NULL,
+      product_id INTEGER NOT NULL,
+      quantity INTEGER NOT NULL,
+      expires_at DATETIME NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS user_addresses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      address TEXT NOT NULL,
+      city TEXT NOT NULL,
+      state TEXT NOT NULL,
+      pincode TEXT NOT NULL,
+      is_default INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS otps (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      identifier TEXT NOT NULL,
+      otp TEXT NOT NULL,
+      expires_at DATETIME NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Run schema expansions / column additions
@@ -419,8 +491,18 @@ async function initDb() {
   await addColumn('products', 'variants', 'TEXT');
   await addColumn('products', 'related_products', 'TEXT');
 
+  await addColumn('users', 'phone', 'TEXT UNIQUE');
+
+
   await addColumn('categories', 'type', "TEXT DEFAULT 'deity'");
   await addColumn('orders', 'tracking_number', 'TEXT');
+  await addColumn('orders', 'razorpay_order_id', 'TEXT');
+  await addColumn('orders', 'razorpay_payment_id', 'TEXT');
+  await addColumn('orders', 'razorpay_signature', 'TEXT');
+  await addColumn('orders', 'captured_at', 'TIMESTAMP');
+  await addColumn('orders', 'refund_status', "TEXT DEFAULT 'none'");
+  await addColumn('orders', 'refund_id', 'TEXT');
+  await addColumn('orders', 'payment_logs', 'TEXT');
   
   await addColumn('banners', 'video_url', 'TEXT');
   await addColumn('blogs', 'seo_title', 'TEXT');
@@ -433,6 +515,7 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id);
     CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
     CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items (product_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_razorpay_payment_id ON orders (razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;
   `);
 
   console.log('Database tables verified/created successfully.');

@@ -141,7 +141,7 @@ export default function ProductCard({ product }) {
 
           {/* Short Description - Mobile Only */}
           <p className="mobile-only-desc" style={{ display: 'none', fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: '1.4' }}>
-            {product.description ? (product.description.slice(0, 120) + '...') : 'Premium electroplated spiritual sculpture, handcrafted with 24K gold highlights by master artisans.'}
+            {product.description ? (product.description.slice(0, 60) + '...') : 'Premium electroplated spiritual sculpture.'}
           </p>
           
           <div className="product-price">

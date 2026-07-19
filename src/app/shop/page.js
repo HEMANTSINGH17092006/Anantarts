@@ -1,62 +1,26 @@
-import FilterSidebar from '@/components/shop/FilterSidebar';
-import CatalogGrid from '@/components/shop/CatalogGrid';
+import { Suspense } from 'react';
+import ShopCatalogClient from '@/components/shop/ShopCatalogClient';
 import { getCategories, getProducts } from '@/lib/db-helpers';
 
-export const revalidate = 60; // Cache search result skeletons/categories for 60 seconds
+export const dynamic = 'force-dynamic';
 
-export default async function ShopPage({ searchParams }) {
-  // Await searchParams as required in Next.js
-  const params = await searchParams;
-  
+export default async function ShopPage() {
   const categories = await getCategories();
-  
-  // Fetch products with parameters from the URL
-  const products = await getProducts({
-    category: params.category || '',
-    search: params.search || '',
-    sort: params.sort || 'latest',
-    maxPrice: params.maxPrice || '',
-    inStock: params.inStock || '',
-    tag: params.tag || '',
-  });
+  const products = await getProducts(); // Fetch all published products for instant client-side filtering
 
   return (
-    <div style={{ background: 'var(--bg-cream)', padding: '3rem 0' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
-        
-        {/* Banner Headers */}
-        <div className="section-heading" style={{ textAlign: 'left', marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '2rem' }}>
-            {params.wishlist === 'true' ? 'Your Sacred Wishlist' : 'Artisan Idol Catalog'}
-          </h2>
-          <div className="gold-line" style={{ margin: '8px 0 16px 0' }}></div>
-          <p style={{ margin: 0 }}>
-            {params.wishlist === 'true' 
-              ? 'Patronize and complete your selection of divine luxury sculptures.' 
-              : 'Browse our collection of masterfully casted and electroplated spiritual sculptures.'}
-          </p>
-        </div>
-
-        {/* Layout Grid */}
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'row', 
-          gap: '2.5rem', 
-          alignItems: 'flex-start',
-          flexWrap: 'wrap' 
-        }}>
-          {/* Left Sidebar Filter */}
-          <div style={{ flex: '1 1 280px', maxWidth: '320px' }}>
-            <FilterSidebar categories={categories} />
-          </div>
-
-          {/* Right Product Grid */}
-          <div style={{ flex: '3 1 600px' }}>
-            <CatalogGrid initialProducts={products} />
-          </div>
-        </div>
-
+    <Suspense fallback={
+      <div style={{ background: 'var(--bg-cream)', minHeight: '100vh', padding: '5rem 0', textAlign: 'center' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>🪷</div>
+        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: 'var(--text-dark)' }}>
+          Loading Divine Collections...
+        </h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '8px' }}>
+          Preparing our handcrafted spiritual idols catalogue for you.
+        </p>
       </div>
-    </div>
+    }>
+      <ShopCatalogClient initialProducts={products} categories={categories} />
+    </Suspense>
   );
 }

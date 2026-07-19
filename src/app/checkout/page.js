@@ -4,6 +4,7 @@ import { useCart } from '@/components/context/AppContext';
 import { formatPrice, generateOrderNumber } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
@@ -31,6 +32,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const {
     cart,
+    loading: cartLoading,
     subtotal,
     discount,
     shipping,
@@ -50,8 +52,14 @@ export default function CheckoutPage() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' or 'razorpay'
+  const [paymentMethod, setPaymentMethod] = useState('razorpay'); // 'razorpay' or 'cod'
+  const [createAccount, setCreateAccount] = useState(false);
   const [touched, setTouched] = useState({});
+
+  // Auth & Saved Addresses
+  const [authUser, setAuthUser] = useState(null);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
 
   // Checkout execution states
   const [loading, setLoading] = useState(false);
@@ -60,11 +68,11 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState({});
 
   // Inline Validation Helpers
-  const validateName = (val) => val.trim().length >= 3 && val.trim().length <= 50 && /^[a-zA-Z\s]+$/.test(val.trim());
+  const validateName = (val) => val.trim().length >= 3 && val.trim().length <= 50 && /^[a-zA-Z\s\.]+$/.test(val.trim());
   const validatePhone = (val) => /^[6-9][0-9]{9}$/.test(val.trim());
   const validateEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
-  const validateAddress = (val) => val.trim().length >= 10;
-  const validateCity = (val) => val.trim().length >= 3 && /^[a-zA-Z\s]+$/.test(val.trim());
+  const validateAddress = (val) => val.trim().length >= 5;
+  const validateCity = (val) => val.trim().length >= 3 && /^[a-zA-Z\s\.\-]+$/.test(val.trim());
   const validateState = (val) => val.trim().length > 0;
   const validateZip = (val) => /^[1-9][0-9]{5}$/.test(val.trim());
   const validateLandmark = (val) => val.trim().length === 0 || val.trim().length <= 100;
@@ -102,23 +110,63 @@ export default function CheckoutPage() {
 
   const [settings, setSettings] = useState({});
 
+  // Health check state
+  const [paymentHealth, setPaymentHealth] = useState({ checked: true, healthy: true, message: '' });
+
   useEffect(() => {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => setSettings(data))
       .catch(err => console.error('Failed to fetch settings', err));
+      
+    // Fetch customer profile & addresses
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setAuthUser(data.user);
+          if (data.user.name) setName(data.user.name);
+          if (data.user.email) setEmail(data.user.email);
+          if (data.user.phone) setPhone(data.user.phone);
+        }
+        if (data.addresses && data.addresses.length > 0) {
+          setSavedAddresses(data.addresses);
+          const defaultAddr = data.addresses[0]; // Assuming sorted by is_default
+          handleSelectAddress(defaultAddr);
+        }
+      })
+      .catch(err => console.error('Failed to fetch customer profile', err));
   }, []);
 
-  // Load Razorpay Checkout script on mount
+  const handleSelectAddress = (addr) => {
+    setSelectedAddressId(addr.id);
+    setName(addr.name || authUser?.name || '');
+    setPhone(addr.phone || authUser?.phone || '');
+    setAddress(addr.address || '');
+    setCity(addr.city || '');
+    setState(addr.state || '');
+    setZip(addr.pincode || '');
+    
+    // Clear errors for fields that are filled
+    setErrors({});
+  };
+
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
+    fetch('/api/razorpay/health')
+      .then(res => res.json())
+      .then(data => {
+        setPaymentHealth({
+          checked: true,
+          healthy: Boolean(data.healthy),
+          message: data.healthy ? '' : ''
+        });
+      })
+      .catch(() => {
+        setPaymentHealth({ checked: true, healthy: true, message: '' });
+      });
   }, []);
+
+  // Next.js Script will be used to load Razorpay natively instead of manual DOM manipulation.
 
   if (orderSuccess) {
     const adminNumber = settings.whatsapp_admin_number || '917275819354';
@@ -158,6 +206,11 @@ export default function CheckoutPage() {
         <div style={{ maxWidth: '600px', margin: '0 auto', padding: '32px', background: 'white', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
           <div style={{ fontSize: '4.5rem', color: 'var(--success)', marginBottom: '16px' }}>✔️</div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', marginBottom: '8px' }}>Order Placed Successfully!</h2>
+          {orderSuccess.warning && (
+            <div style={{ background: '#FFF3E0', color: '#E65100', padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '0.9rem', border: '1px solid #FFE082' }}>
+              <strong>Payment received successfully.</strong> We are processing your order in the background.
+            </div>
+          )}
           <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
             Thank you for your patronage. Your order has been registered under order number: <strong style={{ color: 'var(--text-dark)' }}>{orderSuccess.order_number}</strong>.
           </p>
@@ -191,12 +244,29 @@ export default function CheckoutPage() {
             </a>
           </div>
 
-          <div style={{ background: 'var(--bg-cream)', padding: '16px', borderRadius: '4px', textAlign: 'left', fontSize: '0.82rem', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ background: 'var(--bg-cream)', padding: '18px', borderRadius: '6px', textAlign: 'left', fontSize: '0.85rem', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid var(--primary-gold-border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '6px' }}>
+              <span><strong>Payment Status:</strong></span>
+              <span style={{ 
+                background: (orderSuccess.payment_status === 'Captured' || orderSuccess.payment_status === 'Paid') ? '#E8F5E9' : '#FFF3E0', 
+                color: (orderSuccess.payment_status === 'Captured' || orderSuccess.payment_status === 'Paid') ? '#2E7D32' : '#E65100', 
+                padding: '2px 10px', 
+                borderRadius: '12px', 
+                fontWeight: '700',
+                fontSize: '0.78rem'
+              }}>
+                ✓ {orderSuccess.payment_status || 'Captured'}
+              </span>
+            </div>
+            {orderSuccess.payment_id && (
+              <div><strong>Transaction ID:</strong> <code style={{ background: '#f5f5f5', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' }}>{orderSuccess.payment_id}</code></div>
+            )}
+            <div><strong>Estimated Delivery:</strong> <span style={{ color: 'var(--primary-gold)', fontWeight: '700' }}>3-7 Business Days</span></div>
             <div><strong>Recipient:</strong> {orderSuccess.customer_name}</div>
             <div><strong>Email:</strong> {orderSuccess.customer_email}</div>
-            <div><strong>Address:</strong> {orderSuccess.shipping_address}</div>
-            <div><strong>Total Paid:</strong> {formatPrice(orderSuccess.total_amount)}</div>
-            <div><strong>Payment Method:</strong> {orderSuccess.payment_method.toUpperCase()}</div>
+            <div><strong>Delivery Address:</strong> {orderSuccess.shipping_address}</div>
+            <div><strong>Total Paid:</strong> <strong style={{ fontSize: '1rem', color: 'var(--text-dark)' }}>{formatPrice(orderSuccess.total_amount)}</strong></div>
+            <div><strong>Payment Method:</strong> {orderSuccess.payment_method ? orderSuccess.payment_method.toUpperCase() : 'ONLINE'}</div>
           </div>
           
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -208,6 +278,14 @@ export default function CheckoutPage() {
             </Link>
           </div>
         </div>
+      </div>
+    );
+  }
+  if (cartLoading) {
+    return (
+      <div style={{ background: 'var(--bg-cream)', padding: '10rem 0', textAlign: 'center', minHeight: '60vh' }}>
+        <div style={{ width: '40px', height: '40px', border: '3px solid var(--primary-gold-border)', borderTopColor: 'var(--primary-gold)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div>
+        <p style={{ marginTop: '16px', color: 'var(--text-muted)' }}>Loading your checkout...</p>
       </div>
     );
   }
@@ -260,7 +338,15 @@ export default function CheckoutPage() {
 
     if (cleaned.length === 6 && cleaned[0] !== '0') {
       try {
-        const response = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+        
+        const response = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+
         if (response.ok) {
           const data = await response.json();
           if (data && data[0]?.Status === 'Success') {
@@ -281,7 +367,8 @@ export default function CheckoutPage() {
           }
         }
       } catch (err) {
-        console.error('ZIP lookup failed', err);
+        // Suppress noisy network errors for this non-critical autofill feature
+        console.warn('ZIP lookup autofill unavailable:', err.message || err);
       }
     }
   };
@@ -324,75 +411,202 @@ export default function CheckoutPage() {
       return;
     }
     setError('');
+    setLoading(true);
     
     const orderNumber = generateOrderNumber();
     const shippingAddressString = `${address}, ${landmark ? landmark + ', ' : ''}${city}, ${state} - ${zip}, India`;
 
+    const orderDetailsPayload = {
+      order_number: orderNumber,
+      customer_name: name,
+      customer_email: email,
+      customer_phone: phone,
+      street_address: address,
+      city: city,
+      state: state,
+      zip: zip,
+      landmark: landmark,
+      shipping_address: shippingAddressString,
+      billing_address: shippingAddressString,
+      coupon_id: coupon?.id || null,
+      discount_amount: discount,
+      shipping_charge: shipping,
+      subtotal: subtotal,
+      total_amount: total,
+      create_account: createAccount,
+      items: cart.map(item => ({
+        product_id: item.id,
+        product_name: item.name,
+        price: item.discount_price && item.discount_price > 0 ? item.discount_price : item.price,
+        quantity: item.quantity
+      }))
+    };
+
     if (paymentMethod === 'razorpay') {
-      setLoading(true);
-      const options = {
-        key: 'rzp_live_TF5Q4XYGrKlT1b', // Using Live Key directly
-        amount: Math.round(total * 100),
-        currency: 'INR',
-        name: 'Anant Arts',
-        description: `Order ${orderNumber}`,
-        handler: async function (response) {
-          createDbOrder(orderNumber, shippingAddressString, 'Razorpay', 'Paid', response.razorpay_payment_id);
-        },
-        prefill: {
-          name: name,
-          email: email,
-          contact: phone,
-        },
-        theme: {
-          color: '#D4AF37',
-        },
-        modal: {
-          ondismiss: function () {
-            setLoading(false);
+      try {
+        // 1. Generate Razorpay Order server-side with 3-attempt auto-retry
+        let orderData = null;
+        let lastErrMessage = null;
+
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            console.log(`[Checkout Client Attempt ${attempt}/3] Requesting Razorpay order creation...`);
+            console.log("Creating Order");
+            
+            const orderRes = await fetch('/api/razorpay/create-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(orderDetailsPayload)
+            });
+
+            const data = await orderRes.json();
+            console.log("Order Response:", data);
+            
+            if (orderRes.ok && data.success) {
+              orderData = data;
+              break;
+            } else {
+              lastErrMessage = data.message;
+            }
+          } catch (fetchErr) {
+            console.warn(`[Checkout Client Retry ${attempt}/3 Exception]:`, fetchErr.message);
+            lastErrMessage = fetchErr.message;
+          }
+
+          if (attempt < 3) {
+            await new Promise((res) => setTimeout(res, 500 * attempt));
           }
         }
-      };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+        if (!orderData) {
+          setLoading(false);
+          setError(lastErrMessage || "We're unable to connect to our payment partner right now. Please try again in a few moments or choose Cash on Delivery.");
+          setPaymentMethod('cod'); // Automatically select COD as fallback!
+          return;
+        }
+        const razorpayKey = orderData.key_id || (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TF5Q4XYGrKlT1b');
+
+        // 2. Configure Razorpay modal with server generated order_id
+        if (!orderData || !orderData.order_id) {
+          throw new Error(lastErrMessage || 'Failed to initialize payment.');
+        }
+
+        // Check if backend gave us a fake order ID because of missing credentials
+        if (orderData.order_id.startsWith('order_') && orderData.order_id.length > 25) {
+           console.warn("⚠️ Client-side fallback order ID detected. Razorpay popup may fail if credentials are not configured on the backend.");
+        }
+
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'missing_key',
+          amount: orderData.amount,
+          currency: orderData.currency || 'INR',
+          name: 'Anant Arts',
+          description: 'Divine Idols Checkout',
+          order_id: orderData.order_id,
+          handler: function (response) {
+            console.log("Payment Success Callback Started");
+            (async () => {
+              try {
+                setLoading(true);
+                console.log("Verification Request - Payment ID:", response.razorpay_payment_id, "Order ID:", response.razorpay_order_id, "Signature:", response.razorpay_signature);
+                // 3. Verify Payment & Auto-Capture on server side before creating DB order
+                const verifyRes = await fetch('/api/razorpay/verify-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    orderDetails: orderDetailsPayload
+                  })
+                });
+
+                const verifyData = await verifyRes.json();
+                console.log("Verification Response:", verifyData);
+
+                if (!verifyRes.ok || !verifyData.success) {
+                  throw new Error(verifyData.message || verifyData.error || `Verification failed for Transaction ${response.razorpay_payment_id}`);
+                }
+
+                // Payment Verified & Order Created successfully!
+                setOrderSuccess({
+                  ...orderDetailsPayload,
+                  id: verifyData.order_id,
+                  payment_method: 'Razorpay',
+                  payment_status: verifyData.payment_status || 'Captured',
+                  payment_id: response.razorpay_payment_id,
+                  created_at: new Date().toISOString(),
+                  warning: verifyData.warning
+                });
+                clearCart();
+              } catch (verifyErr) {
+                console.log("Payment Error:", verifyErr);
+                console.error('Payment Verification Callback Exception:', verifyErr);
+                const actualError = verifyErr.message || 'Verification failed.';
+                alert(actualError); // EXACT ROOT ERROR displayed as alert
+                setError(`Payment Notice: ${actualError} Transaction Reference: ${response.razorpay_payment_id || 'N/A'}.`);
+              } finally {
+                setLoading(false);
+              }
+            })();
+          },
+          prefill: {
+            name: name,
+            email: email,
+            contact: phone,
+          },
+          theme: {
+            color: '#D4AF37',
+          },
+          modal: {
+            ondismiss: function () {
+              setLoading(false);
+              setError('Payment window was closed. Your cart and shipping details remain saved. You can retry or choose Cash on Delivery.');
+            }
+          }
+        };
+
+        if (!window.Razorpay) {
+          console.error("Razorpay SDK not loaded. Blocked by browser?");
+          setLoading(false);
+          alert("Payment gateway failed to load. Please disable any adblockers or strict tracking protection, or try Cash on Delivery.");
+          setPaymentMethod('cod');
+          return;
+        }
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          console.error("Razorpay SDK Payment Failed:", response.error);
+          setLoading(false);
+          setError(`Payment failed: ${response.error.description || 'Unknown error'}. Please try again.`);
+        });
+
+        rzp.open();
+      } catch (err) {
+        console.error('Checkout Submission Error:', err);
+        console.error('Razorpay Init Error:', err);
+        const actualError = err.message || "We're unable to connect to our payment partner right now.";
+        alert("Initialization Error: " + actualError); // EXACT ROOT ERROR displayed as alert
+        setError(`${actualError} Please try again in a few moments or choose Cash on Delivery.`);
+        setPaymentMethod('cod');
+        setLoading(false);
+      }
     } else {
-      setLoading(true);
-      createDbOrder(orderNumber, shippingAddressString, 'COD', 'Pending', null);
+      // Cash on Delivery flow
+      createDbOrder(orderNumber, shippingAddressString, 'COD', 'Pending', null, orderDetailsPayload);
     }
   };
 
-  const createDbOrder = async (orderNumber, shippingAddress, method, payStatus, paymentId) => {
+  const createDbOrder = async (orderNumber, shippingAddress, method, payStatus, paymentId, orderDetailsPayload) => {
     try {
       const res = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number: orderNumber,
-          customer_name: name,
-          customer_email: email,
-          customer_phone: phone,
-          street_address: address,
-          city: city,
-          state: state,
-          zip: zip,
-          landmark: landmark,
-          shipping_address: shippingAddress,
-          billing_address: shippingAddress,
-          coupon_id: coupon?.id || null,
-          discount_amount: discount,
-          shipping_charge: shipping,
-          subtotal: subtotal,
-          total_amount: total,
+          ...orderDetailsPayload,
           payment_method: method,
           payment_status: payStatus,
-          payment_id: paymentId,
-          items: cart.map(item => ({
-            product_id: item.id,
-            product_name: item.name,
-            price: item.discount_price && item.discount_price > 0 ? item.discount_price : item.price,
-            quantity: item.quantity
-          }))
+          payment_id: paymentId
         })
       });
 
@@ -410,6 +624,7 @@ export default function CheckoutPage() {
 
   return (
     <div style={{ background: 'var(--bg-cream)', padding: '4rem 0' }}>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         
         <div className="section-heading" style={{ textAlign: 'left', marginBottom: '2.5rem' }}>
@@ -421,7 +636,55 @@ export default function CheckoutPage() {
           
           {/* Left Column: Customer Form */}
           <div style={{ flex: '2 1 500px', background: 'white', padding: '32px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '20px' }}>Shipping Information</h3>
+            
+            {savedAddresses.length > 0 && (
+              <div style={{ marginBottom: '32px' }}>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '16px' }}>Saved Addresses</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {savedAddresses.map(addr => (
+                    <div 
+                      key={addr.id}
+                      onClick={() => handleSelectAddress(addr)}
+                      style={{
+                        padding: '16px',
+                        border: selectedAddressId === addr.id ? '2px solid var(--primary-gold)' : '1px solid var(--primary-gold-border)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        background: selectedAddressId === addr.id ? 'var(--primary-gold-light)' : 'white'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <strong style={{ fontSize: '0.9rem' }}>{addr.name}</strong>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{addr.phone}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-dark)', lineHeight: '1.4' }}>
+                        {addr.address}<br />
+                        {addr.city}, {addr.state} - {addr.pincode}
+                      </p>
+                    </div>
+                  ))}
+                  
+                  <button 
+                    onClick={() => {
+                      setSelectedAddressId(null);
+                      setAddress(''); setCity(''); setState(''); setZip('');
+                    }}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary-gold)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', textAlign: 'left', padding: '8px 0' }}
+                  >
+                    + Add New Address
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '20px' }}>{savedAddresses.length > 0 && selectedAddressId ? 'Edit Shipping Information' : 'Shipping Information'}</h3>
+            
+            {paymentHealth.checked && !paymentHealth.healthy && (
+              <div style={{ padding: '12px 16px', borderRadius: '6px', background: '#FFF3E0', border: '1px solid #FFE082', color: '#E65100', marginBottom: '16px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
+                <span>{paymentHealth.message}</span>
+              </div>
+            )}
             
             <form onSubmit={handleCheckoutSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} noValidate>
               {/* Full Name */}
@@ -651,6 +914,20 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {!authUser && (
+                <div style={{ marginTop: '20px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-dark)', fontWeight: '500' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={createAccount}
+                      onChange={(e) => setCreateAccount(e.target.checked)}
+                      style={{ accentColor: 'var(--primary-gold)', width: '16px', height: '16px' }}
+                    />
+                    Create an account for faster checkout next time
+                  </label>
+                </div>
+              )}
+
               {/* Payment Methods */}
               <div style={{ marginTop: '16px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '20px' }}>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '16px' }}>Payment Method</h3>
@@ -685,6 +962,20 @@ export default function CheckoutPage() {
                     </div>
                   </label>
                 </div>
+
+                {/* Payment Troubleshooting Callout */}
+                <div style={{
+                  marginTop: '16px',
+                  padding: '12px 16px',
+                  borderRadius: '6px',
+                  backgroundColor: '#faf8f2',
+                  borderLeft: '4px solid var(--primary-gold)',
+                  fontSize: '0.8rem',
+                  lineHeight: '1.4',
+                  color: 'var(--text-dark)'
+                }}>
+                  💡 <strong>Payment Troubleshooting:</strong> If your online transaction fails due to banking errors (e.g. <em>remitter invalid transaction</em>), please verify your daily bank limits, check your UPI app for pending authorization notifications, or select <strong>Cash on Delivery (COD)</strong> to complete your order immediately.
+                </div>
               </div>
 
               {error && <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: '8px 0 0 0' }}>{error}</p>}
@@ -697,11 +988,11 @@ export default function CheckoutPage() {
                   justifyContent: 'center',
                   marginTop: '24px',
                   padding: '14px',
-                  opacity: (!isFormValid || loading) ? 0.5 : 1,
-                  cursor: (!isFormValid || loading) ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.5 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
                   transition: 'opacity 0.2s'
                 }}
-                disabled={loading || !isFormValid}
+                disabled={loading}
               >
                 {loading ? 'Processing Order...' : paymentMethod === 'razorpay' ? 'Pay Now via Razorpay' : 'Place Order (COD)'}
               </button>

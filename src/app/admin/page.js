@@ -211,62 +211,88 @@ export default async function AdminDashboardPage() {
 
       </div>
 
-      {/* Recent Orders Table */}
-      <div style={{ background: 'white', padding: '24px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', margin: 0 }}>Recent Orders</h3>
-          <Link href="/admin/orders" style={{ fontSize: '0.8rem', color: 'var(--primary-gold-hover)', fontWeight: '600' }}>
-            View All Orders
-          </Link>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', flexWrap: 'wrap' }}>
+        {/* Recent Orders Table */}
+        <div style={{ background: 'white', padding: '24px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', margin: 0 }}>Recent Orders</h3>
+            <Link href="/admin/orders" style={{ fontSize: '0.8rem', color: 'var(--primary-gold-hover)', fontWeight: '600' }}>
+              View All Orders
+            </Link>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--bg-cream-dark)', color: 'var(--text-muted)' }}>
+                  <th style={{ padding: '12px' }}>Order Number</th>
+                  <th style={{ padding: '12px' }}>Customer Name</th>
+                  <th style={{ padding: '12px' }}>Amount</th>
+                  <th style={{ padding: '12px' }}>Payment Status</th>
+                  <th style={{ padding: '12px' }}>Order Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.slice(0, 5).map((o) => (
+                  <tr key={o.id} style={{ borderBottom: '1px solid var(--bg-cream-dark)' }}>
+                    <td style={{ padding: '12px', fontWeight: '600' }}>{o.order_number}</td>
+                    <td style={{ padding: '12px' }}>{o.customer_name}</td>
+                    <td style={{ padding: '12px', fontWeight: '600' }}>{formatPrice(o.total_amount)}</td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '0.7rem',
+                        fontWeight: '600',
+                        backgroundColor: o.payment_status === 'Paid' ? 'rgba(46, 125, 50, 0.1)' : 'rgba(239, 108, 0, 0.1)',
+                        color: o.payment_status === 'Paid' ? 'var(--success)' : 'var(--warning)'
+                      }}>
+                        {o.payment_status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '0.7rem',
+                        fontWeight: '600',
+                        backgroundColor: o.order_status === 'Delivered' ? 'rgba(46, 125, 50, 0.1)' : 'rgba(21, 101, 192, 0.1)',
+                        color: o.order_status === 'Delivered' ? 'var(--success)' : 'var(--info)'
+                      }}>
+                        {o.order_status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--bg-cream-dark)', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '12px' }}>Order Number</th>
-                <th style={{ padding: '12px' }}>Customer Name</th>
-                <th style={{ padding: '12px' }}>Date</th>
-                <th style={{ padding: '12px' }}>Amount</th>
-                <th style={{ padding: '12px' }}>Payment Status</th>
-                <th style={{ padding: '12px' }}>Order Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.slice(0, 5).map((o) => (
-                <tr key={o.id} style={{ borderBottom: '1px solid var(--bg-cream-dark)' }}>
-                  <td style={{ padding: '12px', fontWeight: '600' }}>{o.order_number}</td>
-                  <td style={{ padding: '12px' }}>{o.customer_name}</td>
-                  <td style={{ padding: '12px' }}>{new Date(o.created_at).toLocaleDateString('en-IN')}</td>
-                  <td style={{ padding: '12px', fontWeight: '600' }}>{formatPrice(o.total_amount)}</td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      fontSize: '0.7rem',
-                      fontWeight: '600',
-                      backgroundColor: o.payment_status === 'Paid' ? 'rgba(46, 125, 50, 0.1)' : 'rgba(239, 108, 0, 0.1)',
-                      color: o.payment_status === 'Paid' ? 'var(--success)' : 'var(--warning)'
-                    }}>
-                      {o.payment_status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      fontSize: '0.7rem',
-                      fontWeight: '600',
-                      backgroundColor: o.order_status === 'Delivered' ? 'rgba(46, 125, 50, 0.1)' : 'rgba(21, 101, 192, 0.1)',
-                      color: o.order_status === 'Delivered' ? 'var(--success)' : 'var(--info)'
-                    }}>
-                      {o.order_status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Top Products / Best Sellers */}
+        <div style={{ background: 'white', padding: '24px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', margin: 0 }}>Star Products</h3>
+            <Link href="/admin/products" style={{ fontSize: '0.8rem', color: 'var(--primary-gold-hover)', fontWeight: '600' }}>
+              Manage
+            </Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {products.filter(p => p.is_bestseller === 1 || p.is_featured === 1).slice(0, 4).map((p) => (
+              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--bg-cream-dark)', paddingBottom: '12px' }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-dark)' }}>{p.name}</p>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Stock: {p.stock_quantity} remaining</span>
+                </div>
+                <div style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--primary-gold)' }}>
+                  {formatPrice(p.price)}
+                </div>
+              </div>
+            ))}
+            {products.filter(p => p.is_bestseller === 1 || p.is_featured === 1).length === 0 && (
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No bestsellers marked yet.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

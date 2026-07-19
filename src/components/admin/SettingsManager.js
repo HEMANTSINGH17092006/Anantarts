@@ -1,17 +1,24 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateSettings } from '@/app/actions';
+import { updateSettings, createAdminAction, toggleAdminStatusAction, deleteAdminAction } from '@/app/actions';
 
-export default function SettingsManager({ settings, logs = [] }) {
+export default function SettingsManager({ settings, logs = [], currentUser, admins = [] }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isTransitionPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState('WhatsApp');
 
   // WhatsApp States
   const [wpEnabled, setWpEnabled] = useState(settings.whatsapp_notifications_enabled === '1');
   const [wpNumber, setWpNumber] = useState(settings.whatsapp_admin_number || '');
   const [wpTemplate, setWpTemplate] = useState(settings.whatsapp_message_template || '');
+  
+  // Admin Management States
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState('manager');
+  const [adminCreating, setAdminCreating] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ type: '', message: '' });
@@ -39,6 +46,47 @@ export default function SettingsManager({ settings, logs = [] }) {
       startTransition(() => { router.refresh(); });
     } else {
       showAlert('danger', res.message || 'Failed to update settings.');
+    }
+  };
+
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    if (!newAdminEmail || !newAdminPassword || !newAdminRole) return;
+    setAdminCreating(true);
+    
+    const res = await createAdminAction(newAdminEmail, newAdminPassword, newAdminRole);
+    setAdminCreating(false);
+
+    if (res.success) {
+      showAlert('success', 'New administrator account created successfully.');
+      setNewAdminEmail('');
+      setNewAdminPassword('');
+      setNewAdminRole('manager');
+      setAdminModalOpen(false);
+      startTransition(() => { router.refresh(); });
+    } else {
+      showAlert('danger', res.message || 'Failed to create administrator account.');
+    }
+  };
+
+  const handleToggleStatus = async (adminId, currentStatus) => {
+    const res = await toggleAdminStatusAction(adminId, !currentStatus);
+    if (res.success) {
+      showAlert('success', 'Administrator status updated.');
+      startTransition(() => { router.refresh(); });
+    } else {
+      showAlert('danger', res.message || 'Failed to update administrator status.');
+    }
+  };
+
+  const handleDeleteAdmin = async (adminId) => {
+    if (!confirm('Are you sure you want to delete this administrator account? This action cannot be undone.')) return;
+    const res = await deleteAdminAction(adminId);
+    if (res.success) {
+      showAlert('success', 'Administrator account deleted.');
+      startTransition(() => { router.refresh(); });
+    } else {
+      showAlert('danger', res.message || 'Failed to delete administrator account.');
     }
   };
 
@@ -86,6 +134,11 @@ export default function SettingsManager({ settings, logs = [] }) {
         <button onClick={() => setActiveTab('Logs')} style={tabStyle('Logs')}>
           Notification Logs
         </button>
+        {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
+          <button onClick={() => setActiveTab('Admins')} style={tabStyle('Admins')}>
+            Manage Admins
+          </button>
+        )}
       </div>
 
       {/* ============ WHATSAPP TAB ============ */}
@@ -198,6 +251,159 @@ export default function SettingsManager({ settings, logs = [] }) {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ============ ADMINS TAB ============ */}
+      {activeTab === 'Admins' && (currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Header Action */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '1.1rem', margin: 0 }}>System Administrators ({admins.length})</h2>
+            {currentUser?.role === 'super_admin' && (
+              <button onClick={() => setAdminModalOpen(true)} className="btn-gold" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
+                + Add Administrator
+              </button>
+            )}
+          </div>
+
+          {/* Admins Table */}
+          <div style={{ background: 'white', borderRadius: '8px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--bg-cream-dark)', color: 'var(--text-muted)' }}>
+                  <th style={{ padding: '12px' }}>Email Address</th>
+                  <th style={{ padding: '12px' }}>Role</th>
+                  <th style={{ padding: '12px' }}>Status</th>
+                  <th style={{ padding: '12px' }}>Created At</th>
+                  {currentUser?.role === 'super_admin' && <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {admins.map((adm) => {
+                  const isSelf = adm.email === currentUser?.email;
+                  return (
+                    <tr key={adm.id} style={{ borderBottom: '1px solid var(--bg-cream-dark)' }}>
+                      <td style={{ padding: '12px', fontWeight: '600' }}>
+                        {adm.email} {isSelf && <span style={{ fontSize: '0.7rem', color: 'var(--primary-gold-hover)', fontStyle: 'italic' }}>(You)</span>}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '0.68rem',
+                          fontWeight: '600',
+                          backgroundColor: adm.role === 'super_admin' ? 'rgba(212,175,55,0.1)' : adm.role === 'manager' ? 'rgba(76,175,80,0.1)' : 'rgba(33,150,243,0.1)',
+                          color: adm.role === 'super_admin' ? 'var(--primary-gold-hover)' : adm.role === 'manager' ? '#2e7d32' : '#1565c0',
+                          textTransform: 'uppercase'
+                        }}>
+                          {adm.role.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        {currentUser?.role === 'super_admin' && !isSelf ? (
+                          <button
+                            onClick={() => handleToggleStatus(adm.id, adm.is_active)}
+                            style={{
+                              background: 'transparent',
+                              border: '1px solid',
+                              borderColor: adm.is_active ? 'var(--success)' : 'var(--text-muted)',
+                              color: adm.is_active ? 'var(--success)' : 'var(--text-muted)',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.72rem',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {adm.is_active ? 'Active' : 'Inactive'}
+                          </button>
+                        ) : (
+                          <span style={{ color: adm.is_active ? 'var(--success)' : 'var(--text-muted)', fontWeight: '600' }}>
+                            {adm.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
+                        {new Date(adm.created_at).toLocaleDateString('en-IN')}
+                      </td>
+                      {currentUser?.role === 'super_admin' && (
+                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                          {!isSelf && (
+                            <button
+                              onClick={() => handleDeleteAdmin(adm.id)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--danger)',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem'
+                              }}
+                              title="Delete Administrator"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Add Admin Modal */}
+          {adminModalOpen && (
+            <div className="admin-modal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+              <div className="admin-modal-content" style={{ maxWidth: '400px', width: '90%', padding: '24px' }}>
+                <span className="modal-close-btn" onClick={() => setAdminModalOpen(false)}>&times;</span>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', marginBottom: '16px' }}>Add New Administrator</h3>
+                <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      value={newAdminEmail}
+                      onChange={(e) => setNewAdminEmail(e.target.value)}
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Password *</label>
+                    <input
+                      type="password"
+                      required
+                      value={newAdminPassword}
+                      onChange={(e) => setNewAdminPassword(e.target.value)}
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Role *</label>
+                    <select
+                      value={newAdminRole}
+                      onChange={(e) => setNewAdminRole(e.target.value)}
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', background: 'white' }}
+                    >
+                      <option value="manager">Manager (Products & Orders)</option>
+                      <option value="content_editor">Content Editor (Products & Blogs)</option>
+                      <option value="super_admin">Super Admin (Full Access)</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                    <button type="button" onClick={() => setAdminModalOpen(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.8rem', background: 'transparent', border: '1px solid var(--text-muted)' }}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-gold" style={{ padding: '8px 16px', fontSize: '0.8rem' }} disabled={adminCreating}>
+                      {adminCreating ? 'Creating...' : 'Create Admin'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

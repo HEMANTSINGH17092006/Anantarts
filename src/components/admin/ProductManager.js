@@ -139,6 +139,10 @@ export default function ProductManager({ initialProducts = [], categories = [] }
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!name || !price || !sku) return;
+    if (!categoryId) {
+      showAlert('danger', 'Please select a category.');
+      return;
+    }
     setLoading(true);
 
     const formData = new FormData();
@@ -486,6 +490,7 @@ export default function ProductManager({ initialProducts = [], categories = [] }
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Category *</label>
                   <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', background: 'white' }}>
+                    <option value="">-- Select Category --</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>

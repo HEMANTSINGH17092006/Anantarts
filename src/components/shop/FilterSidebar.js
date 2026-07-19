@@ -14,6 +14,19 @@ export default function FilterSidebar({ categories = [], initialMaxPrice = 50000
   const [inStock, setInStock] = useState(searchParams.get('inStock') === '1');
   const [sort, setSort] = useState(searchParams.get('sort') || 'latest');
   const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '');
+  
+  // Mobile collapsing state
+  const [isMobile, setIsMobile] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Synchronize state with URL search params when they change (e.g. Back button)
   useEffect(() => {
@@ -95,154 +108,184 @@ export default function FilterSidebar({ categories = [], initialMaxPrice = 50000
       background: 'var(--bg-white)',
       border: '1px solid var(--primary-gold-border)',
       borderRadius: '8px',
-      padding: '24px',
+      padding: isMobile ? '12px 16px' : '24px',
       width: '100%'
     }}>
-      {/* Search Bar */}
-      <div style={{ marginBottom: '24px' }}>
-        <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Search Idols</h4>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px' }}>
-          <input
-            type="text"
-            placeholder="Type search terms..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              flex: 1,
-              padding: '8px 12px',
-              borderRadius: '4px',
-              border: '1px solid var(--primary-gold-border)',
-              fontSize: '0.85rem'
-            }}
-          />
-          <button type="submit" className="btn-gold" style={{ padding: '8px 12px' }}>
-            <i className="fas fa-search"></i>
-          </button>
-        </form>
-      </div>
-
-      {/* Sort */}
-      <div style={{ marginBottom: '24px' }}>
-        <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Sort By</h4>
-        <select
-          value={sort}
-          onChange={handleSortChange}
+      {isMobile && (
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
           style={{
             width: '100%',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            border: '1px solid var(--primary-gold-border)',
-            fontSize: '0.85rem',
-            background: 'white',
-            outline: 'none'
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer',
+            padding: '4px 0',
+            color: 'var(--text-dark)',
+            fontWeight: '600',
+            fontSize: '0.95rem',
+            fontFamily: 'var(--font-heading)'
           }}
         >
-          <option value="latest">Newest Arrivals</option>
-          <option value="price-low">Price: Low to High</option>
-          <option value="price-high">Price: High to Low</option>
-        </select>
-      </div>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fas fa-filter" style={{ color: 'var(--primary-gold)', fontSize: '0.85rem' }}></i> 
+            Filter & Sort Products
+          </span>
+          <i className={`fas fa-chevron-${isCollapsed ? 'down' : 'up'}`} style={{ color: 'var(--primary-gold)', fontSize: '0.85rem' }}></i>
+        </button>
+      )}
 
-      {/* Categories */}
-      <div style={{ marginBottom: '24px' }}>
-        <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Deities</h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {categories.map((cat) => (
-            <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', cursor: 'pointer' }}>
+      {(!isMobile || !isCollapsed) && (
+        <div style={{ marginTop: isMobile ? '16px' : '0' }}>
+          {/* Search Bar */}
+          <div style={{ marginBottom: '24px' }}>
+            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Search Idols</h4>
+            <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px' }}>
               <input
-                type="checkbox"
-                checked={selectedCategory === cat.slug}
-                onChange={() => handleCategoryChange(cat.slug)}
-                style={{ accentColor: 'var(--primary-gold)' }}
+                type="text"
+                placeholder="Type search terms..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--primary-gold-border)',
+                  fontSize: '0.85rem'
+                }}
               />
-              <span>{cat.name}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+              <button type="submit" className="btn-gold" style={{ padding: '8px 12px' }}>
+                <i className="fas fa-search"></i>
+              </button>
+            </form>
+          </div>
 
-      {/* Tags Filter */}
-      <div style={{ marginBottom: '24px' }}>
-        <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Featured Tags</h4>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {['Best Seller', 'New Arrival', 'Featured', 'Festival Special'].map((tag) => (
-            <button
-              key={tag}
-              onClick={() => handleTagChange(tag)}
+          {/* Sort */}
+          <div style={{ marginBottom: '24px' }}>
+            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Sort By</h4>
+            <select
+              value={sort}
+              onChange={handleSortChange}
               style={{
-                padding: '4px 10px',
-                borderRadius: '16px',
-                border: '1px solid var(--primary-gold)',
-                fontSize: '0.72rem',
-                cursor: 'pointer',
-                background: selectedTag === tag ? 'var(--gold-gradient)' : 'transparent',
-                color: selectedTag === tag ? 'var(--text-dark)' : 'var(--text-dark)',
-                fontWeight: '500',
-                transition: 'all 0.2s ease'
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                border: '1px solid var(--primary-gold-border)',
+                fontSize: '0.85rem',
+                background: 'white',
+                outline: 'none'
               }}
             >
-              {tag}
-            </button>
-          ))}
-        </div>
-      </div>
+              <option value="latest">Newest Arrivals</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
 
-      {/* Price Slider */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', margin: 0 }}>Max Price</h4>
-          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--primary-gold-hover)' }}>
-            ₹{Number(maxPrice).toLocaleString('en-IN')}
-          </span>
-        </div>
-        <input
-          type="range"
-          min="1000"
-          max="50000"
-          step="1000"
-          value={maxPrice}
-          onChange={handlePriceChange}
-          onMouseUp={handlePriceMouseUp}
-          onTouchEnd={handlePriceMouseUp}
-          style={{ width: '100%', accentColor: 'var(--primary-gold)' }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-          <span>₹1,000</span>
-          <span>₹50,000</span>
-        </div>
-      </div>
+          {/* Categories */}
+          <div style={{ marginBottom: '24px' }}>
+            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Deities</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {categories.map((cat) => (
+                <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCategory === cat.slug}
+                    onChange={() => handleCategoryChange(cat.slug)}
+                    style={{ accentColor: 'var(--primary-gold)' }}
+                  />
+                  <span>{cat.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
 
-      {/* Stock Toggle */}
-      <div style={{ marginBottom: '24px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={inStock}
-            onChange={handleInStockChange}
-            style={{ accentColor: 'var(--primary-gold)' }}
-          />
-          <strong>In Stock Only</strong>
-        </label>
-      </div>
+          {/* Tags Filter */}
+          <div style={{ marginBottom: '24px' }}>
+            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Featured Tags</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {['Best Seller', 'New Arrival', 'Featured', 'Festival Special'].map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => handleTagChange(tag)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '16px',
+                    border: '1px solid var(--primary-gold)',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    background: selectedTag === tag ? 'var(--gold-gradient)' : 'transparent',
+                    color: selectedTag === tag ? 'var(--text-dark)' : 'var(--text-dark)',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Clear Button */}
-      <button
-        onClick={handleClearAll}
-        style={{
-          width: '100%',
-          padding: '10px',
-          border: '1px solid var(--text-muted)',
-          background: 'transparent',
-          borderRadius: '4px',
-          fontSize: '0.8rem',
-          fontWeight: '500',
-          cursor: 'pointer',
-          color: 'var(--text-dark)',
-          transition: 'all 0.2s ease'
-        }}
-      >
-        <i className="fas fa-undo" style={{ marginRight: '6px' }}></i> Clear All Filters
-      </button>
+          {/* Price Slider */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', margin: 0 }}>Max Price</h4>
+              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--primary-gold-hover)' }}>
+                ₹{Number(maxPrice).toLocaleString('en-IN')}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="1000"
+              max="50000"
+              step="1000"
+              value={maxPrice}
+              onChange={handlePriceChange}
+              onMouseUp={handlePriceMouseUp}
+              onTouchEnd={handlePriceMouseUp}
+              style={{ width: '100%', accentColor: 'var(--primary-gold)' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span>₹1,000</span>
+              <span>₹50,000</span>
+            </div>
+          </div>
+
+          {/* Stock Toggle */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={inStock}
+                onChange={handleInStockChange}
+                style={{ accentColor: 'var(--primary-gold)' }}
+              />
+              <strong>In Stock Only</strong>
+            </label>
+          </div>
+
+          {/* Clear Button */}
+          <button
+            onClick={handleClearAll}
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid var(--text-muted)',
+              background: 'transparent',
+              borderRadius: '4px',
+              fontSize: '0.8rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              color: 'var(--text-dark)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <i className="fas fa-undo" style={{ marginRight: '6px' }}></i> Clear All Filters
+          </button>
+        </div>
+      )}
     </div>
   );
 }
