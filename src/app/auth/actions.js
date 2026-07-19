@@ -170,7 +170,7 @@ export async function getSessionCustomer() {
   }
 }
 
-export async function updateCustomerProfile(newName) {
+export async function updateCustomerProfile(newName, newPhone, newEmail) {
   try {
     const customer = await getSessionCustomer();
     if (!customer) return { success: false, message: 'Not authenticated.' };
@@ -180,10 +180,49 @@ export async function updateCustomerProfile(newName) {
       return { success: false, message: 'Name must be between 3 and 50 characters.' };
     }
 
+    const cleanPhone = (newPhone || '').trim();
+    if (cleanPhone && !/^[6-9][0-9]{9}$/.test(cleanPhone)) {
+      return { success: false, message: 'Please enter a valid 10-digit mobile number.' };
+    }
+
+    const cleanEmail = (newEmail || '').trim().toLowerCase();
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
+
     const supabase = createAdminClient();
+
+    // Verify uniqueness of phone if changed
+    if (cleanPhone && cleanPhone !== (customer.phone || '')) {
+      const { data: existingPhone } = await supabase
+        .from('users')
+        .select('id')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
+      if (existingPhone) {
+        return { success: false, message: 'This phone number is already registered by another account.' };
+      }
+    }
+
+    // Verify uniqueness of email if changed
+    if (cleanEmail && cleanEmail !== (customer.email || '')) {
+      const { data: existingEmail } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+      if (existingEmail) {
+        return { success: false, message: 'This email address is already registered by another account.' };
+      }
+    }
+
+    const updateData = { name: cleanName };
+    updateData.phone = cleanPhone || null;
+    updateData.email = cleanEmail || null;
+
     const { data: updatedUser, error } = await supabase
       .from('users')
-      .update({ name: cleanName })
+      .update(updateData)
       .eq('id', customer.id)
       .select('*')
       .single();

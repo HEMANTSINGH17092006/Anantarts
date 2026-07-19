@@ -13,10 +13,6 @@ export default async function AccountProfilePage() {
       <h2 style={{ fontFamily: 'var(--font-heading)', margin: '0 0 24px 0', fontSize: '1.5rem', color: '#333' }}>Profile Settings</h2>
       
       <ProfileSettingsClient customer={customer} />
-      
-      <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '24px' }}>
-        * To update your mobile number or email, please contact customer support.
-      </p>
     </div>
   );
 }
