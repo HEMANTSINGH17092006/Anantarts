@@ -504,6 +504,15 @@ async function initDb() {
   await addColumn('orders', 'refund_id', 'TEXT');
   await addColumn('orders', 'payment_logs', 'TEXT');
   
+  if (isPostgres) {
+    try {
+      await pool.query("ALTER TABLE users ALTER COLUMN email DROP NOT NULL;");
+      await pool.query("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;");
+    } catch (e) {
+      // Ignore
+    }
+  }
+  
   await addColumn('banners', 'video_url', 'TEXT');
   await addColumn('blogs', 'seo_title', 'TEXT');
   await addColumn('blogs', 'seo_description', 'TEXT');
