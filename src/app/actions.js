@@ -949,13 +949,156 @@ export async function submitContactInquiry({ name, email, phone, subject, messag
     });
 
     if (error) throw error;
-
-    return { success: true, message: 'Thank you for contacting us! We will get back to you within 24 hours.' };
+    return { success: true, message: 'Your message has been sent successfully!' };
   } catch (err) {
-    console.error('[submitContactInquiry] Error:', err.message);
-    return { success: false, message: 'Could not submit your inquiry. Please try again or WhatsApp us directly.' };
+    console.error('[submitContactInquiry] Error:', err);
+    return { success: false, message: 'Failed to send message. Please try again later.' };
   }
 }
+
+/**
+ * getAdminNotificationsAction — Fetches notifications and operational alerts for admin
+ */
+export async function getAdminNotificationsAction() {
+  try {
+    const supabase = createAdminClient();
+
+    // 1. Database log notifications
+    const { data: notifications = [] } = await supabase
+      .from('notifications')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // 2. Count stuck authorized payments
+    const { count: authorizedCount } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('payment_status', 'Authorized');
+
+    // 3. Count low stock products
+    const { count: lowStockCount } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .lt('stock_quantity', 5);
+
+    // 4. Count pending new orders
+    const { count: newOrdersCount } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('order_status', 'Pending');
+
+    return {
+      success: true,
+      notifications: notifications || [],
+      counts: {
+        authorizedPayments: authorizedCount || 0,
+        lowStock: lowStockCount || 0,
+        newOrders: newOrdersCount || 0
+      }
+    };
+  } catch (err) {
+    console.error('[getAdminNotificationsAction] Error:', err);
+    return { success: false, notifications: [], counts: { authorizedPayments: 0, lowStock: 0, newOrders: 0 } };
+  }
+}
+
+/**
+ * markNotificationsReadAction — Marks all notifications as read
+ */
+export async function markNotificationsReadAction() {
+  try {
+    const supabase = createAdminClient();
+    await supabase.from('notifications').update({ is_read: 1 }).eq('is_read', 0);
+    return { success: true };
+  } catch (err) {
+    return { success: false };
+  }
+}
+
+/**
+ * updateSettings — Upserts key-value setting pairs into website_settings table
+ * @param {Array<{key: string, value: string}>} settingsArray
+ */
+export async function updateSettings(settingsArray) {
+  try {
+    const admin = await checkAuthRole(['admin', 'super_admin']);
+    if (!Array.isArray(settingsArray) || settingsArray.length === 0) {
+      return { success: false, message: 'Settings array is empty.' };
+    }
+
+    const supabase = createAdminClient();
+
+    for (const item of settingsArray) {
+      if (item.key) {
+        await supabase
+          .from('website_settings')
+          .upsert({ key: item.key, value: String(item.value ?? '') }, { onConflict: 'key' });
+      }
+    }
+
+    await logAudit(admin.email, 'UPDATE_WEBSITE_SETTINGS', { count: settingsArray.length });
+    return { success: true, message: 'Website settings saved successfully!' };
+  } catch (err) {
+    console.error('[updateSettings] Error:', err);
+    return { success: false, message: err.message || 'Failed to save settings.' };
+  }
+}
+
+/**
+ * exportFullBackupAction — Generates a full database backup JSON object for download
+ */
+export async function exportFullBackupAction() {
+  try {
+    await checkAuthRole(['super_admin', 'admin']);
+    const supabase = createAdminClient();
+
+    const [
+      { data: products },
+      { data: categories },
+      { data: orders },
+      { data: orderItems },
+      { data: users },
+      { data: coupons },
+      { data: websiteSettings }
+    ] = await Promise.all([
+      supabase.from('products').select('*'),
+      supabase.from('categories').select('*'),
+      supabase.from('orders').select('*'),
+      supabase.from('order_items').select('*'),
+      supabase.from('users').select('id, email, full_name, phone, created_at'),
+      supabase.from('coupons').select('*'),
+      supabase.from('website_settings').select('*')
+    ]);
+
+    const backupData = {
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      store: 'Anant Arts',
+      counts: {
+        products: products?.length || 0,
+        orders: orders?.length || 0,
+        users: users?.length || 0
+      },
+      data: {
+        products: products || [],
+        categories: categories || [],
+        orders: orders || [],
+        orderItems: orderItems || [],
+        users: users || [],
+        coupons: coupons || [],
+        websiteSettings: websiteSettings || []
+      }
+    };
+
+    return { success: true, backup: backupData };
+  } catch (err) {
+    console.error('[exportFullBackupAction] Error:', err);
+    return { success: false, message: err.message || 'Failed to generate backup.' };
+  }
+}
+
+
 
 /**
  * submitCorporateInquiry — Saves a corporate/bulk gift inquiry

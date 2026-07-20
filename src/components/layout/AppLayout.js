@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { AppProviders } from '../context/AppContext';
 import Header from './Header';
 import Footer from './Footer';
@@ -9,6 +10,9 @@ import WishlistDrawer from './WishlistDrawer';
 import MenuDrawer from './MenuDrawer';
 
 export default function AppLayout({ children, settings = {} }) {
+  const pathname = usePathname();
+  const isAdmin = pathname?.startsWith('/admin');
+
   // Single Source of Truth for mobile navigation tab & open drawer:
   // null | 'search' | 'wishlist' | 'cart' | 'menu'
   const [activeTab, setActiveTab] = useState(null);
@@ -18,6 +22,16 @@ export default function AppLayout({ children, settings = {} }) {
   };
 
   const closeTab = () => setActiveTab(null);
+
+  if (isAdmin) {
+    return (
+      <AppProviders>
+        <div style={{ minHeight: '100vh', background: '#F8FAF9' }}>
+          {children}
+        </div>
+      </AppProviders>
+    );
+  }
 
   return (
     <AppProviders>
