@@ -7,20 +7,30 @@ export const dynamic = 'force-dynamic';
 export default async function AdminDashboardPage() {
   const supabase = createAdminClient();
 
-  // 1. Parallel DB queries for enterprise stats
-  const [
-    { data: orders = [] },
-    { data: products = [] },
-    { data: users = [] },
-    { data: notifications = [] },
-    { data: orderItems = [] }
-  ] = await Promise.all([
-    supabase.from('orders').select('*').order('created_at', { ascending: false }),
-    supabase.from('products').select('*'),
-    supabase.from('users').select('id, email, full_name, created_at'),
-    supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(6),
-    supabase.from('order_items').select('product_id, product_name, price, quantity, total_price')
-  ]);
+  // 1. Parallel DB queries for enterprise stats with safe fallback arrays
+  let orders = [];
+  let products = [];
+  let users = [];
+  let notifications = [];
+  let orderItems = [];
+
+  try {
+    const [ordersRes, productsRes, usersRes, notificationsRes, orderItemsRes] = await Promise.all([
+      supabase.from('orders').select('*').order('created_at', { ascending: false }),
+      supabase.from('products').select('*'),
+      supabase.from('users').select('id, email, full_name, created_at'),
+      supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(6),
+      supabase.from('order_items').select('product_id, product_name, price, quantity, total_price')
+    ]);
+
+    orders = Array.isArray(ordersRes?.data) ? ordersRes.data : [];
+    products = Array.isArray(productsRes?.data) ? productsRes.data : [];
+    users = Array.isArray(usersRes?.data) ? usersRes.data : [];
+    notifications = Array.isArray(notificationsRes?.data) ? notificationsRes.data : [];
+    orderItems = Array.isArray(orderItemsRes?.data) ? orderItemsRes.data : [];
+  } catch (err) {
+    console.error('[AdminDashboardPage] Error fetching dashboard metrics:', err);
+  }
 
   // 2. Dashboard Statistics Calculations
   const totalOrders = orders.length;

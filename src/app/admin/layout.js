@@ -95,7 +95,9 @@ export default function AdminLayout({ children }) {
   const allowedRoutes = rolePermissions[userRole] || [];
   const isAuthorized = allowedRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
 
-  const totalUnreadNotifs = (notifications.filter(n => !n.is_read).length) + notifCounts.authorizedPayments + notifCounts.lowStock;
+  const safeNotifs = Array.isArray(notifications) ? notifications : [];
+  const safeCounts = notifCounts || { authorizedPayments: 0, lowStock: 0, newOrders: 0 };
+  const totalUnreadNotifs = (safeNotifs.filter(n => !n?.is_read).length) + (safeCounts.authorizedPayments || 0) + (safeCounts.lowStock || 0);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F6F8', fontFamily: "'Inter', system-ui, sans-serif" }}>
