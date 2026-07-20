@@ -15,13 +15,8 @@ function OrderTrackingContent() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
 
-  const urlOrder = searchParams.get('order');
-
-  useEffect(() => {
-    if (urlOrder) {
-      setOrderNumber(urlOrder);
-    }
-  }, [urlOrder]);
+  const urlOrder = searchParams.get('order') || searchParams.get('id');
+  const urlPhone = searchParams.get('phone');
 
   const trackOrder = async (num, ph) => {
     if (!num?.trim()) return;
@@ -41,6 +36,14 @@ function OrderTrackingContent() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (urlOrder) {
+      setOrderNumber(urlOrder);
+      if (urlPhone) setPhone(urlPhone);
+      trackOrder(urlOrder, urlPhone || '');
+    }
+  }, [urlOrder, urlPhone]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (!orderNumber.trim()) return;
@@ -59,7 +62,7 @@ function OrderTrackingContent() {
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <input
               type="text"
-              placeholder="Order ID (e.g., AA-260718-ABCXYZ)"
+              placeholder="Order ID (e.g. ANT-20260720-XXXX)"
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value)}
               required
@@ -67,10 +70,9 @@ function OrderTrackingContent() {
             />
             <input
               type="tel"
-              placeholder="Registered phone number"
+              placeholder="Registered phone number (optional if logged in)"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              required
               style={{ flex: '1 1 160px', padding: '12px 16px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.85rem' }}
             />
             <button type="submit" className="btn-gold" style={{ padding: '12px 24px', whiteSpace: 'nowrap' }} disabled={loading}>

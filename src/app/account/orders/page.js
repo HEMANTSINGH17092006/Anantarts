@@ -71,7 +71,7 @@ export default async function AccountOrdersPage() {
                   )}
                 </div>
                 
-                <Link href={`/order-tracking?id=${order.order_number}&phone=${order.customer_phone}`} style={{ fontSize: '0.85rem', color: 'var(--primary-gold)', fontWeight: '600', textDecoration: 'none' }}>
+                <Link href={`/order-tracking?id=${encodeURIComponent(order.order_number)}&phone=${encodeURIComponent(order.customer_phone || '')}`} style={{ fontSize: '0.85rem', color: 'var(--primary-gold)', fontWeight: '600', textDecoration: 'none' }}>
                   View Detailed Tracking <i className="fas fa-arrow-right" style={{ marginLeft: '4px' }}></i>
                 </Link>
               </div>

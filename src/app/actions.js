@@ -709,40 +709,111 @@ export async function deleteFlashSale(id) {
 // ======================================================
 
 /**
- * trackOrderAction — Securely looks up an order by ID + phone number
- * Replaces direct client-side Supabase query in order-tracking page.
- * @param {string} orderId - Customer's order ID
- * @param {string} phone - Customer's phone number for verification
+ * trackOrderAction — Looks up an order by order_number (or id)
+ * If user is authenticated, allows direct lookup for their own orders without phone requirement.
+ * If guest, requires phone number verification matching customer_phone.
+ * @param {string} orderId - Customer's order number or ID
+ * @param {string} phone - Customer's phone number (optional if logged in)
  */
 export async function trackOrderAction(orderId, phone) {
   try {
-    if (!orderId || !phone) {
-      return { success: false, message: 'Order ID and phone number are required.' };
+    const cleanId = (orderId || '').trim();
+    const cleanPhone = (phone || '').replace(/\s+/g, '').trim();
+
+    console.log('[trackOrderAction] Received Order ID/Number:', cleanId);
+    console.log('[trackOrderAction] Received Phone:', cleanPhone);
+
+    if (!cleanId) {
+      return { success: false, message: 'Order ID or Order Number is required.' };
     }
+
+    const customer = await getSessionCustomer();
+    console.log('[trackOrderAction] Authenticated Customer Session:', customer ? `User ID ${customer.id}` : 'None (Guest)');
 
     const supabase = createAdminClient();
-    const { data: order, error } = await supabase
+
+    let query = supabase
       .from('orders')
       .select(`
-        id, status, total_amount, payment_status, payment_method,
-        tracking_number, shipping_carrier, notes, created_at,
-        shipping_name, shipping_address, shipping_city, shipping_state, shipping_pincode,
+        id, user_id, order_number, customer_name, customer_email, customer_phone,
+        shipping_address, billing_address, coupon_id, discount_amount, shipping_charge,
+        subtotal, total_amount, payment_method, payment_status, order_status, notes,
+        tracking_number, created_at,
         order_items (
-          quantity, price_at_purchase,
-          products ( name, images:product_images(image_path) )
+          id, product_id, product_name, price, quantity, total_price
         )
-      `)
-      .eq('id', orderId)
-      .eq('shipping_phone', phone.replace(/\s+/g, ''))
-      .single();
+      `);
 
-    if (error || !order) {
-      return { success: false, message: 'Order not found. Please check your Order ID and phone number.' };
+    // Match order_number or numeric id
+    const isNumeric = /^\d+$/.test(cleanId);
+    if (isNumeric) {
+      query = query.or(`order_number.eq.${cleanId},id.eq.${parseInt(cleanId, 10)}`);
+    } else {
+      query = query.eq('order_number', cleanId);
     }
 
-    return { success: true, order };
+    // Auth vs Guest Verification
+    if (customer) {
+      // Logged in customer: match user_id OR email OR phone
+      const customerEmail = (customer.email || '').toLowerCase();
+      const customerPhone = (customer.phone || '').trim();
+
+      let orClauses = [`user_id.eq.${customer.id}`];
+      if (customerEmail) orClauses.push(`customer_email.eq.${customerEmail}`);
+      if (customerPhone) orClauses.push(`customer_phone.eq.${customerPhone}`);
+
+      query = query.or(orClauses.join(','));
+    } else {
+      // Guest user: require phone match
+      if (!cleanPhone) {
+        return { success: false, message: 'Registered phone number is required for guest order verification.' };
+      }
+      query = query.eq('customer_phone', cleanPhone);
+    }
+
+    const { data: orders, error } = await query;
+    console.log('[trackOrderAction] DB Query Result Count:', orders ? orders.length : 0, 'Error:', error);
+
+    if (error || !orders || orders.length === 0) {
+      // Fallback attempt for logged in user if initial user_id/email filter didn't catch a guest-placed order
+      if (customer && cleanPhone) {
+        console.log('[trackOrderAction] Retrying with explicit phone match fallback...');
+        let fallbackQuery = supabase
+          .from('orders')
+          .select(`
+            id, user_id, order_number, customer_name, customer_email, customer_phone,
+            shipping_address, billing_address, coupon_id, discount_amount, shipping_charge,
+            subtotal, total_amount, payment_method, payment_status, order_status, notes,
+            tracking_number, created_at,
+            order_items (
+              id, product_id, product_name, price, quantity, total_price
+            )
+          `)
+          .eq('customer_phone', cleanPhone);
+
+        if (isNumeric) {
+          fallbackQuery = fallbackQuery.or(`order_number.eq.${cleanId},id.eq.${parseInt(cleanId, 10)}`);
+        } else {
+          fallbackQuery = fallbackQuery.eq('order_number', cleanId);
+        }
+
+        const { data: fallbackOrders } = await fallbackQuery;
+        if (fallbackOrders && fallbackOrders.length > 0) {
+          return { success: true, order: fallbackOrders[0] };
+        }
+      }
+
+      return { 
+        success: false, 
+        message: customer 
+          ? `Order "${cleanId}" not found in your account. Please verify your Order ID.` 
+          : `Order "${cleanId}" not found. Please verify your Order ID and registered phone number.` 
+      };
+    }
+
+    return { success: true, order: orders[0] };
   } catch (err) {
-    console.error('[trackOrderAction] Error:', err.message);
+    console.error('[trackOrderAction] Exception:', err);
     return { success: false, message: 'An error occurred while tracking your order. Please try again.' };
   }
 }
