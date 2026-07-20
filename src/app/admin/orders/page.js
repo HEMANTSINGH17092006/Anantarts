@@ -4,29 +4,33 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOrdersPage() {
-  const supabase = createAdminClient();
+  try {
+    const supabase = createAdminClient();
 
-  // Fetch all orders
-  const { data: ordersData = [] } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false });
+    const [ordersRes, itemsRes] = await Promise.all([
+      supabase.from('orders').select('*').order('created_at', { ascending: false }),
+      supabase.from('order_items').select('*')
+    ]);
 
-  // Fetch all order items and map them to their parent orders
-  const orders = [];
-  for (const order of ordersData) {
-    const { data: items = [] } = await supabase
-      .from('order_items')
-      .select('*')
-      .eq('order_id', order.id);
-      
-    orders.push({
-      ...order,
-      items
+    const rawOrders = Array.isArray(ordersRes?.data) ? ordersRes.data : [];
+    const rawItems = Array.isArray(itemsRes?.data) ? itemsRes.data : [];
+
+    const itemsMap = {};
+    rawItems.forEach(item => {
+      if (item && item.order_id) {
+        if (!itemsMap[item.order_id]) itemsMap[item.order_id] = [];
+        itemsMap[item.order_id].push(item);
+      }
     });
-  }
 
-  return (
-    <OrderManager initialOrders={orders} />
-  );
+    const orders = rawOrders.map(order => ({
+      ...order,
+      items: itemsMap[order.id] || []
+    }));
+
+    return <OrderManager initialOrders={orders} />;
+  } catch (err) {
+    console.error('[AdminOrdersPage] Error:', err);
+    return <OrderManager initialOrders={[]} />;
+  }
 }
