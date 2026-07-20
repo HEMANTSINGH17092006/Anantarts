@@ -7,7 +7,7 @@ import * as jose from 'jose';
 import { cookies } from 'next/headers';
 import { slugify } from '@/lib/utils';
 import { sendEmail } from '@/lib/email';
-import { sendAdminB2bNotification } from '@/lib/whatsapp';
+import { sendAdminB2bNotification, sendCustomerDeliveryWhatsAppNotification } from '@/lib/whatsapp';
 
 
 const JWT_SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'anant_arts_divine_key_999');
@@ -890,6 +890,22 @@ export async function addAdminOrderTrackingEventAction({
         text: emailText,
         html: `<div style="font-family: sans-serif; padding: 20px; color: #333;"><p>Hello <strong>${order.customer_name}</strong>,</p><p>Your order <strong>#${order.order_number}</strong> status is now: <span style="color: #D4AF37; font-weight: bold;">${status}</span>.</p><p>${eventDesc}</p>${estimatedDelivery ? `<p><strong>Expected Delivery:</strong> ${estimatedDelivery}</p>` : ''}<p style="margin-top: 20px;"><a href="https://anantarts.in/order-tracking?order=${order.order_number}" style="background: #D4AF37; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Track Shipment Live</a></p></div>`
       }).catch(err => console.error('Email alert sending error:', err));
+    }
+
+    // 5. Send WhatsApp delivery notification to customer
+    if (order.customer_phone) {
+      const updatedOrderObj = {
+        ...order,
+        courier_name: courierName !== undefined ? courierName : order.courier_name,
+        tracking_number: trackingNumber !== undefined ? trackingNumber : order.tracking_number,
+        estimated_delivery: estimatedDelivery !== undefined ? estimatedDelivery : order.estimated_delivery
+      };
+      sendCustomerDeliveryWhatsAppNotification(updatedOrderObj, {
+        status,
+        title: eventTitle,
+        description: eventDesc,
+        location: location || 'Warehouse Hub'
+      }).catch(err => console.error('WhatsApp delivery alert sending error:', err));
     }
 
     await logAudit(admin.email, 'UPDATE_ORDER_TRACKING', { orderId, status, title: eventTitle });

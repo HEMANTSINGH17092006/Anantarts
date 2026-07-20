@@ -518,6 +518,11 @@ async function initDb() {
   await addColumn('orders', 'refund_status', "TEXT DEFAULT 'none'");
   await addColumn('orders', 'refund_id', 'TEXT');
   await addColumn('orders', 'payment_logs', 'TEXT');
+
+  await addColumn('order_tracking_events', 'courier_name', 'TEXT');
+  await addColumn('order_tracking_events', 'tracking_number', 'TEXT');
+  await addColumn('order_tracking_events', 'estimated_delivery', 'TEXT');
+  await addColumn('order_tracking_events', 'updated_by_admin', 'TEXT');
   
   if (isPostgres) {
     try {

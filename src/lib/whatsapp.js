@@ -181,3 +181,49 @@ export async function sendAdminB2bNotification(enquiry, settings) {
   }
 }
 
+/**
+ * Notify customer of order status / delivery event update via WhatsApp.
+ */
+export async function sendCustomerDeliveryWhatsAppNotification(order, event) {
+  try {
+    if (!order || !order.customer_phone) return { success: false, error: 'Customer phone not available.' };
+
+    let toNum = order.customer_phone.replace(/\D/g, '');
+    if (toNum.length === 10) toNum = '91' + toNum;
+
+    const statusTitle = event.title || `Order ${event.status}`;
+    const messageBody = `📦 *Order Update – Anant Arts*\n\n` +
+      `Hello *${order.customer_name}*,\n\n` +
+      `Your order *#${order.order_number}* status is now: *${event.status.toUpperCase()}* (${statusTitle}).\n\n` +
+      `📌 *Details:* ${event.description || 'Status updated.'}\n` +
+      (order.courier_name ? `🚚 *Courier:* ${order.courier_name}\n` : '') +
+      (order.tracking_number ? `🔖 *AWB / Tracking:* ${order.tracking_number}\n` : '') +
+      (order.estimated_delivery ? `📅 *Expected Delivery:* ${order.estimated_delivery}\n` : '') +
+      (event.location ? `📍 *Location:* ${event.location}\n` : '') +
+      `\n🔗 *Track Live:* https://anantarts.in/order-tracking?order=${order.order_number}\n\n` +
+      `Thank you for choosing Anant Arts!`;
+
+    const supabase = createAdminClient();
+    const { data: logEntry } = await supabase.from('whatsapp_logs').insert({
+      order_number: order.order_number,
+      phone_number: toNum,
+      status: 'Queued',
+      message: messageBody
+    }).select('id').single();
+
+    const result = await sendWhatsAppMessage(toNum, messageBody, 1).catch(err => ({ success: false, error: err.message }));
+
+    if (logEntry) {
+      await supabase.from('whatsapp_logs').update({
+        status: result.success ? 'Sent' : 'Logged',
+        message: result.success ? messageBody : `STATUS: Logged for reference\n\n${messageBody}`
+      }).eq('id', logEntry.id);
+    }
+
+    return result;
+  } catch (err) {
+    console.error('Failed to send customer WhatsApp delivery notification:', err);
+    return { success: false, error: err.message };
+  }
+}
+

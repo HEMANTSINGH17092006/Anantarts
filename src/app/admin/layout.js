@@ -5,9 +5,9 @@ import { adminLogout, getAdminSessionAction, getAdminNotificationsAction, markNo
 import { useState, useEffect } from 'react';
 
 const rolePermissions = {
-  super_admin: ['/admin', '/admin/products', '/admin/categories', '/admin/orders', '/admin/customers', '/admin/payment-recovery', '/admin/coupons', '/admin/content', '/admin/blogs', '/admin/settings'],
-  admin: ['/admin', '/admin/products', '/admin/categories', '/admin/orders', '/admin/customers', '/admin/payment-recovery', '/admin/coupons', '/admin/content', '/admin/blogs', '/admin/settings'],
-  manager: ['/admin', '/admin/products', '/admin/categories', '/admin/orders', '/admin/payment-recovery'],
+  super_admin: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/customers', '/admin/payment-recovery', '/admin/coupons', '/admin/content', '/admin/blogs', '/admin/settings'],
+  admin: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/customers', '/admin/payment-recovery', '/admin/coupons', '/admin/content', '/admin/blogs', '/admin/settings'],
+  manager: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/payment-recovery'],
   content_editor: ['/admin', '/admin/products', '/admin/categories', '/admin/blogs', '/admin/content']
 };
 
@@ -59,6 +59,7 @@ export default function AdminLayout({ children }) {
 
   const navLinks = [
     { href: '/admin', label: 'Dashboard Overview', icon: 'fa-chart-pie' },
+    { href: '/admin/delivery', label: '📦 Delivery Management', icon: 'fa-truck-fast' },
     { href: '/admin/orders', label: 'Order Fulfillment', icon: 'fa-shopping-bag' },
     { href: '/admin/products', label: 'Products & Inventory', icon: 'fa-boxes' },
     { href: '/admin/categories', label: 'Categories & Deities', icon: 'fa-folder-tree' },
