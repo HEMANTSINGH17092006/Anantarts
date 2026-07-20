@@ -237,6 +237,8 @@ export async function registerCustomer(name, email, phone, password) {
     console.error('registerCustomer error:', err);
     return { success: false, message: 'Something went wrong. Please try again.' };
   }
+}
+
 // Rate limiter helper (5 requests per 60 sec per key)
 const rateLimitMap = new Map();
 function checkRateLimit(key, limit = 5, windowMs = 60000) {
