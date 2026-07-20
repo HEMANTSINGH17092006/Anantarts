@@ -97,12 +97,12 @@ export default function SearchDrawer({ isOpen, onClose }) {
 
   return (
     <div 
-      className={`cart-drawer-overlay ${isOpen ? 'open' : ''}`} 
+      className="cart-drawer-overlay open" 
       onClick={onClose}
-      style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}
+      style={{ zIndex: 10000 }}
     >
       <div 
-        className="search-drawer"
+        className="search-drawer search-modal-drawer open"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
@@ -111,15 +111,15 @@ export default function SearchDrawer({ isOpen, onClose }) {
           borderBottom: '1px solid var(--primary-gold-border)',
           boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
           padding: '24px 20px',
-          animation: 'slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 10000,
+          zIndex: 10001,
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: '90vh',
+          maxHeight: '100vh',
           overflowY: 'auto'
         }}
       >

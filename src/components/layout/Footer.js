@@ -8,9 +8,8 @@ export default function Footer({
   onCartClick, 
   onSearchClick, 
   onWishlistClick,
-  cartOpen = false,
-  searchOpen = false,
-  wishlistOpen = false
+  onMenuClick,
+  activeDrawer = null
 }) {
   const pathname = usePathname();
   const contactAddress = settings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
@@ -35,6 +34,8 @@ export default function Footer({
   const instUrl = socialLinks.instagram || 'https://www.instagram.com/arts_by_anant';
   const fbUrl = socialLinks.facebook || '';
   const ytUrl = socialLinks.youtube || '';
+
+  const isDrawerOpen = Boolean(activeDrawer);
 
   return (
     <footer id="main-footer" style={{ borderTop: '1px solid var(--primary-gold-border)' }}>
@@ -116,57 +117,68 @@ export default function Footer({
         </p>
       </div>
 
-      {/* Floating WhatsApp button */}
-      <a 
-        href={`https://wa.me/${whatsappNumber}?text=Hi%20Anant%20Arts%20team%2C%20I%20want%20to%20know%20more%20about%20your%20idols.`}
-        className="whatsapp-float"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          position: 'fixed',
-          bottom: '80px',
-          right: '20px',
-          backgroundColor: '#25D366',
-          color: 'white',
-          borderRadius: '50%',
-          width: '60px',
-          height: '60px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '30px',
-          boxShadow: '2px 2px 3px #999',
-          zIndex: '999'
-        }}
-        aria-label="Chat on WhatsApp"
-      >
-        <i className="fab fa-whatsapp"></i>
-      </a>
+      {/* Floating WhatsApp button — positioned at bottom: 90px, automatically hidden when any drawer is active */}
+      {!isDrawerOpen && (
+        <a 
+          href={`https://wa.me/${whatsappNumber}?text=Hi%20Anant%20Arts%20team%2C%20I%20want%20to%20know%20more%20about%20your%20idols.`}
+          className="whatsapp-float"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            position: 'fixed',
+            bottom: '90px',
+            right: '20px',
+            backgroundColor: '#25D366',
+            color: 'white',
+            borderRadius: '50%',
+            width: '56px',
+            height: '56px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '28px',
+            boxShadow: '0 4px 15px rgba(37, 211, 102, 0.4)',
+            zIndex: '9998',
+            transition: 'transform 0.2s ease, opacity 0.2s ease'
+          }}
+          aria-label="Chat on WhatsApp"
+        >
+          <i className="fab fa-whatsapp"></i>
+        </a>
+      )}
 
-      {/* Mobile Sticky Floating Dock */}
+      {/* Mobile Glassmorphism Navigation Bar: Home | Search | Wishlist | Cart | Account */}
       <div className="mobile-action-dock">
-        <Link href="/" className={`mobile-action-dock-item ${pathname === '/' && !searchOpen && !wishlistOpen && !cartOpen ? 'active' : ''}`}>
+        {/* 1. Home */}
+        <Link 
+          href="/" 
+          className={`mobile-action-dock-item ${pathname === '/' && !activeDrawer ? 'active' : ''}`}
+        >
           <i className="fas fa-home"></i>
           <span>Home</span>
         </Link>
+
+        {/* 2. Search */}
         <button 
           onClick={onSearchClick} 
-          className={`mobile-action-dock-item ${searchOpen ? 'active' : ''}`}
+          className={`mobile-action-dock-item ${activeDrawer === 'search' ? 'active' : ''}`}
           style={{ background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}
         >
           <i className="fas fa-search"></i>
           <span>Search</span>
         </button>
+
+        {/* 3. Wishlist */}
         <button 
           onClick={onWishlistClick} 
-          className={`mobile-action-dock-item ${wishlistOpen ? 'active' : ''}`}
+          className={`mobile-action-dock-item ${activeDrawer === 'wishlist' ? 'active' : ''}`}
           style={{ background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', position: 'relative', padding: 0 }}
         >
           <i className="fas fa-heart"></i>
           {wishlistCount > 0 && (
             <span style={{
-              position: 'absolute', top: '4px', right: '18%',
-              background: 'var(--primary-gold)', color: 'var(--bg-dark)',
+              position: 'absolute', top: '2px', right: '18%',
+              background: 'var(--primary-gold)', color: '#000',
               borderRadius: '50%', width: '16px', height: '16px',
               fontSize: '0.62rem', fontWeight: '700',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -176,16 +188,18 @@ export default function Footer({
           )}
           <span>Wishlist</span>
         </button>
+
+        {/* 4. Cart */}
         <button 
           onClick={onCartClick} 
-          className={`mobile-action-dock-item ${cartOpen ? 'active' : ''}`}
+          className={`mobile-action-dock-item ${activeDrawer === 'cart' ? 'active' : ''}`}
           style={{ position: 'relative', background: 'none', border: 'none', color: 'inherit', width: '100%', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}
         >
           <i className="fas fa-shopping-bag"></i>
           {cartCount > 0 && (
             <span style={{
-              position: 'absolute', top: '4px', right: '22%',
-              background: 'var(--primary-gold)', color: 'var(--bg-dark)',
+              position: 'absolute', top: '2px', right: '22%',
+              background: 'var(--primary-gold)', color: '#000',
               borderRadius: '50%', width: '16px', height: '16px',
               fontSize: '0.62rem', fontWeight: '700',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -195,10 +209,15 @@ export default function Footer({
           )}
           <span>Cart</span>
         </button>
-        <a href={`https://wa.me/${whatsappNumber}?text=Hi%20Anant%20Arts%20team%2C%20I%20want%20to%20know%20more%20about%20your%20idols.`} target="_blank" rel="noopener noreferrer" className="mobile-action-dock-item">
-          <i className="fab fa-whatsapp" style={{ color: '#25D366' }}></i>
-          <span>WhatsApp</span>
-        </a>
+
+        {/* 5. Account */}
+        <Link 
+          href="/account" 
+          className={`mobile-action-dock-item ${pathname.startsWith('/account') && !activeDrawer ? 'active' : ''}`}
+        >
+          <i className="fas fa-user-circle"></i>
+          <span>Account</span>
+        </Link>
       </div>
     </footer>
   );

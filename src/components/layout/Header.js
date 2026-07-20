@@ -1,10 +1,8 @@
 'use client';
-import { useState } from 'react';
 import Link from 'next/link';
 import { useCart, useWishlist } from '../context/AppContext';
 
-export default function Header({ settings = {}, onCartClick, onSearchClick, onWishlistClick }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
+export default function Header({ settings = {}, onCartClick, onSearchClick, onWishlistClick, onMenuClick, activeDrawer }) {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
 
@@ -18,7 +16,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
         <div className="announcement-container">
           <div className="announcement-item">🪷 FREE INSURED SHIPPING ON ORDERS ABOVE ₹10,000</div>
           <div className="announcement-item">✨ 100% SECURE MULTI-LAYER WOODEN CRATE PACKAGING</div>
-          <div className="announcement-item">⚜️ 24K GOLD & STERLING SILVER ELECTROPLATED MASTERPIECES</div>
+          <div className="announcement-item">⚜️ 24K GOLD &amp; STERLING SILVER ELECTROPLATED MASTERPIECES</div>
           {/* Repeat for seamless loop */}
           <div className="announcement-item">🪷 FREE INSURED SHIPPING ON ORDERS ABOVE ₹10,000</div>
           <div className="announcement-item">✨ 100% SECURE MULTI-LAYER WOODEN CRATE PACKAGING</div>
@@ -27,7 +25,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
 
       <header className="site-header">
         <div className="header-container">
-          <Link href="/" className="logo-group" onClick={() => setMobileOpen(false)}>
+          <Link href="/" className="logo-group">
             <img src="/uploads/logo.png" alt="Anant Arts Logo" style={{ height: '48px', width: 'auto' }} onError={(e) => { e.target.style.display = 'none'; }} />
             <div className="logo-text">
               <h1>{siteName}</h1>
@@ -35,16 +33,16 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
             </div>
           </Link>
 
-          <nav className={`main-nav ${mobileOpen ? 'open' : ''}`}>
+          <nav className="main-nav">
             <ul>
-              <li><Link href="/" onClick={() => setMobileOpen(false)}>Home</Link></li>
-              <li><Link href="/shop" onClick={() => setMobileOpen(false)}>Shop All Idols</Link></li>
-              <li><Link href="/corporate-gifts" onClick={() => setMobileOpen(false)}>Corporate Gifts</Link></li>
-              <li><Link href="/consultation" onClick={() => setMobileOpen(false)} style={{ color: 'var(--primary-gold)', fontWeight: '600' }}><i className="fas fa-gem" style={{ fontSize: '0.75rem', marginRight: '4px' }}></i> Vastu Consultation</Link></li>
-              <li><Link href="/blog" onClick={() => setMobileOpen(false)}>Artisan Blogs</Link></li>
-              <li><Link href="/about" onClick={() => setMobileOpen(false)}>Our Story</Link></li>
-              <li><Link href="/account" onClick={() => setMobileOpen(false)}><i className="fas fa-user-circle" style={{ fontSize: '0.8rem', marginRight: '4px' }}></i>My Account</Link></li>
-              <li><Link href="/contact" onClick={() => setMobileOpen(false)}>Contact</Link></li>
+              <li><Link href="/">Home</Link></li>
+              <li><Link href="/shop">Shop All Idols</Link></li>
+              <li><Link href="/corporate-gifts">Corporate Gifts</Link></li>
+              <li><Link href="/consultation" style={{ color: 'var(--primary-gold)', fontWeight: '600' }}><i className="fas fa-gem" style={{ fontSize: '0.75rem', marginRight: '4px' }}></i> Vastu Consultation</Link></li>
+              <li><Link href="/blog">Artisan Blogs</Link></li>
+              <li><Link href="/about">Our Story</Link></li>
+              <li><Link href="/account"><i className="fas fa-user-circle" style={{ fontSize: '0.8rem', marginRight: '4px' }}></i>My Account</Link></li>
+              <li><Link href="/contact">Contact</Link></li>
             </ul>
           </nav>
 
@@ -59,17 +57,16 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
               <i className="far fa-heart"></i>
               {wishlistCount > 0 && <span className="cart-count" style={{ backgroundColor: 'var(--primary-gold)' }}>{wishlistCount}</span>}
             </button>
-            <button className="header-icon" onClick={onCartClick} aria-label="Cart">
+            <button className="header-icon" onClick={onCartClick} aria-label="Cart" style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
               <i className="fas fa-shopping-bag"></i>
               {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
             </button>
             <button
               className="mobile-menu-btn"
-              onClick={() => setMobileOpen(!mobileOpen)}
+              onClick={onMenuClick}
               aria-label="Toggle menu"
-              style={{ display: 'block' }}
             >
-              <i className={`fas ${mobileOpen ? 'fa-times' : 'fa-bars'}`}></i>
+              <i className={`fas ${activeDrawer === 'menu' ? 'fa-times' : 'fa-bars'}`}></i>
             </button>
           </div>
         </div>

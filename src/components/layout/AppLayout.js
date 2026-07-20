@@ -6,35 +6,47 @@ import Footer from './Footer';
 import CartDrawer from './CartDrawer';
 import SearchDrawer from './SearchDrawer';
 import WishlistDrawer from './WishlistDrawer';
+import MenuDrawer from './MenuDrawer';
 
 export default function AppLayout({ children, settings = {} }) {
-  const [cartOpen, setCartOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [wishlistOpen, setWishlistOpen] = useState(false);
+  // Centralized drawer state: null | 'cart' | 'search' | 'wishlist' | 'menu'
+  const [activeDrawer, setActiveDrawer] = useState(null);
+
+  const toggleDrawer = (drawerName) => {
+    setActiveDrawer((prev) => (prev === drawerName ? null : drawerName));
+  };
+
+  const closeDrawer = () => setActiveDrawer(null);
 
   return (
     <AppProviders>
       <div className="site-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Header 
           settings={settings} 
-          onCartClick={() => setCartOpen(true)} 
-          onSearchClick={() => setSearchOpen(true)}
-          onWishlistClick={() => setWishlistOpen(true)}
+          onCartClick={() => toggleDrawer('cart')} 
+          onSearchClick={() => toggleDrawer('search')}
+          onWishlistClick={() => toggleDrawer('wishlist')}
+          onMenuClick={() => toggleDrawer('menu')}
+          activeDrawer={activeDrawer}
         />
-        <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
-        <SearchDrawer isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-        <WishlistDrawer isOpen={wishlistOpen} onClose={() => setWishlistOpen(false)} />
+
+        {/* Centralized Exclusive Drawers */}
+        <CartDrawer isOpen={activeDrawer === 'cart'} onClose={closeDrawer} />
+        <SearchDrawer isOpen={activeDrawer === 'search'} onClose={closeDrawer} />
+        <WishlistDrawer isOpen={activeDrawer === 'wishlist'} onClose={closeDrawer} />
+        <MenuDrawer isOpen={activeDrawer === 'menu'} onClose={closeDrawer} />
+
         <main style={{ flex: 1 }}>
           {children}
         </main>
+
         <Footer 
           settings={settings} 
-          onCartClick={() => setCartOpen(true)} 
-          onSearchClick={() => setSearchOpen(true)}
-          onWishlistClick={() => setWishlistOpen(true)}
-          cartOpen={cartOpen}
-          searchOpen={searchOpen}
-          wishlistOpen={wishlistOpen}
+          onCartClick={() => toggleDrawer('cart')} 
+          onSearchClick={() => toggleDrawer('search')}
+          onWishlistClick={() => toggleDrawer('wishlist')}
+          onMenuClick={() => toggleDrawer('menu')}
+          activeDrawer={activeDrawer}
         />
       </div>
     </AppProviders>

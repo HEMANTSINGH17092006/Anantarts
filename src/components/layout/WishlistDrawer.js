@@ -21,33 +21,38 @@ export default function WishlistDrawer({ isOpen, onClose }) {
 
   const handleAddToCart = (product) => {
     addToCart(product);
-    // Keep it in wishlist or remove? Let's keep it but show feedback
-    alert(`${product.name} added to your shopping bag!`);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className={`cart-drawer-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
-      <div className={`cart-drawer ${isOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
-        <div className="cart-drawer-header">
-          <h3>My Wishlist ({wishlist.length})</h3>
+    <div className="cart-drawer-overlay open" onClick={onClose} style={{ zIndex: 10000 }}>
+      <div 
+        className="wishlist-drawer open" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="cart-drawer-header" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+          <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.3rem', fontWeight: '700' }}>
+            My Wishlist ({wishlist.length})
+          </h3>
           <button className="close-drawer-btn" onClick={onClose} aria-label="Close wishlist">
             <i className="fas fa-times"></i>
           </button>
         </div>
 
         {wishlist.length === 0 ? (
-          <div className="cart-drawer-empty" style={{ padding: '60px 32px', textAlign: 'center' }}>
+          <div className="cart-drawer-empty" style={{ padding: '60px 32px', textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <div className="empty-icon" style={{ fontSize: '3.5rem', marginBottom: '16px', color: 'var(--primary-gold)' }}>♡</div>
             <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '8px' }}>Your Wishlist is Empty</h3>
-            <p style={{ fontSize: '0.88rem', color: '#6B6B6B', marginBottom: '24px', lineHeight: '1.5' }}>
-              Browse products and save your favorite idols to view them later.
+            <p style={{ fontSize: '0.88rem', color: '#6B6B6B', marginBottom: '24px', lineHeight: '1.5', maxWidth: '300px' }}>
+              Browse products and save your favorite divine idols to view them later.
             </p>
             <Link href="/shop" className="btn-gold" onClick={onClose} style={{ display: 'inline-block', padding: '12px 32px', borderRadius: '4px', textDecoration: 'none', fontWeight: '600' }}>
               Browse Collection
             </Link>
           </div>
         ) : (
-          <div className="cart-drawer-items" style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="cart-drawer-items" style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
             {wishlist.map((item) => {
               const activePrice = item.discount_price && item.discount_price > 0 ? item.discount_price : item.price;
               return (
@@ -67,14 +72,15 @@ export default function WishlistDrawer({ isOpen, onClose }) {
                       onClick={() => handleAddToCart(item)}
                       className="btn-gold"
                       style={{
-                        padding: '6px 12px',
-                        fontSize: '0.72rem',
-                        marginTop: '6px',
+                        padding: '8px 14px',
+                        fontSize: '0.75rem',
+                        marginTop: '8px',
                         width: 'fit-content',
-                        borderRadius: '4px'
+                        borderRadius: '4px',
+                        fontWeight: '600'
                       }}
                     >
-                      Add To Cart
+                      <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Add To Cart
                     </button>
                   </div>
                   <button
