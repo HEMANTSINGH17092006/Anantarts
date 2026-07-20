@@ -720,18 +720,18 @@ export async function trackOrderAction(orderId, phone) {
     const cleanId = (orderId || '').trim();
     const cleanPhone = (phone || '').replace(/\s+/g, '').trim();
 
-    console.log('[trackOrderAction] Received Order ID/Number:', cleanId);
-    console.log('[trackOrderAction] Received Phone:', cleanPhone);
+    console.log('[trackOrderAction] Received -> Order ID:', cleanId, '| Phone:', cleanPhone);
 
     if (!cleanId) {
-      return { success: false, message: 'Order ID or Order Number is required.' };
+      return { success: false, message: 'Please enter an Order ID or Order Number.' };
     }
 
     const customer = await getSessionCustomer();
-    console.log('[trackOrderAction] Authenticated Customer Session:', customer ? `User ID ${customer.id}` : 'None (Guest)');
+    console.log('[trackOrderAction] Customer Session:', customer ? `User ID: ${customer.id}, Email: ${customer.email}` : 'Guest');
 
     const supabase = createAdminClient();
 
+    // Query order by order_number or numeric id
     let query = supabase
       .from('orders')
       .select(`
@@ -744,40 +744,21 @@ export async function trackOrderAction(orderId, phone) {
         )
       `);
 
-    // Match order_number or numeric id
     const isNumeric = /^\d+$/.test(cleanId);
     if (isNumeric) {
-      query = query.or(`order_number.eq.${cleanId},id.eq.${parseInt(cleanId, 10)}`);
+      query = query.eq('id', parseInt(cleanId, 10));
     } else {
       query = query.eq('order_number', cleanId);
     }
 
-    // Auth vs Guest Verification
-    if (customer) {
-      // Logged in customer: match user_id OR email OR phone
-      const customerEmail = (customer.email || '').toLowerCase();
-      const customerPhone = (customer.phone || '').trim();
-
-      let orClauses = [`user_id.eq.${customer.id}`];
-      if (customerEmail) orClauses.push(`customer_email.eq.${customerEmail}`);
-      if (customerPhone) orClauses.push(`customer_phone.eq.${customerPhone}`);
-
-      query = query.or(orClauses.join(','));
-    } else {
-      // Guest user: require phone match if specified, or try finding order
-      if (cleanPhone) {
-        query = query.eq('customer_phone', cleanPhone);
-      }
-    }
-
-    const { data: orders, error } = await query;
-    console.log('[trackOrderAction] DB Query Result Count:', orders ? orders.length : 0, 'Error:', error);
+    const { data: orders, error: orderErr } = await query;
+    console.log('[trackOrderAction] Query result count:', orders ? orders.length : 0, 'Error:', orderErr);
 
     let matchedOrder = orders && orders.length > 0 ? orders[0] : null;
 
-    if (!matchedOrder) {
-      // Fallback attempt: Try exact order_number query
-      let fallbackQuery = supabase
+    // Fallback search if cleanId was typed with different case
+    if (!matchedOrder && !isNumeric) {
+      const { data: fallbackOrders } = await supabase
         .from('orders')
         .select(`
           id, user_id, order_number, customer_name, customer_email, customer_phone,
@@ -787,19 +768,8 @@ export async function trackOrderAction(orderId, phone) {
           order_items (
             id, product_id, product_name, price, quantity, total_price
           )
-        `);
-
-      if (isNumeric) {
-        fallbackQuery = fallbackQuery.or(`order_number.eq.${cleanId},id.eq.${parseInt(cleanId, 10)}`);
-      } else {
-        fallbackQuery = fallbackQuery.eq('order_number', cleanId);
-      }
-
-      if (cleanPhone) {
-        fallbackQuery = fallbackQuery.eq('customer_phone', cleanPhone);
-      }
-
-      const { data: fallbackOrders } = await fallbackQuery;
+        `)
+        .ilike('order_number', cleanId);
       if (fallbackOrders && fallbackOrders.length > 0) {
         matchedOrder = fallbackOrders[0];
       }
@@ -808,27 +778,47 @@ export async function trackOrderAction(orderId, phone) {
     if (!matchedOrder) {
       return { 
         success: false, 
-        message: customer 
-          ? `Order "${cleanId}" not found in your account. Please verify your Order ID.` 
-          : `Order "${cleanId}" not found. Please verify your Order ID and registered phone number.` 
+        message: `Order "${cleanId}" not found. Please double-check your Order ID.` 
       };
     }
 
+    // Ownership & Verification Check
+    if (customer) {
+      console.log('[trackOrderAction] Authenticated user tracking order:', matchedOrder.order_number);
+    } else {
+      if (!cleanPhone) {
+        return { success: false, message: 'Please enter your registered phone number for guest order verification.' };
+      }
+      const dbPhone = (matchedOrder.customer_phone || '').replace(/\s+/g, '');
+      if (dbPhone !== cleanPhone && !dbPhone.endsWith(cleanPhone) && !cleanPhone.endsWith(dbPhone)) {
+        return { success: false, message: 'Phone number does not match the record for this Order ID.' };
+      }
+    }
+
     // Fetch tracking events for timeline
-    const { data: trackingEvents = [] } = await supabase
-      .from('order_tracking_events')
-      .select('*')
-      .eq('order_id', matchedOrder.id)
-      .order('timestamp', { ascending: true });
+    let trackingEvents = [];
+    try {
+      const { data: events } = await supabase
+        .from('order_tracking_events')
+        .select('*')
+        .eq('order_id', matchedOrder.id)
+        .order('timestamp', { ascending: true });
+      if (events) trackingEvents = events;
+    } catch (e) {
+      console.warn('[trackOrderAction] Non-fatal tracking events fetch error:', e.message);
+    }
 
     return { 
       success: true, 
       order: matchedOrder,
-      trackingEvents: trackingEvents || []
+      trackingEvents
     };
   } catch (err) {
-    console.error('[trackOrderAction] Exception:', err);
-    return { success: false, message: 'An error occurred while tracking your order. Please try again.' };
+    console.error('[trackOrderAction] Critical Exception:', err);
+    return { 
+      success: false, 
+      message: `Error tracking order: ${err.message || 'Unknown error'}` 
+    };
   }
 }
 
