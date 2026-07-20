@@ -82,11 +82,16 @@ export async function sendEmail({ to, subject, html, text }) {
     `;
 
     const mailOptions = {
-      from,
+      from: `"Anant Arts" <${from}>`,
+      replyTo: from,
       to,
       subject,
       text,
       html: brandedHtml,
+      headers: {
+        'X-Mailer': 'Anant Arts Mailer',
+        'List-Unsubscribe': `<mailto:${from}?subject=unsubscribe>`,
+      },
     };
 
     const info = await transporter.sendMail(mailOptions);

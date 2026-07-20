@@ -492,6 +492,7 @@ async function initDb() {
   await addColumn('products', 'related_products', 'TEXT');
 
   await addColumn('users', 'phone', 'TEXT UNIQUE');
+  await addColumn('users', 'email_verified', 'INTEGER DEFAULT 0');
 
 
   await addColumn('categories', 'type', "TEXT DEFAULT 'deity'");

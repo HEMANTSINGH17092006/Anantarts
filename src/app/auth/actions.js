@@ -4,7 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import * as jose from 'jose';
 import { cookies } from 'next/headers';
 import { sendEmail } from '@/lib/email';
-// import { sendWhatsAppMessage } from '@/lib/whatsapp'; // Assuming we had a direct text method, but let's just log it or send via email for now to guarantee delivery in dev.
+import bcrypt from 'bcryptjs';
+// import { sendWhatsAppMessage } from '@/lib/whatsapp';
 
 const JWT_SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'anant_arts_divine_key_999');
 
@@ -154,6 +155,131 @@ export async function verifyOtp(identifier, otp, userName = 'Valued Customer') {
   } catch (err) {
     console.error('verifyOtp error:', err);
     return { success: false, message: 'Verification failed.' };
+  }
+}
+
+// ==================== PASSWORD-BASED AUTH ====================
+
+export async function registerCustomer(name, email, phone, password) {
+  try {
+    // Validation
+    const cleanName = (name || '').trim();
+    if (cleanName.length < 3 || cleanName.length > 50) {
+      return { success: false, message: 'Name must be between 3 and 50 characters.' };
+    }
+
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
+
+    const cleanPhone = (phone || '').trim();
+    if (cleanPhone && !/^[6-9][0-9]{9}$/.test(cleanPhone)) {
+      return { success: false, message: 'Please enter a valid 10-digit mobile number.' };
+    }
+
+    if (!password || password.length < 6) {
+      return { success: false, message: 'Password must be at least 6 characters.' };
+    }
+
+    const supabase = createAdminClient();
+
+    // Check if email already exists
+    const { data: existingEmail } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', cleanEmail)
+      .maybeSingle();
+    if (existingEmail) {
+      return { success: false, message: 'An account with this email already exists. Please login instead.' };
+    }
+
+    // Check if phone already exists (if provided)
+    if (cleanPhone) {
+      const { data: existingPhone } = await supabase
+        .from('users')
+        .select('id')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
+      if (existingPhone) {
+        return { success: false, message: 'An account with this phone number already exists. Please login instead.' };
+      }
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Create user
+    const insertData = {
+      name: cleanName,
+      email: cleanEmail,
+      password_hash: passwordHash,
+      role: 'customer',
+    };
+    if (cleanPhone) insertData.phone = cleanPhone;
+
+    const { data: newUser, error: createError } = await supabase
+      .from('users')
+      .insert(insertData)
+      .select('*')
+      .single();
+
+    if (createError) {
+      console.error('registerCustomer insert error:', createError);
+      return { success: false, message: 'Failed to create account. Please try again.' };
+    }
+
+    // Set session cookie
+    await setCustomerSessionCookie(newUser);
+
+    return { success: true, message: 'Account created successfully!' };
+  } catch (err) {
+    console.error('registerCustomer error:', err);
+    return { success: false, message: 'Something went wrong. Please try again.' };
+  }
+}
+
+export async function loginCustomer(identifier, password) {
+  try {
+    if (!identifier || !password) {
+      return { success: false, message: 'Please enter your email/phone and password.' };
+    }
+
+    const ident = identifier.trim().toLowerCase();
+    const isEmail = ident.includes('@');
+    const lookupColumn = isEmail ? 'email' : 'phone';
+
+    const supabase = createAdminClient();
+
+    // Look up user
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq(lookupColumn, ident)
+      .single();
+
+    if (userError || !user) {
+      return { success: false, message: 'No account found with this email/phone. Please register first.' };
+    }
+
+    // Check if user has a password set
+    if (!user.password_hash) {
+      return { success: false, message: 'This account was created via OTP. Please contact support or use the forgot password option to set a password.' };
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return { success: false, message: 'Incorrect password. Please try again.' };
+    }
+
+    // Set session cookie
+    await setCustomerSessionCookie(user);
+
+    return { success: true, message: 'Logged in successfully!' };
+  } catch (err) {
+    console.error('loginCustomer error:', err);
+    return { success: false, message: 'Login failed. Please try again.' };
   }
 }
 
