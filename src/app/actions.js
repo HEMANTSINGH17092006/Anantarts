@@ -1327,23 +1327,6 @@ export async function submitB2bEnquiry(prevState, formData) {
   }
 }
 
-export async function updateSettings(settingsArray) {
-  try {
-    const adminSession = await checkAuthRole(['admin', 'super_admin']);
-    const supabase = createAdminClient();
-    for (const setting of settingsArray) {
-      await supabase
-        .from('website_settings')
-        .upsert({ key: setting.key, value: setting.value }, { onConflict: 'key' });
-    }
-    await logAudit(adminSession.email, 'UPDATE_SETTINGS', 'Updated website settings.');
-    revalidatePath('/admin');
-    return { success: true };
-  } catch (err) {
-    console.error('updateSettings error:', err);
-    return { success: false, message: 'Failed to update settings.' };
-  }
-}
 
 export async function createAdminAction(email, password, role) {
   try {
