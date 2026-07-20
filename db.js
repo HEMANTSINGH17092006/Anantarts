@@ -474,6 +474,18 @@ async function initDb() {
       expires_at DATETIME NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS order_tracking_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      location TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by_admin TEXT,
+      FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE
+    );
   `);
 
   // Run schema expansions / column additions
@@ -497,6 +509,8 @@ async function initDb() {
 
   await addColumn('categories', 'type', "TEXT DEFAULT 'deity'");
   await addColumn('orders', 'tracking_number', 'TEXT');
+  await addColumn('orders', 'courier_name', 'TEXT');
+  await addColumn('orders', 'estimated_delivery', 'TEXT');
   await addColumn('orders', 'razorpay_order_id', 'TEXT');
   await addColumn('orders', 'razorpay_payment_id', 'TEXT');
   await addColumn('orders', 'razorpay_signature', 'TEXT');

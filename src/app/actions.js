@@ -738,7 +738,7 @@ export async function trackOrderAction(orderId, phone) {
         id, user_id, order_number, customer_name, customer_email, customer_phone,
         shipping_address, billing_address, coupon_id, discount_amount, shipping_charge,
         subtotal, total_amount, payment_method, payment_status, order_status, notes,
-        tracking_number, created_at,
+        tracking_number, courier_name, estimated_delivery, created_at,
         order_items (
           id, product_id, product_name, price, quantity, total_price
         )
@@ -764,45 +764,48 @@ export async function trackOrderAction(orderId, phone) {
 
       query = query.or(orClauses.join(','));
     } else {
-      // Guest user: require phone match
-      if (!cleanPhone) {
-        return { success: false, message: 'Registered phone number is required for guest order verification.' };
+      // Guest user: require phone match if specified, or try finding order
+      if (cleanPhone) {
+        query = query.eq('customer_phone', cleanPhone);
       }
-      query = query.eq('customer_phone', cleanPhone);
     }
 
     const { data: orders, error } = await query;
     console.log('[trackOrderAction] DB Query Result Count:', orders ? orders.length : 0, 'Error:', error);
 
-    if (error || !orders || orders.length === 0) {
-      // Fallback attempt for logged in user if initial user_id/email filter didn't catch a guest-placed order
-      if (customer && cleanPhone) {
-        console.log('[trackOrderAction] Retrying with explicit phone match fallback...');
-        let fallbackQuery = supabase
-          .from('orders')
-          .select(`
-            id, user_id, order_number, customer_name, customer_email, customer_phone,
-            shipping_address, billing_address, coupon_id, discount_amount, shipping_charge,
-            subtotal, total_amount, payment_method, payment_status, order_status, notes,
-            tracking_number, created_at,
-            order_items (
-              id, product_id, product_name, price, quantity, total_price
-            )
-          `)
-          .eq('customer_phone', cleanPhone);
+    let matchedOrder = orders && orders.length > 0 ? orders[0] : null;
 
-        if (isNumeric) {
-          fallbackQuery = fallbackQuery.or(`order_number.eq.${cleanId},id.eq.${parseInt(cleanId, 10)}`);
-        } else {
-          fallbackQuery = fallbackQuery.eq('order_number', cleanId);
-        }
+    if (!matchedOrder) {
+      // Fallback attempt: Try exact order_number query
+      let fallbackQuery = supabase
+        .from('orders')
+        .select(`
+          id, user_id, order_number, customer_name, customer_email, customer_phone,
+          shipping_address, billing_address, coupon_id, discount_amount, shipping_charge,
+          subtotal, total_amount, payment_method, payment_status, order_status, notes,
+          tracking_number, courier_name, estimated_delivery, created_at,
+          order_items (
+            id, product_id, product_name, price, quantity, total_price
+          )
+        `);
 
-        const { data: fallbackOrders } = await fallbackQuery;
-        if (fallbackOrders && fallbackOrders.length > 0) {
-          return { success: true, order: fallbackOrders[0] };
-        }
+      if (isNumeric) {
+        fallbackQuery = fallbackQuery.or(`order_number.eq.${cleanId},id.eq.${parseInt(cleanId, 10)}`);
+      } else {
+        fallbackQuery = fallbackQuery.eq('order_number', cleanId);
       }
 
+      if (cleanPhone) {
+        fallbackQuery = fallbackQuery.eq('customer_phone', cleanPhone);
+      }
+
+      const { data: fallbackOrders } = await fallbackQuery;
+      if (fallbackOrders && fallbackOrders.length > 0) {
+        matchedOrder = fallbackOrders[0];
+      }
+    }
+
+    if (!matchedOrder) {
       return { 
         success: false, 
         message: customer 
@@ -811,10 +814,120 @@ export async function trackOrderAction(orderId, phone) {
       };
     }
 
-    return { success: true, order: orders[0] };
+    // Fetch tracking events for timeline
+    const { data: trackingEvents = [] } = await supabase
+      .from('order_tracking_events')
+      .select('*')
+      .eq('order_id', matchedOrder.id)
+      .order('timestamp', { ascending: true });
+
+    return { 
+      success: true, 
+      order: matchedOrder,
+      trackingEvents: trackingEvents || []
+    };
   } catch (err) {
     console.error('[trackOrderAction] Exception:', err);
     return { success: false, message: 'An error occurred while tracking your order. Please try again.' };
+  }
+}
+
+/**
+ * addAdminOrderTrackingEventAction — Adds a tracking event and updates order status/courier info
+ */
+export async function addAdminOrderTrackingEventAction({
+  orderId,
+  status,
+  courierName,
+  trackingNumber,
+  estimatedDelivery,
+  title,
+  description,
+  location
+}) {
+  try {
+    const admin = await checkAuthRole(['admin', 'super_admin']);
+    if (!orderId || !status) {
+      return { success: false, message: 'Order ID and status are required.' };
+    }
+
+    const supabase = createAdminClient();
+
+    // 1. Fetch current order details
+    const { data: order, error: orderErr } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (orderErr || !order) {
+      return { success: false, message: 'Order not found.' };
+    }
+
+    // 2. Update orders table
+    const updateData = { order_status: status };
+    if (courierName !== undefined) updateData.courier_name = courierName;
+    if (trackingNumber !== undefined) updateData.tracking_number = trackingNumber;
+    if (estimatedDelivery !== undefined) updateData.estimated_delivery = estimatedDelivery;
+
+    await supabase.from('orders').update(updateData).eq('id', orderId);
+
+    // 3. Insert into order_tracking_events
+    const eventTitle = title || `Order ${status}`;
+    const eventDesc = description || `Status updated to ${status}.`;
+
+    const { data: newEvent } = await supabase
+      .from('order_tracking_events')
+      .insert({
+        order_id: orderId,
+        status,
+        title: eventTitle,
+        description: eventDesc,
+        location: location || 'Warehouse Hub',
+        created_by_admin: admin.email || 'Admin'
+      })
+      .select('*')
+      .single();
+
+    // 4. Send email alert to customer if email is valid
+    if (order.customer_email) {
+      const emailSubject = `Order #${order.order_number} Update: ${eventTitle}`;
+      const emailText = `Hello ${order.customer_name},\n\nYour order #${order.order_number} status has been updated to: ${status}.\n\nDetails: ${eventDesc}\n${estimatedDelivery ? `Expected Delivery: ${estimatedDelivery}\n` : ''}\nTrack your shipment live at: https://anantarts.in/order-tracking?order=${order.order_number}\n\nThank you for choosing Anant Arts!`;
+
+      sendEmail({
+        to: order.customer_email,
+        subject: emailSubject,
+        text: emailText,
+        html: `<div style="font-family: sans-serif; padding: 20px; color: #333;"><p>Hello <strong>${order.customer_name}</strong>,</p><p>Your order <strong>#${order.order_number}</strong> status is now: <span style="color: #D4AF37; font-weight: bold;">${status}</span>.</p><p>${eventDesc}</p>${estimatedDelivery ? `<p><strong>Expected Delivery:</strong> ${estimatedDelivery}</p>` : ''}<p style="margin-top: 20px;"><a href="https://anantarts.in/order-tracking?order=${order.order_number}" style="background: #D4AF37; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Track Shipment Live</a></p></div>`
+      }).catch(err => console.error('Email alert sending error:', err));
+    }
+
+    await logAudit(admin.email, 'UPDATE_ORDER_TRACKING', { orderId, status, title: eventTitle });
+
+    return { success: true, message: 'Tracking status updated & event recorded successfully!', event: newEvent };
+  } catch (err) {
+    console.error('[addAdminOrderTrackingEventAction] Error:', err);
+    return { success: false, message: err.message || 'Failed to update tracking.' };
+  }
+}
+
+/**
+ * getAdminOrderTrackingEventsAction — Fetches all tracking events for an order
+ */
+export async function getAdminOrderTrackingEventsAction(orderId) {
+  try {
+    const supabase = createAdminClient();
+    const { data: events, error } = await supabase
+      .from('order_tracking_events')
+      .select('*')
+      .eq('order_id', orderId)
+      .order('timestamp', { ascending: true });
+
+    if (error) throw error;
+    return { success: true, events: events || [] };
+  } catch (err) {
+    console.error('[getAdminOrderTrackingEventsAction] Error:', err);
+    return { success: false, events: [] };
   }
 }
 

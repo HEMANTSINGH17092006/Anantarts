@@ -1,7 +1,7 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateOrderStatus } from '@/app/actions';
+import { updateOrderStatus, addAdminOrderTrackingEventAction, getAdminOrderTrackingEventsAction } from '@/app/actions';
 import { formatPrice } from '@/lib/utils';
 
 export default function OrderManager({ initialOrders = [] }) {
@@ -13,9 +13,17 @@ export default function OrderManager({ initialOrders = [] }) {
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   
-  // Status editing states
+  // Status & Tracking editing states
   const [nextStatus, setNextStatus] = useState('');
+  const [courierName, setCourierName] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
+  const [estimatedDelivery, setEstimatedDelivery] = useState('');
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventDescription, setEventDescription] = useState('');
+  const [eventLocation, setEventLocation] = useState('');
+  const [trackingEvents, setTrackingEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+
   const [updating, setUpdating] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [refunding, setRefunding] = useState(false);
@@ -51,7 +59,7 @@ export default function OrderManager({ initialOrders = [] }) {
     setTimeout(() => setAlert({ type: '', message: '' }), 5000);
   };
 
-  const orderTabs = ['All', 'Pending', 'Confirmed', 'Packed', 'Shipped', 'Delivered'];
+  const orderTabs = ['All', 'Pending', 'Payment Confirmed', 'Order Confirmed', 'Preparing Shipment', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered', 'Cancelled'];
   const paymentStatusOptions = ['All', 'Captured', 'Authorized', 'Pending', 'Failed', 'Refunded'];
 
   // Metrics Calculations
@@ -569,32 +577,79 @@ export default function OrderManager({ initialOrders = [] }) {
               ))}
             </div>
 
-            {/* Status updates Form */}
+            {/* Status & Tracking updates Form */}
             <form onSubmit={handleStatusUpdateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#D4AF37' }}>📦 Shipment &amp; Tracking Management</h4>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Order Status Log</label>
-                  <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', background: 'white' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '600', marginBottom: '4px' }}>Order Status</label>
+                  <select value={nextStatus} onChange={(e) => { setNextStatus(e.target.value); if (!eventTitle) setEventTitle(`Order ${e.target.value}`); }} style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', background: 'white', fontSize: '0.82rem' }}>
                     <option value="Pending">Pending</option>
-                    <option value="Confirmed">Confirmed</option>
+                    <option value="Payment Confirmed">Payment Confirmed</option>
+                    <option value="Order Confirmed">Order Confirmed</option>
+                    <option value="Preparing Shipment">Preparing Shipment</option>
                     <option value="Packed">Packed</option>
                     <option value="Shipped">Shipped</option>
+                    <option value="Out For Delivery">Out For Delivery</option>
                     <option value="Delivered">Delivered</option>
                     <option value="Cancelled">Cancelled</option>
+                    <option value="Returned">Returned</option>
+                    <option value="Refunded">Refunded</option>
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Courier Tracking No</label>
-                  <input type="text" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} placeholder="e.g. BD-12345" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '600', marginBottom: '4px' }}>Courier Partner Name</label>
+                  <input type="text" value={courierName} onChange={(e) => setCourierName(e.target.value)} placeholder="e.g. BlueDart / Delhivery" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', fontSize: '0.82rem' }} />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '600', marginBottom: '4px' }}>Tracking / AWB Number</label>
+                  <input type="text" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} placeholder="e.g. BD-987654321" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', fontSize: '0.82rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '600', marginBottom: '4px' }}>Expected Delivery Date</label>
+                  <input type="text" value={estimatedDelivery} onChange={(e) => setEstimatedDelivery(e.target.value)} placeholder="e.g. 25 July 2026" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px', fontSize: '0.82rem' }} />
+                </div>
+              </div>
+
+              {/* Event Timeline Entry */}
+              <div style={{ background: '#FDFBF7', padding: '12px', borderRadius: '6px', border: '1px solid #EAE3D2' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#333', display: 'block', marginBottom: '8px' }}>➕ Add Timeline Tracking Event</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                  <input type="text" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} placeholder="Event Title (e.g. Package Handed to Courier)" style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid #DDD', fontSize: '0.8rem' }} />
+                  <input type="text" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} placeholder="Location (e.g. Mumbai Sorting Hub)" style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid #DDD', fontSize: '0.8rem' }} />
+                </div>
+                <input type="text" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} placeholder="Event Details / Note (e.g. Package cleared security scan and departed facility)" style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #DDD', fontSize: '0.8rem', boxSizing: 'border-box' }} />
+              </div>
+
+              {/* Tracking History Timeline */}
+              {trackingEvents.length > 0 && (
+                <div style={{ marginTop: '8px' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#555', display: 'block', marginBottom: '6px' }}>📜 Recorded Tracking Timeline ({trackingEvents.length})</span>
+                  <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #EEE', borderRadius: '4px', padding: '8px', background: '#FAFAFA', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {trackingEvents.map((evt, idx) => (
+                      <div key={evt.id || idx} style={{ borderBottom: '1px solid #EEE', paddingBottom: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#333' }}>
+                          <strong>{evt.title || evt.status}</strong>
+                          <span style={{ color: '#888' }}>{new Date(evt.timestamp || Date.now()).toLocaleString('en-IN')}</span>
+                        </div>
+                        {evt.location && <div style={{ color: '#666', fontSize: '0.7rem' }}>📍 {evt.location}</div>}
+                        {evt.description && <div style={{ color: '#555', fontSize: '0.72rem' }}>{evt.description}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
                 <button type="button" onClick={() => handlePrintInvoice(selectedOrder)} className="btn-outline-gold" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
                   <i className="fas fa-print" style={{ marginRight: '6px' }}></i> Invoice
                 </button>
                 <button type="submit" className="btn-gold" style={{ padding: '8px 16px', fontSize: '0.8rem' }} disabled={updating}>
-                  {updating ? 'Saving logs...' : 'Save Order Changes'}
+                  {updating ? 'Recording Status...' : 'Post Tracking Update & Alert Customer'}
                 </button>
               </div>
             </form>
