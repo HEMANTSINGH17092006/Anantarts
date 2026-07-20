@@ -5,6 +5,97 @@ import { formatPrice, generateOrderNumber } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
+import { registerCustomer } from '@/app/auth/actions';
+
+function PostOrderAccountCreation({ orderSuccess, onCreated }) {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleCreateAccount = async (e) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+
+    const res = await registerCustomer(
+      orderSuccess.customer_name,
+      orderSuccess.customer_email,
+      orderSuccess.customer_phone,
+      password
+    );
+    setLoading(false);
+
+    if (res.success) {
+      setSuccess('Account created successfully! You are now logged in.');
+      if (onCreated) onCreated({ name: orderSuccess.customer_name, email: orderSuccess.customer_email });
+    } else {
+      setError(res.message);
+    }
+  };
+
+  if (success) {
+    return (
+      <div style={{ background: '#E8F5E9', border: '1px solid #C8E6C9', padding: '16px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center', color: '#2E7D32', fontSize: '0.88rem' }}>
+        🎉 {success} <Link href="/account" style={{ color: '#1B5E20', fontWeight: '700', textDecoration: 'underline', marginLeft: '6px' }}>View My Account</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: '#FAF9F5', border: '1px solid var(--primary-gold-border)', padding: '20px', borderRadius: '8px', marginBottom: '24px', textAlign: 'left' }}>
+      <h4 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: '700', color: 'var(--text-dark)' }}>
+        🎁 Save your details for next time!
+      </h4>
+      <p style={{ margin: '0 0 14px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+        Create a password to track this order easily and enjoy faster 1-click checkout on future purchases.
+      </p>
+
+      {error && (
+        <div style={{ background: '#FFF4F4', color: '#D32F2F', padding: '8px 12px', borderRadius: '4px', fontSize: '0.78rem', marginBottom: '12px', border: '1px solid #FFCDD2' }}>
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleCreateAccount} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="New Password (min 6 chars)"
+          style={{ flex: '1 1 180px', padding: '10px 12px', borderRadius: '4px', border: '1px solid #DDD', fontSize: '0.85rem' }}
+          required
+        />
+        <input
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Confirm Password"
+          style={{ flex: '1 1 180px', padding: '10px 12px', borderRadius: '4px', border: '1px solid #DDD', fontSize: '0.85rem' }}
+          required
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-gold"
+          style={{ padding: '10px 18px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+        >
+          {loading ? 'Creating...' : 'Create Account'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
@@ -243,6 +334,10 @@ export default function CheckoutPage() {
               Send Confirmation to WhatsApp
             </a>
           </div>
+
+          {!authUser && (
+            <PostOrderAccountCreation orderSuccess={orderSuccess} onCreated={(user) => setAuthUser(user)} />
+          )}
 
           <div style={{ background: 'var(--bg-cream)', padding: '18px', borderRadius: '6px', textAlign: 'left', fontSize: '0.85rem', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid var(--primary-gold-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '6px' }}>
@@ -674,6 +769,17 @@ export default function CheckoutPage() {
                     + Add New Address
                   </button>
                 </div>
+              </div>
+            )}
+
+            {!authUser && (
+              <div style={{ background: '#FFF9E6', border: '1px solid #FFE082', padding: '14px 18px', borderRadius: '8px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ fontSize: '0.85rem', color: '#5D4037' }}>
+                  <strong>Already have an account?</strong> Sign in for faster checkout and saved addresses.
+                </div>
+                <Link href="/login?next=/checkout" className="btn-gold" style={{ padding: '8px 16px', fontSize: '0.8rem', textDecoration: 'none' }}>
+                  Sign In
+                </Link>
               </div>
             )}
 

@@ -237,6 +237,19 @@ export async function registerCustomer(name, email, phone, password) {
     console.error('registerCustomer error:', err);
     return { success: false, message: 'Something went wrong. Please try again.' };
   }
+// Rate limiter helper (5 requests per 60 sec per key)
+const rateLimitMap = new Map();
+function checkRateLimit(key, limit = 5, windowMs = 60000) {
+  const now = Date.now();
+  const record = rateLimitMap.get(key) || { count: 0, resetAt: now + windowMs };
+  if (now > record.resetAt) {
+    record.count = 1;
+    record.resetAt = now + windowMs;
+  } else {
+    record.count += 1;
+  }
+  rateLimitMap.set(key, record);
+  return record.count <= limit;
 }
 
 export async function loginCustomer(identifier, password) {
@@ -246,6 +259,11 @@ export async function loginCustomer(identifier, password) {
     }
 
     const ident = identifier.trim().toLowerCase();
+
+    if (!checkRateLimit(`login_${ident}`, 10)) {
+      return { success: false, message: 'Too many login attempts. Please wait 1 minute before trying again.' };
+    }
+
     const isEmail = ident.includes('@');
     const lookupColumn = isEmail ? 'email' : 'phone';
 
@@ -262,9 +280,13 @@ export async function loginCustomer(identifier, password) {
       return { success: false, message: 'No account found with this email/phone. Please register first.' };
     }
 
-    // Check if user has a password set
+    // Check if user has a password set (legacy OTP user)
     if (!user.password_hash) {
-      return { success: false, message: 'This account was created via OTP. Please contact support or use the forgot password option to set a password.' };
+      return { 
+        success: false, 
+        requiresPasswordSet: true, 
+        message: 'Your account was created via OTP. Please click "Set Password" below to set a password.' 
+      };
     }
 
     // Verify password
@@ -282,6 +304,95 @@ export async function loginCustomer(identifier, password) {
     return { success: false, message: 'Login failed. Please try again.' };
   }
 }
+
+export async function setPasswordWithOtp(identifier, otp, newPassword) {
+  try {
+    if (!identifier || !otp || !newPassword) {
+      return { success: false, message: 'Email/Phone, OTP code, and new password are required.' };
+    }
+
+    const ident = identifier.trim().toLowerCase();
+
+    if (!checkRateLimit(`setpwd_${ident}`, 5)) {
+      return { success: false, message: 'Too many attempts. Please wait 1 minute.' };
+    }
+
+    if (newPassword.length < 6) {
+      return { success: false, message: 'Password must be at least 6 characters.' };
+    }
+
+    const supabase = createAdminClient();
+
+    // Check OTP
+    const { data: validOtp, error: otpError } = await supabase
+      .from('otps')
+      .select('*')
+      .eq('identifier', ident)
+      .eq('otp', otp.trim())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (otpError || !validOtp) {
+      return { success: false, message: 'Invalid OTP code.' };
+    }
+
+    const dbExpiresAt = validOtp.expires_at.endsWith('Z') ? validOtp.expires_at : validOtp.expires_at + 'Z';
+    if (new Date(dbExpiresAt).getTime() < Date.now()) {
+      return { success: false, message: 'OTP code has expired. Please request a new code.' };
+    }
+
+    const isEmail = ident.includes('@');
+    const lookupColumn = isEmail ? 'email' : 'phone';
+
+    let { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq(lookupColumn, ident)
+      .maybeSingle();
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    if (!user) {
+      const insertData = {
+        name: isEmail ? ident.split('@')[0] : 'Valued Customer',
+        password_hash: passwordHash,
+        role: 'customer'
+      };
+      if (isEmail) insertData.email = ident;
+      else insertData.phone = ident;
+
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert(insertData)
+        .select('*')
+        .single();
+      if (createError) throw createError;
+      user = newUser;
+    } else {
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update({ password_hash: passwordHash })
+        .eq('id', user.id)
+        .select('*')
+        .single();
+      if (updateError) throw updateError;
+      user = updatedUser;
+    }
+
+    // Clean used OTP
+    await supabase.from('otps').delete().eq('identifier', ident);
+
+    // Set session cookie
+    await setCustomerSessionCookie(user);
+
+    return { success: true, message: 'Password set successfully! Logging you in...' };
+  } catch (err) {
+    console.error('setPasswordWithOtp error:', err);
+    return { success: false, message: 'Failed to set password. Please try again.' };
+  }
+}
+
 
 export async function getSessionCustomer() {
   const cookieStore = await cookies();
