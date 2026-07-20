@@ -9,7 +9,7 @@ export default function Footer({
   onSearchClick, 
   onWishlistClick,
   onMenuClick,
-  activeDrawer = null
+  activeTab = null
 }) {
   const pathname = usePathname();
   const contactAddress = settings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
@@ -35,7 +35,7 @@ export default function Footer({
   const fbUrl = socialLinks.facebook || '';
   const ytUrl = socialLinks.youtube || '';
 
-  const isDrawerOpen = Boolean(activeDrawer);
+  const isDrawerOpen = Boolean(activeTab);
 
   return (
     <footer id="main-footer" style={{ borderTop: '1px solid var(--primary-gold-border)' }}>
@@ -152,7 +152,8 @@ export default function Footer({
         {/* 1. Home */}
         <Link 
           href="/" 
-          className={`mobile-action-dock-item ${pathname === '/' && !activeDrawer ? 'active' : ''}`}
+          onClick={() => { if (activeTab) onCartClick(); }}
+          className={`mobile-action-dock-item ${pathname === '/' && activeTab === null ? 'active' : ''}`}
         >
           <i className="fas fa-home"></i>
           <span>Home</span>
@@ -161,7 +162,7 @@ export default function Footer({
         {/* 2. Search */}
         <button 
           onClick={onSearchClick} 
-          className={`mobile-action-dock-item ${activeDrawer === 'search' ? 'active' : ''}`}
+          className={`mobile-action-dock-item ${activeTab === 'search' ? 'active' : ''}`}
           style={{ background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}
         >
           <i className="fas fa-search"></i>
@@ -171,7 +172,7 @@ export default function Footer({
         {/* 3. Wishlist */}
         <button 
           onClick={onWishlistClick} 
-          className={`mobile-action-dock-item ${activeDrawer === 'wishlist' ? 'active' : ''}`}
+          className={`mobile-action-dock-item ${activeTab === 'wishlist' ? 'active' : ''}`}
           style={{ background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', position: 'relative', padding: 0 }}
         >
           <i className="fas fa-heart"></i>
@@ -192,7 +193,7 @@ export default function Footer({
         {/* 4. Cart */}
         <button 
           onClick={onCartClick} 
-          className={`mobile-action-dock-item ${activeDrawer === 'cart' ? 'active' : ''}`}
+          className={`mobile-action-dock-item ${activeTab === 'cart' ? 'active' : ''}`}
           style={{ position: 'relative', background: 'none', border: 'none', color: 'inherit', width: '100%', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}
         >
           <i className="fas fa-shopping-bag"></i>
@@ -213,7 +214,8 @@ export default function Footer({
         {/* 5. Account */}
         <Link 
           href="/account" 
-          className={`mobile-action-dock-item ${pathname.startsWith('/account') && !activeDrawer ? 'active' : ''}`}
+          onClick={() => { if (activeTab) onCartClick(); }}
+          className={`mobile-action-dock-item ${pathname.startsWith('/account') && activeTab === null ? 'active' : ''}`}
         >
           <i className="fas fa-user-circle"></i>
           <span>Account</span>
