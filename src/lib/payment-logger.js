@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendAdminFailedPaymentEmail } from '@/lib/admin-email';
 
 /**
  * Enterprise Payment Logging Utility
@@ -20,8 +21,16 @@ export async function logPaymentEvent({
   
   // Format console log for real-time terminal & server debugging
   const logPrefix = `[PaymentLog][${eventType.toUpperCase()}][${status.toUpperCase()}]`;
-  if (status === 'error') {
+  if (status === 'error' || eventType === 'order_failure' || eventType === 'capture_failure') {
     console.error(`${logPrefix} Order: ${orderNumber || 'N/A'}, Error: ${errorMessage}`, errorStack || '');
+
+    // Asynchronously dispatch admin failed payment email (non-blocking)
+    sendAdminFailedPaymentEmail({
+      orderNumber,
+      customerName: typeof customerInfo === 'object' ? customerInfo?.name : null,
+      amount,
+      errorReason: errorMessage
+    }).catch(e => console.error('Failed Payment Admin Email Error:', e));
   } else {
     console.log(`${logPrefix} Order: ${orderNumber || 'N/A'}, Amount: ₹${amount || 0}, Status: ${status}`);
   }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { checkAuthRole } from '@/app/actions';
 import { refundPayment } from '@/lib/razorpay';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendAdminRefundEmail } from '@/lib/admin-email';
 
 export async function POST(req) {
   try {
@@ -32,7 +33,7 @@ export async function POST(req) {
 
     // Update database order record
     const supabase = createAdminClient();
-    await supabase
+    const { data: updatedOrder } = await supabase
       .from('orders')
       .update({
         payment_status: 'Refunded',
@@ -41,7 +42,17 @@ export async function POST(req) {
         order_status: 'Cancelled',
         notes: `Refund processed by ${session.email}. Refund ID: ${result.refund?.id || 'N/A'}. Reason: ${reason || 'Customer refund'}`
       })
-      .eq('id', order_id);
+      .eq('id', order_id)
+      .select('*')
+      .maybeSingle();
+
+    // Trigger Admin Refund Email Alert (Asynchronous, Non-blocking)
+    sendAdminRefundEmail({
+      orderNumber: updatedOrder?.order_number || order_id,
+      customerName: updatedOrder?.customer_name || 'Valued Patron',
+      amount: amount || updatedOrder?.total_amount || 0,
+      reason: reason || 'Customer refund'
+    }).catch(e => console.error('Refund Admin Email Error:', e));
 
     return NextResponse.json({
       success: true,

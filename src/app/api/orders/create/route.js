@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { sendAdminOrderNotification } from '@/lib/whatsapp';
+import { sendAdminNewOrderEmail, sendAdminLowStockEmail } from '@/lib/admin-email';
 import { getSessionCustomer } from '../../../auth/actions';
 
 const INDIAN_STATES = [
@@ -251,6 +252,12 @@ export async function POST(req) {
             type: 'warning',
             link: `/admin/products?search=${encodeURIComponent(item.product_name)}`
           });
+
+        // Instant Admin Low Stock Email Notification (Asynchronous, Non-blocking)
+        sendAdminLowStockEmail({
+          productName: item.product_name,
+          stockQuantity: nextStock
+        }).catch(e => console.error('Low Stock Admin Email Error:', e));
       }
     }
 
@@ -275,7 +282,9 @@ export async function POST(req) {
         link: `/admin/orders`
       });
 
-    // 6. Send WhatsApp Notification
+    // 6. Send Instant Admin Email & WhatsApp Notifications (Asynchronous, Non-blocking)
+    sendAdminNewOrderEmail(order, items).catch(e => console.error('Admin New Order Email Error:', e));
+
     try {
       const { data: settingsData } = await supabase.from('website_settings').select('*');
       const settings = {};
