@@ -1,5 +1,5 @@
 'use client';
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateOrderStatus, addAdminOrderTrackingEventAction, getAdminOrderTrackingEventsAction } from '@/app/actions';
 import { formatPrice } from '@/lib/utils';
@@ -8,10 +8,20 @@ export default function OrderManager({ initialOrders = [] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const [orders, setOrders] = useState(initialOrders);
+  useEffect(() => {
+    setOrders(initialOrders);
+  }, [initialOrders]);
+
   const [activeTab, setActiveTab] = useState('All');
   const [paymentFilter, setPaymentFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Permanent Deletion States
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteStep, setDeleteStep] = useState('');
+  const [deleting, setDeleting] = useState(false);
   
   // Status & Tracking editing states
   const [nextStatus, setNextStatus] = useState('');
@@ -63,16 +73,16 @@ export default function OrderManager({ initialOrders = [] }) {
   const paymentStatusOptions = ['All', 'Captured', 'Authorized', 'Pending', 'Failed', 'Refunded'];
 
   // Metrics Calculations
-  const totalCapturedRevenue = initialOrders
+  const totalCapturedRevenue = orders
     .filter(o => o.payment_status === 'Captured' || o.payment_status === 'Paid')
     .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
 
-  const authorizedCount = initialOrders.filter(o => o.payment_status === 'Authorized').length;
-  const capturedCount = initialOrders.filter(o => o.payment_status === 'Captured' || o.payment_status === 'Paid').length;
-  const pendingCount = initialOrders.filter(o => !o.payment_status || o.payment_status === 'Pending').length;
-  const failedCount = initialOrders.filter(o => o.payment_status === 'Failed' || o.payment_status === 'Refunded').length;
+  const authorizedCount = orders.filter(o => o.payment_status === 'Authorized').length;
+  const capturedCount = orders.filter(o => o.payment_status === 'Captured' || o.payment_status === 'Paid').length;
+  const pendingCount = orders.filter(o => !o.payment_status || o.payment_status === 'Pending').length;
+  const failedCount = orders.filter(o => o.payment_status === 'Failed' || o.payment_status === 'Refunded').length;
 
-  const filteredOrders = initialOrders.filter(o => {
+  const filteredOrders = orders.filter(o => {
     const matchesSearch = o.order_number.toLowerCase().includes(search.toLowerCase()) ||
                           o.customer_name.toLowerCase().includes(search.toLowerCase()) ||
                           (o.razorpay_payment_id && o.razorpay_payment_id.toLowerCase().includes(search.toLowerCase()));
@@ -82,6 +92,64 @@ export default function OrderManager({ initialOrders = [] }) {
                            o.payment_status === paymentFilter;
     return matchesSearch && matchesTab && matchesPayment;
   });
+
+  // Permanent Deletion Handlers
+  const handlePromptDelete = (o) => {
+    if (!o) return;
+    setDeleteTarget(o);
+    const pStatus = (o.payment_status || '').toUpperCase();
+    if (pStatus === 'CAPTURED' || pStatus === 'PAID') {
+      setDeleteStep('captured_warning');
+    } else {
+      setDeleteStep('confirm_delete');
+    }
+  };
+
+  const handleConfirmCapturedWarning = () => {
+    setDeleteStep('confirm_delete');
+  };
+
+  const handleExecuteDeleteOrder = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+
+    try {
+      const res = await fetch('/api/admin/orders/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: deleteTarget.id,
+          orderNumber: deleteTarget.order_number
+        })
+      });
+
+      const data = await res.json();
+      setDeleting(false);
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete order. Please try again.');
+      }
+
+      const deletedId = deleteTarget.id;
+      setOrders(prev => prev.filter(o => o.id !== deletedId));
+
+      if (selectedOrder && selectedOrder.id === deletedId) {
+        setSelectedOrder(null);
+      }
+
+      setDeleteTarget(null);
+      setDeleteStep('');
+
+      showAlert('success', 'Order permanently deleted.');
+
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (err) {
+      setDeleting(false);
+      showAlert('danger', 'Failed to delete order. Please try again.');
+    }
+  };
 
   const handleOpenDetail = (o) => {
     setSelectedOrder(o);
@@ -417,6 +485,7 @@ export default function OrderManager({ initialOrders = [] }) {
                       <button onClick={() => handleOpenDetail(o)} className="header-icon" title="View details" style={{ color: 'var(--info)' }}><i className="fas fa-eye"></i></button>
                       <button onClick={() => handlePrintInvoice(o)} className="header-icon" title="Print Invoice" style={{ color: 'var(--text-dark)' }}><i className="fas fa-print"></i></button>
                       <button onClick={() => handleSendWhatsApp(o)} className="header-icon" title="Send WhatsApp Update" style={{ color: '#25D366' }}><i className="fab fa-whatsapp"></i></button>
+                      <button onClick={() => handlePromptDelete(o)} className="header-icon" title="Delete Order Permanently" style={{ color: 'var(--danger, #C62828)' }}><i className="fas fa-trash-alt"></i></button>
                     </td>
                   </tr>
                 );
@@ -557,6 +626,85 @@ export default function OrderManager({ initialOrders = [] }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= PERMANENT DELETE CONFIRMATION MODAL ================= */}
+      {deleteTarget && (
+        <div className="admin-modal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)' }}>
+          <div className="admin-modal-content" style={{ maxWidth: '440px', width: '90%', padding: '28px', borderRadius: '12px', background: '#FFFFFF', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', border: '1px solid var(--primary-gold-border)' }}>
+            
+            {deleteStep === 'captured_warning' ? (
+              <>
+                <div style={{ fontSize: '2.5rem', color: '#E65100', marginBottom: '12px' }}>⚠️</div>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', marginBottom: '12px', color: '#1C1C1C' }}>
+                  Delete Order - Warning
+                </h3>
+                <p style={{ fontSize: '0.85rem', color: '#555', lineHeight: '1.5', marginBottom: '24px' }}>
+                  This order contains a successful payment. Deleting it may remove payment records permanently.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setDeleteTarget(null); setDeleteStep(''); }}
+                    className="btn-outline-gold"
+                    style={{ flex: 1, padding: '10px', fontSize: '0.82rem' }}
+                    disabled={deleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmCapturedWarning}
+                    style={{ flex: 1, padding: '10px', fontSize: '0.82rem', background: '#E65100', color: '#FFF', border: 'none', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}
+                    disabled={deleting}
+                  >
+                    Proceed to Delete
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: '2.5rem', color: 'var(--danger, #C62828)', marginBottom: '12px' }}>🗑️</div>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '12px', color: '#1C1C1C' }}>
+                  Delete Order
+                </h3>
+                <p style={{ fontSize: '0.85rem', color: '#555', lineHeight: '1.5', marginBottom: '24px' }}>
+                  Are you sure you want to permanently delete this order from the system and database? This action cannot be undone.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setDeleteTarget(null); setDeleteStep(''); }}
+                    className="btn-outline-gold"
+                    style={{ flex: 1, padding: '10px', fontSize: '0.82rem' }}
+                    disabled={deleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecuteDeleteOrder}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      fontSize: '0.82rem',
+                      background: 'var(--danger, #C62828)',
+                      color: '#FFF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                    disabled={deleting}
+                  >
+                    {deleting ? 'Deleting...' : 'Permanently Delete'}
+                  </button>
+                </div>
+              </>
+            )}
+
           </div>
         </div>
       )}
