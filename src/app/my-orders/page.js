@@ -365,9 +365,31 @@ export default function MyOrdersPage() {
                           <p style={{ margin: 0, color: 'var(--text-muted)' }}>Status: {order.payment_status}</p>
                         </div>
 
+                        {/* Invoice Download Action */}
+                        <div style={{ marginTop: '8px' }}>
+                          <a
+                            href={`/api/orders/${order.id}/invoice`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-gold"
+                            style={{
+                              padding: '8px 14px',
+                              fontSize: '0.75rem',
+                              width: '100%',
+                              justifyContent: 'center',
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}
+                          >
+                            <i className="fas fa-file-invoice"></i> Download Invoice 📄
+                          </a>
+                        </div>
+
                         {/* Customer Actions */}
                         {isUpdatable(order.order_status) && (
-                          <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                             <button
                               onClick={() => handleOpenEditModal(order)}
                               className="btn-outline-gold"

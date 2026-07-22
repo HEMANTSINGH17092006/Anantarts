@@ -55,17 +55,39 @@ export default function TrackingTimeline({ order, trackingEvents = [] }) {
               {isCancelled ? 'Order Cancelled' : `Expected Delivery: ${estimatedDelivery}`}
             </h2>
           </div>
-          <span style={{
-            background: isCancelled ? '#FFCDD2' : currentStatus === 'Delivered' ? '#E8F5E9' : 'rgba(212, 175, 55, 0.2)',
-            color: isCancelled ? '#B71C1C' : currentStatus === 'Delivered' ? '#2E7D32' : '#D4AF37',
-            padding: '6px 14px',
-            borderRadius: '20px',
-            fontSize: '0.8rem',
-            fontWeight: '700',
-            border: '1px solid rgba(212,175,55,0.3)'
-          }}>
-            {order.order_number}
-          </span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <a
+              href={`/api/orders/${order.id}/invoice`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: 'var(--primary-gold, #D4AF37)',
+                color: '#111',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+            >
+              📄 Download Invoice
+            </a>
+            <span style={{
+              background: isCancelled ? '#FFCDD2' : currentStatus === 'Delivered' ? '#E8F5E9' : 'rgba(212, 175, 55, 0.2)',
+              color: isCancelled ? '#B71C1C' : currentStatus === 'Delivered' ? '#2E7D32' : '#D4AF37',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              border: '1px solid rgba(212,175,55,0.3)'
+            }}>
+              {order.order_number}
+            </span>
+          </div>
         </div>
 
         {/* Courier Meta Box */}

@@ -500,16 +500,16 @@ app.get('/api/orders/:id/invoice', async (req, res) => {
     // Customer / Bill details
     doc.fontSize(12).font('Helvetica-Bold').fillColor('#800020').text('Billed To:', 50, 130);
     doc.fontSize(10).font('Helvetica').fillColor('#333');
-    doc.text(order.customer_name, 50, 147);
-    doc.text(order.customer_phone, 50, 160);
-    doc.text(order.customer_email, 50, 173);
-    doc.text(order.shipping_address, 50, 186, { width: 220 });
+    doc.text(order.customer_name || 'Valued Customer', 50, 147);
+    doc.text(order.customer_phone || '', 50, 160);
+    doc.text(order.customer_email || '', 50, 173);
+    doc.text(order.shipping_address || '', 50, 186, { width: 220 });
 
     doc.fontSize(12).font('Helvetica-Bold').fillColor('#800020').text('Transaction Details:', 320, 130);
     doc.fontSize(10).font('Helvetica').fillColor('#333');
     doc.text(`Order Number: #${order.order_number}`, 320, 147);
-    doc.text(`Payment Mode: ${order.payment_method}`, 320, 160);
-    doc.text(`Payment Status: ${order.payment_status}`, 320, 173);
+    doc.text(`Payment Mode: ${order.payment_method || 'Online'}`, 320, 160);
+    doc.text(`Payment Status: ${order.payment_status || 'Paid'}`, 320, 173);
 
     // Draw Table headers
     let y = 250;
@@ -527,12 +527,14 @@ app.get('/api/orders/:id/invoice', async (req, res) => {
 
     // Table rows
     doc.font('Helvetica').fillColor('#333');
-    for (const item of items) {
+    for (const item of (items || [])) {
       y += 15;
-      doc.text(item.product_name, 50, y, { width: 230 });
-      doc.text(item.price.toLocaleString(), 300, y, { width: 80, align: 'right' });
-      doc.text(item.quantity.toString(), 390, y, { width: 50, align: 'center' });
-      doc.text((item.price * item.quantity).toLocaleString(), 460, y, { width: 90, align: 'right' });
+      const itemPrice = item.price || 0;
+      const itemQty = item.quantity || 1;
+      doc.text(item.product_name || 'Product', 50, y, { width: 230 });
+      doc.text(itemPrice.toLocaleString(), 300, y, { width: 80, align: 'right' });
+      doc.text(itemQty.toString(), 390, y, { width: 50, align: 'center' });
+      doc.text((itemPrice * itemQty).toLocaleString(), 460, y, { width: 90, align: 'right' });
       y += 10; // Extra line height padding
     }
 
@@ -540,27 +542,31 @@ app.get('/api/orders/:id/invoice', async (req, res) => {
     doc.moveTo(50, y).lineTo(550, y).strokeColor('#DDD').lineWidth(1).stroke();
 
     // Summary calculations
+    const subtotalVal = order.subtotal || order.total_amount || 0;
+    const discountVal = order.discount_amount || 0;
+    const totalVal = order.total_amount || 0;
+
     y += 15;
     doc.fontSize(10).font('Helvetica').text('Subtotal:', 350, y);
-    doc.font('Helvetica-Bold').text(`Rs. ${order.subtotal.toLocaleString()}`, 460, y, { width: 90, align: 'right' });
+    doc.font('Helvetica-Bold').text(`Rs. ${subtotalVal.toLocaleString()}`, 460, y, { width: 90, align: 'right' });
 
-    if (order.discount_amount > 0) {
+    if (discountVal > 0) {
       y += 15;
       doc.font('Helvetica').text('Coupon Discount:', 350, y);
-      doc.font('Helvetica-Bold').fillColor('green').text(`-Rs. ${order.discount_amount.toLocaleString()}`, 460, y, { width: 90, align: 'right' });
+      doc.font('Helvetica-Bold').fillColor('green').text(`-Rs. ${discountVal.toLocaleString()}`, 460, y, { width: 90, align: 'right' });
       doc.fillColor('#333');
     }
 
     y += 15;
     doc.font('Helvetica').text('Shipping Fee:', 350, y);
-    doc.font('Helvetica-Bold').text(order.shipping_charge === 0 ? 'FREE' : `Rs. ${order.shipping_charge.toLocaleString()}`, 460, y, { width: 90, align: 'right' });
+    doc.font('Helvetica-Bold').text(order.shipping_charge === 0 ? 'FREE' : `Rs. ${(order.shipping_charge || 0).toLocaleString()}`, 460, y, { width: 90, align: 'right' });
 
     y += 20;
     doc.moveTo(350, y).lineTo(550, y).strokeColor('#800020').lineWidth(15).stroke(); // Draw background for total row
     
     y += 4;
     doc.fontSize(11).fillColor('#FFF').font('Helvetica-Bold').text('Grand Total:', 355, y);
-    doc.text(`Rs. ${order.total_amount.toLocaleString()}`, 460, y, { width: 90, align: 'right' });
+    doc.text(`Rs. ${totalVal.toLocaleString()}`, 460, y, { width: 90, align: 'right' });
 
     // Footer note
     doc.fillColor('#666').fontSize(8).font('Helvetica-Oblique').text('Thank you for choosing Anant Arts to bring spiritual elegance into your home. This is a computer generated invoice and requires no signature.', 50, 700, { align: 'center', width: 500 });
