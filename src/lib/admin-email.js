@@ -2,7 +2,7 @@ import { sendEmail } from '@/lib/email';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 function getAdminEmail() {
-  return process.env.ADMIN_EMAIL || process.env.CONTACT_EMAIL || process.env.SMTP_USER || 'hemant4507vns@gmail.com';
+  return process.env.ADMIN_EMAIL || process.env.CONTACT_EMAIL || process.env.SMTP_USER || 'anantarts39@gmail.com';
 }
 
 function formatINR(val) {
