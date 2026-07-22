@@ -16,6 +16,8 @@ export default function OrderManager({ initialOrders = [] }) {
   const [activeTab, setActiveTab] = useState('All');
   const [paymentFilter, setPaymentFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('latest');
+  const [popoverOrderId, setPopoverOrderId] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Permanent Deletion States
@@ -83,14 +85,30 @@ export default function OrderManager({ initialOrders = [] }) {
   const failedCount = orders.filter(o => o.payment_status === 'Failed' || o.payment_status === 'Refunded').length;
 
   const filteredOrders = orders.filter(o => {
-    const matchesSearch = o.order_number.toLowerCase().includes(search.toLowerCase()) ||
-                          o.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-                          (o.razorpay_payment_id && o.razorpay_payment_id.toLowerCase().includes(search.toLowerCase()));
+    const term = search.toLowerCase().trim();
+    const matchesSearch = !term ||
+      (o.order_number && o.order_number.toLowerCase().includes(term)) ||
+      (o.customer_name && o.customer_name.toLowerCase().includes(term)) ||
+      (o.customer_phone && o.customer_phone.toLowerCase().includes(term)) ||
+      (o.customer_email && o.customer_email.toLowerCase().includes(term)) ||
+      (o.razorpay_payment_id && o.razorpay_payment_id.toLowerCase().includes(term)) ||
+      (o.items && o.items.some(item => item.product_name && item.product_name.toLowerCase().includes(term)));
+
     const matchesTab = activeTab === 'All' || o.order_status === activeTab;
     const matchesPayment = paymentFilter === 'All' || 
                            (paymentFilter === 'Captured' && (o.payment_status === 'Captured' || o.payment_status === 'Paid')) ||
                            o.payment_status === paymentFilter;
     return matchesSearch && matchesTab && matchesPayment;
+  }).sort((a, b) => {
+    if (sortBy === 'value-high') {
+      return (Number(b.total_amount) || 0) - (Number(a.total_amount) || 0);
+    }
+    if (sortBy === 'items-most') {
+      const aQty = (a.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
+      const bQty = (b.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
+      return bQty - aQty;
+    }
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
   });
 
   // Permanent Deletion Handlers
@@ -370,9 +388,8 @@ export default function OrderManager({ initialOrders = [] }) {
           ))}
         </div>
 
-        {/* Payment Filter Dropdown */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Payment:</span>
+        {/* Filter & Sort Controls */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <select 
             value={paymentFilter} 
             onChange={(e) => setPaymentFilter(e.target.value)}
@@ -383,9 +400,19 @@ export default function OrderManager({ initialOrders = [] }) {
             ))}
           </select>
 
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--primary-gold-border)', fontSize: '0.8rem', background: 'white', fontWeight: '600' }}
+          >
+            <option value="latest">Sort: Latest Orders</option>
+            <option value="value-high">Sort: Highest Value Orders</option>
+            <option value="items-most">Sort: Most Ordered Products</option>
+          </select>
+
           <input
             type="text"
-            placeholder="Search ref, customer, pay_id..."
+            placeholder="Search Order ID, Customer, Product, Phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
@@ -393,7 +420,7 @@ export default function OrderManager({ initialOrders = [] }) {
               borderRadius: '4px',
               border: '1px solid var(--primary-gold-border)',
               fontSize: '0.8rem',
-              width: '220px'
+              width: '260px'
             }}
           />
         </div>
@@ -406,6 +433,7 @@ export default function OrderManager({ initialOrders = [] }) {
             <tr style={{ borderBottom: '2px solid var(--bg-cream-dark)', color: 'var(--text-muted)' }}>
               <th style={{ padding: '12px' }}>Order Ref</th>
               <th style={{ padding: '12px' }}>Customer Name</th>
+              <th style={{ padding: '12px' }}>📦 Product / Idol</th>
               <th style={{ padding: '12px' }}>Date</th>
               <th style={{ padding: '12px' }}>Amount</th>
               <th style={{ padding: '12px' }}>Payment Mode</th>
@@ -417,7 +445,7 @@ export default function OrderManager({ initialOrders = [] }) {
           <tbody>
             {filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                <td colSpan="9" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                   No orders registered under this criteria.
                 </td>
               </tr>
@@ -429,10 +457,141 @@ export default function OrderManager({ initialOrders = [] }) {
                 const isFailed = payStatus === 'Failed';
                 const isRefunded = payStatus === 'Refunded';
 
+                const firstItem = o.items && o.items.length > 0 ? o.items[0] : null;
+                const extraItemsCount = o.items && o.items.length > 1 ? o.items.length - 1 : 0;
+
                 return (
                   <tr key={o.id} style={{ borderBottom: '1px solid var(--bg-cream-dark)' }}>
-                    <td style={{ padding: '12px', fontWeight: '600' }}>{o.order_number}</td>
-                    <td style={{ padding: '12px' }}>{o.customer_name}</td>
+                    <td style={{ padding: '12px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                      {o.order_number}
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <strong style={{ display: 'block', color: 'var(--text-dark)' }}>{o.customer_name}</strong>
+                      {o.customer_phone && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>📞 {o.customer_phone}</span>
+                      )}
+                    </td>
+                    
+                    {/* 📦 Product / Idol Column */}
+                    <td style={{ padding: '12px', minWidth: '220px', maxWidth: '280px', verticalAlign: 'middle' }}>
+                      {!firstItem ? (
+                        <span style={{ fontSize: '0.78rem', color: '#999', fontStyle: 'italic' }}>No item details</span>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <img
+                            src={firstItem.image_path || '/images/placeholder.jpg'}
+                            alt={firstItem.product_name}
+                            style={{
+                              width: '42px',
+                              height: '42px',
+                              borderRadius: '6px',
+                              objectFit: 'cover',
+                              border: '1px solid var(--primary-gold-border)',
+                              flexShrink: 0,
+                              background: '#F9F9F9'
+                            }}
+                            onError={(e) => { e.target.src = '/images/placeholder.jpg'; }}
+                          />
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div
+                              style={{
+                                fontSize: '0.82rem',
+                                fontWeight: '700',
+                                color: 'var(--text-dark)',
+                                wordBreak: 'break-word',
+                                lineHeight: '1.25'
+                              }}
+                              title={firstItem.product_name}
+                            >
+                              {firstItem.product_name}
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span>Qty: <strong style={{ color: '#111' }}>{firstItem.quantity}</strong></span>
+                              
+                              {extraItemsCount > 0 && (
+                                <div
+                                  style={{ position: 'relative', display: 'inline-block' }}
+                                  onMouseEnter={() => setPopoverOrderId(o.id)}
+                                  onMouseLeave={() => setPopoverOrderId(null)}
+                                >
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPopoverOrderId(popoverOrderId === o.id ? null : o.id);
+                                    }}
+                                    style={{
+                                      background: 'var(--bg-cream, #FAF7F2)',
+                                      color: 'var(--primary, #8C2425)',
+                                      border: '1px solid var(--primary-gold-border, #D4AF37)',
+                                      padding: '1px 7px',
+                                      borderRadius: '12px',
+                                      fontSize: '0.7rem',
+                                      fontWeight: '700',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '2px',
+                                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                                    }}
+                                  >
+                                    +{extraItemsCount} more items
+                                  </span>
+
+                                  {/* Hover / Click Popover Dropdown */}
+                                  {popoverOrderId === o.id && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: '100%',
+                                        marginTop: '6px',
+                                        width: '280px',
+                                        background: '#FFFFFF',
+                                        border: '1px solid var(--primary-gold-border)',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                                        zIndex: 1000,
+                                        padding: '12px',
+                                        fontSize: '0.78rem',
+                                        textAlign: 'left'
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div style={{ fontWeight: '700', fontSize: '0.78rem', color: 'var(--primary)', marginBottom: '8px', borderBottom: '1px solid #F0F0F0', paddingBottom: '4px' }}>
+                                        📦 Ordered Items ({o.items.length})
+                                      </div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                                        {o.items.map((item, idx) => (
+                                          <div key={item.id || idx} style={{ display: 'flex', gap: '8px', alignItems: 'center', borderBottom: idx < o.items.length - 1 ? '1px dashed #EEE' : 'none', paddingBottom: '4px' }}>
+                                            <img
+                                              src={item.image_path || '/images/placeholder.jpg'}
+                                              alt={item.product_name}
+                                              style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #DDD', flexShrink: 0 }}
+                                              onError={(e) => { e.target.src = '/images/placeholder.jpg'; }}
+                                            />
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                              <div style={{ fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#222' }}>
+                                                {item.product_name}
+                                              </div>
+                                              <div style={{ color: '#666', fontSize: '0.72rem' }}>
+                                                Qty: <strong>{item.quantity}</strong> × {formatPrice(item.price)}
+                                              </div>
+                                            </div>
+                                            <div style={{ fontWeight: '700', color: '#222', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                                              {formatPrice(item.total_price || (item.price * item.quantity))}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </td>
                     <td style={{ padding: '12px' }}>{new Date(o.created_at).toLocaleDateString('en-IN')}</td>
                     <td style={{ padding: '12px', fontWeight: '600' }}>{formatPrice(o.total_amount)}</td>
                     <td style={{ padding: '12px', textTransform: 'uppercase' }}>{o.payment_method || 'COD'}</td>

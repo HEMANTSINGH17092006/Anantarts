@@ -7,30 +7,62 @@ export default async function AdminOrdersPage() {
   try {
     const supabase = createAdminClient();
 
-    const [ordersRes, itemsRes] = await Promise.all([
-      supabase.from('orders').select('*').order('created_at', { ascending: false }),
-      supabase.from('order_items').select('*')
-    ]);
+    // Fetch orders with order_items and joined products + product_images in a single query
+    const { data: rawOrders, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          id,
+          order_id,
+          product_id,
+          product_name,
+          price,
+          quantity,
+          total_price,
+          products (
+            id,
+            name,
+            slug,
+            product_images (
+              image_path,
+              is_primary
+            )
+          )
+        )
+      `)
+      .order('created_at', { ascending: false });
 
-    const rawOrders = Array.isArray(ordersRes?.data) ? ordersRes.data : [];
-    const rawItems = Array.isArray(itemsRes?.data) ? itemsRes.data : [];
+    if (error) {
+      console.error('[AdminOrdersPage] Single Query Error:', error);
+      return <OrderManager initialOrders={[]} />;
+    }
 
-    const itemsMap = {};
-    rawItems.forEach(item => {
-      if (item && item.order_id) {
-        if (!itemsMap[item.order_id]) itemsMap[item.order_id] = [];
-        itemsMap[item.order_id].push(item);
-      }
+    const orders = (rawOrders || []).map(order => {
+      const items = (order.order_items || []).map(item => {
+        const productImgs = item.products?.product_images || [];
+        const primaryImg = productImgs.find(img => img.is_primary === 1) || productImgs[0];
+        return {
+          id: item.id,
+          order_id: item.order_id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          price: item.price,
+          quantity: item.quantity,
+          total_price: item.total_price || (item.price * item.quantity),
+          image_path: primaryImg?.image_path || '/images/placeholder.jpg'
+        };
+      });
+
+      return {
+        ...order,
+        items
+      };
     });
-
-    const orders = rawOrders.map(order => ({
-      ...order,
-      items: itemsMap[order.id] || []
-    }));
 
     return <OrderManager initialOrders={orders} />;
   } catch (err) {
-    console.error('[AdminOrdersPage] Error:', err);
+    console.error('[AdminOrdersPage] Exception:', err);
     return <OrderManager initialOrders={[]} />;
   }
 }
