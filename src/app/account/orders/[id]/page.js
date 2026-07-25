@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import TrackingTimeline from '@/components/TrackingTimeline';
+import CancelOrderModal from '@/components/CancelOrderModal';
 
 export const metadata = {
   title: 'Order Tracking Detail - Anant Arts',
@@ -25,7 +26,8 @@ export default async function CustomerOrderDetailPage({ params }) {
       id, user_id, order_number, customer_name, customer_email, customer_phone,
       shipping_address, billing_address, coupon_id, discount_amount, shipping_charge,
       subtotal, total_amount, payment_method, payment_status, order_status, notes,
-      tracking_number, courier_name, estimated_delivery, created_at,
+      tracking_number, courier_name, estimated_delivery, shipping_date, courier_website,
+      cancelled_at, cancelled_by, cancellation_reason, refund_status, created_at,
       order_items (
         id, product_id, product_name, price, quantity, total_price
       )
@@ -81,6 +83,9 @@ export default async function CustomerOrderDetailPage({ params }) {
           <h2 style={{ fontFamily: 'var(--font-heading)', margin: '8px 0 0 0', fontSize: '1.5rem', color: '#333' }}>
             Order Shipment Detail
           </h2>
+        </div>
+        <div>
+          <CancelOrderModal order={order} />
         </div>
       </div>
 

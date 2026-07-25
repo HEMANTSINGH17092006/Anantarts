@@ -2,6 +2,7 @@
 import { useState, useEffect, useTransition } from 'react';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
+import CancelOrderModal from '@/components/CancelOrderModal';
 
 export default function MyOrdersPage() {
   const [patronInfo, setPatronInfo] = useState('');
@@ -388,37 +389,18 @@ export default function MyOrdersPage() {
                         </div>
 
                         {/* Customer Actions */}
-                        {isUpdatable(order.order_status) && (
-                          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                          {isUpdatable(order.order_status) && (
                             <button
                               onClick={() => handleOpenEditModal(order)}
                               className="btn-outline-gold"
-                              style={{ padding: '8px 12px', fontSize: '0.72rem', flex: 1, justifyContent: 'center' }}
+                              style={{ padding: '8px 12px', fontSize: '0.75rem', width: '100%', justifyContent: 'center' }}
                             >
                               Edit Address
                             </button>
-                            <button
-                              onClick={() => setCancelOrderId(order.id)}
-                              style={{
-                                padding: '8px 12px',
-                                fontSize: '0.72rem',
-                                flex: 1,
-                                background: 'transparent',
-                                border: '1px solid var(--danger)',
-                                borderRadius: '4px',
-                                color: 'var(--danger)',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '4px'
-                              }}
-                            >
-                              Cancel Order
-                            </button>
-                          </div>
-                        )}
+                          )}
+                          <CancelOrderModal order={order} onCancelled={() => fetchOrders(savedPatron)} />
+                        </div>
                       </div>
 
                     </div>

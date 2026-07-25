@@ -519,10 +519,18 @@ async function initDb() {
   await addColumn('orders', 'refund_id', 'TEXT');
   await addColumn('orders', 'payment_logs', 'TEXT');
 
+  await addColumn('orders', 'cancelled_at', 'TIMESTAMP');
+  await addColumn('orders', 'cancelled_by', 'TEXT');
+  await addColumn('orders', 'cancellation_reason', 'TEXT');
+  await addColumn('orders', 'shipping_date', 'TEXT');
+  await addColumn('orders', 'courier_website', 'TEXT');
+
   await addColumn('order_tracking_events', 'courier_name', 'TEXT');
   await addColumn('order_tracking_events', 'tracking_number', 'TEXT');
   await addColumn('order_tracking_events', 'estimated_delivery', 'TEXT');
   await addColumn('order_tracking_events', 'updated_by_admin', 'TEXT');
+  await addColumn('order_tracking_events', 'courier_website', 'TEXT');
+  await addColumn('order_tracking_events', 'shipping_date', 'TEXT');
   
   if (isPostgres) {
     try {

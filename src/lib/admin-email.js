@@ -279,3 +279,188 @@ export async function sendAdminRefundEmail({ orderNumber, customerName, amount, 
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * 5. Send Order Cancellation Email to Customer & Admin
+ */
+export async function sendOrderCancellationEmails({ order, reason, cancelledBy = 'CUSTOMER' }) {
+  try {
+    if (!order) return;
+    const adminEmail = getAdminEmail();
+    const customerEmail = order.customer_email;
+    const orderNumber = order.order_number || order.id;
+    const amount = order.total_amount || 0;
+    const customerName = order.customer_name || 'Valued Customer';
+
+    // 1. Email to Customer
+    if (customerEmail) {
+      const customerSubject = `Order #${orderNumber} Cancellation Confirmation - Anant Arts`;
+      const customerHtml = `
+        <div style="background-color: #FFEBEE; padding: 16px; border-radius: 8px; border: 1px solid #FFCDD2; margin-bottom: 24px;">
+          <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #C62828; font-weight: 700;">🔴 Order Cancelled</span>
+          <h2 style="margin: 4px 0 0 0; font-size: 20px; color: #1C1C1C;">Order #${orderNumber} Has Been Cancelled</h2>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">Cancelled by ${cancelledBy === 'CUSTOMER' ? 'You' : 'Store Administrator'}</p>
+        </div>
+
+        <div style="background: #FFFFFF; padding: 16px; border: 1px solid #EEE; border-radius: 6px; font-size: 13px; margin-bottom: 24px;">
+          <h4 style="margin: 0 0 10px 0; color: #C62828; font-size: 12px; text-transform: uppercase;">Cancellation Details</h4>
+          <strong>Order ID:</strong> #${orderNumber}<br>
+          <strong>Customer Name:</strong> ${customerName}<br>
+          <strong>Total Amount:</strong> ${formatINR(amount)}<br>
+          <strong>Reason:</strong> ${reason || 'Not specified'}<br>
+          <strong>Payment Mode:</strong> ${(order.payment_method || 'Online').toUpperCase()}<br>
+          <strong>Refund Status:</strong> ${order.payment_status === 'Paid' || order.payment_status === 'Captured' ? 'Refund Pending (Admin will review and process)' : 'N/A (No charge or COD)'}
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="https://anantarts.in/order-tracking?order=${orderNumber}" 
+             style="display: inline-block; background-color: #D4AF37; color: #FFFFFF; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">
+            View Order Status ➔
+          </a>
+        </div>
+      `;
+
+      sendEmail({
+        to: customerEmail,
+        subject: customerSubject,
+        html: customerHtml,
+        text: `Your Order #${orderNumber} of ${formatINR(amount)} has been cancelled. Reason: ${reason}`
+      }).catch(e => console.error('[Order Cancellation Email Customer Error]:', e));
+    }
+
+    // 2. Email to Admin
+    const adminSubject = `🔴 Order #${orderNumber} Cancelled by ${cancelledBy}`;
+    const adminHtml = `
+      <div style="background-color: #FFEBEE; padding: 16px; border-radius: 8px; border: 1px solid #FFCDD2; margin-bottom: 24px;">
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #C62828; font-weight: 700;">🔴 Admin Alert: Order Cancelled</span>
+        <h2 style="margin: 4px 0 0 0; font-size: 20px; color: #1C1C1C;">Order #${orderNumber} Cancelled</h2>
+      </div>
+
+      <div style="background: #FFFFFF; padding: 16px; border: 1px solid #EEE; border-radius: 6px; font-size: 13px; margin-bottom: 24px;">
+        <strong>Order ID:</strong> #${orderNumber}<br>
+        <strong>Customer:</strong> ${customerName} (${order.customer_email || 'N/A'}, ${order.customer_phone || 'N/A'})<br>
+        <strong>Amount:</strong> ${formatINR(amount)}<br>
+        <strong>Cancelled By:</strong> ${cancelledBy}<br>
+        <strong>Cancellation Reason:</strong> <span style="color: #C62828; font-weight: bold;">${reason || 'No reason provided'}</span><br>
+        <strong>Payment Mode:</strong> ${(order.payment_method || 'Online').toUpperCase()} (${order.payment_status || 'Pending'})
+      </div>
+
+      <div style="text-align: center;">
+        <a href="https://anantarts.in/admin/delivery" 
+           style="display: inline-block; background-color: #8C2425; color: #FFFFFF; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">
+          Manage Orders &amp; Delivery Console ➔
+        </a>
+      </div>
+    `;
+
+    const adminResult = await sendEmail({
+      to: adminEmail,
+      subject: adminSubject,
+      html: adminHtml,
+      text: `Order #${orderNumber} was cancelled by ${cancelledBy}. Amount: ${formatINR(amount)}. Reason: ${reason}`
+    });
+
+    logNotificationResult('order_cancelled_email', adminEmail, adminResult.success, adminResult.error, { orderNumber, reason });
+    return adminResult;
+  } catch (err) {
+    console.error('[Admin Email Error] Order Cancellation Email Exception:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * 6. Send Delivery Status Update Email to Customer
+ */
+export async function sendDeliveryStatusEmail({ order, status, trackingNumber, courierName, estimatedDelivery, notes, items = [] }) {
+  try {
+    if (!order || !order.customer_email) return { success: false, error: 'No order or customer email' };
+    const orderNumber = order.order_number || order.id;
+    const customerName = order.customer_name || 'Valued Customer';
+    const orderItems = items.length > 0 ? items : (order.order_items || order.items || []);
+
+    const statusIcons = {
+      'Packed': '📦',
+      'Shipped': '🚚',
+      'Out For Delivery': '🚛',
+      'Out for Delivery': '🚛',
+      'Delivered': '✅',
+      'Cancelled': '🔴',
+      'Returned': '↩️',
+      'In Transit': '🛣'
+    };
+    const icon = statusIcons[status] || '📦';
+    const subject = `${icon} Order #${orderNumber} Update: ${status}`;
+
+    const itemsHtml = orderItems.length > 0
+      ? orderItems.map(item => `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #EEE; font-size: 13px;">${item.product_name}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #EEE; font-size: 13px; text-align: center;">x${item.quantity}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #EEE; font-size: 13px; text-align: right;">${formatINR(item.total_price || (item.price * item.quantity))}</td>
+        </tr>
+      `).join('')
+      : `<tr><td colspan="3" style="padding: 8px; text-align: center; color: #777;">Order Items</td></tr>`;
+
+    const html = `
+      <div style="background-color: #FAF7F2; padding: 16px; border-radius: 8px; border: 1px solid #EAE3D2; margin-bottom: 24px;">
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #D4AF37; font-weight: 700;">${icon} Delivery Progress</span>
+        <h2 style="margin: 4px 0 0 0; font-size: 20px; color: #1C1C1C;">Order Status: ${status}</h2>
+        <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">Order #${orderNumber}</p>
+      </div>
+
+      ${notes ? `
+        <div style="background: #FFFDE7; border-left: 4px solid #FBC02D; padding: 12px; font-size: 13px; margin-bottom: 20px; color: #444;">
+          <strong>Update Note:</strong> ${notes}
+        </div>
+      ` : ''}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+        <div style="background: #FFFFFF; padding: 12px; border: 1px solid #EEE; border-radius: 6px; font-size: 12px;">
+          <strong>Courier Partner:</strong> ${courierName || order.courier_name || 'Express Logistics'}<br>
+          <strong>Tracking / AWB Number:</strong> <span style="color: #D4AF37; font-weight: bold;">${trackingNumber || order.tracking_number || 'Assigned upon dispatch'}</span>
+        </div>
+        <div style="background: #FFFFFF; padding: 12px; border: 1px solid #EEE; border-radius: 6px; font-size: 12px;">
+          <strong>Expected Delivery:</strong> ${estimatedDelivery || order.estimated_delivery || '3-7 Business Days'}<br>
+          <strong>Recipient:</strong> ${customerName}
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <h4 style="margin: 0 0 10px 0; color: #333; font-size: 13px; text-transform: uppercase;">Items in Package</h4>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #F9F9F9; color: #666; font-size: 11px; text-transform: uppercase;">
+              <th style="padding: 6px; text-align: left;">Product</th>
+              <th style="padding: 6px; text-align: center;">Qty</th>
+              <th style="padding: 6px; text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="https://anantarts.in/order-tracking?order=${orderNumber}" 
+           style="display: inline-block; background-color: #D4AF37; color: #FFFFFF; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+          Track Live Shipment Status ➔
+        </a>
+      </div>
+    `;
+
+    const result = await sendEmail({
+      to: order.customer_email,
+      subject,
+      html,
+      text: `Order #${orderNumber} status update: ${status}. Tracking No: ${trackingNumber || order.tracking_number || 'N/A'}. Track live at: https://anantarts.in/order-tracking?order=${orderNumber}`
+    });
+
+    logNotificationResult('delivery_status_email', order.customer_email, result.success, result.error, { orderNumber, status });
+    return result;
+  } catch (err) {
+    console.error('[Admin Email Error] Delivery Status Email Exception:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+

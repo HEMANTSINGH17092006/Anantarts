@@ -7,6 +7,7 @@ import * as jose from 'jose';
 import { cookies } from 'next/headers';
 import { slugify } from '@/lib/utils';
 import { sendEmail } from '@/lib/email';
+import { sendOrderCancellationEmails, sendDeliveryStatusEmail } from '@/lib/admin-email';
 import { sendAdminB2bNotification, sendCustomerDeliveryWhatsAppNotification } from '@/lib/whatsapp';
 
 
@@ -823,6 +824,145 @@ export async function trackOrderAction(orderId, phone) {
 }
 
 /**
+ * cancelOrderCustomerAction — Allows customers to cancel eligible orders with stock restoration & email alerts
+ */
+export async function cancelOrderCustomerAction({ orderId, orderNumber, reason, customReason }) {
+  try {
+    const supabase = createAdminClient();
+    let query = supabase.from('orders').select('*, order_items(*)');
+    if (orderId) {
+      query = query.eq('id', orderId);
+    } else if (orderNumber) {
+      query = query.eq('order_number', orderNumber);
+    } else {
+      return { success: false, message: 'Order ID or Order Number is required.' };
+    }
+
+    const { data: orders, error } = await query;
+    if (error || !orders || orders.length === 0) {
+      return { success: false, message: 'Order not found.' };
+    }
+    const order = orders[0];
+
+    // Check cancellation eligibility: strictly allow only before packing/dispatch
+    const eligibleStatuses = [
+      'Pending Payment',
+      'Pending',
+      'Payment Confirmed',
+      'Order Confirmed',
+      'Confirmed',
+      'Processing',
+      'Preparing for Dispatch',
+      'Preparing',
+      'Order Received'
+    ];
+
+    const currentStatus = order.order_status || 'Pending';
+    const isEligible = eligibleStatuses.some(s => s.toLowerCase() === currentStatus.toLowerCase());
+
+    if (!isEligible) {
+      return {
+        success: false,
+        message: `Order cannot be cancelled because its current status is "${currentStatus}". Cancellation is only allowed prior to packing and shipment.`
+      };
+    }
+
+    const finalReason = reason === 'Other' ? (customReason?.trim() || 'Other') : (reason || 'Customer requested cancellation');
+
+    // Handle Prepaid vs COD status
+    const isPrepaid = (order.payment_status === 'Paid' || order.payment_status === 'Captured' || order.payment_method === 'online' || order.payment_method === 'razorpay');
+    
+    const updatePayload = {
+      order_status: 'Cancelled',
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: 'CUSTOMER',
+      cancellation_reason: finalReason
+    };
+
+    if (isPrepaid) {
+      updatePayload.refund_status = 'Refund Pending';
+    } else {
+      updatePayload.payment_status = 'Cancelled';
+    }
+
+    const { error: updateErr } = await supabase
+      .from('orders')
+      .update(updatePayload)
+      .eq('id', order.id);
+
+    if (updateErr) {
+      throw updateErr;
+    }
+
+    // Stock Restoration (for non-shipped items)
+    const items = order.order_items || [];
+    if (items.length > 0) {
+      for (const item of items) {
+        if (item.product_id) {
+          const { data: prod } = await supabase
+            .from('products')
+            .select('stock_quantity')
+            .eq('id', item.product_id)
+            .single();
+
+          if (prod) {
+            const restoredStock = (prod.stock_quantity || 0) + item.quantity;
+            await supabase
+              .from('products')
+              .update({ stock_quantity: restoredStock })
+              .eq('id', item.product_id);
+          }
+        }
+      }
+    }
+
+    // Insert tracking event
+    await supabase.from('order_tracking_events').insert({
+      order_id: order.id,
+      status: 'Cancelled',
+      title: 'Order Cancelled',
+      description: `Cancelled by Customer. Reason: ${finalReason}`,
+      location: 'Customer Portal',
+      created_by_admin: 'CUSTOMER'
+    });
+
+    // Admin dashboard notification
+    await supabase.from('notifications').insert({
+      message: `🔴 Order Cancelled: Customer cancelled order ${order.order_number || order.id} (${finalReason})`,
+      is_read: 0,
+      type: 'warning',
+      link: '/admin/delivery'
+    }).catch(() => {});
+
+    // Audit log entry
+    await supabase.from('audit_logs').insert({
+      admin_email: order.customer_email || 'CUSTOMER',
+      action: 'CUSTOMER_CANCEL_ORDER',
+      details: JSON.stringify({ orderId: order.id, orderNumber: order.order_number, reason: finalReason })
+    }).catch(() => {});
+
+    // Trigger emails to Customer & Admin
+    await sendOrderCancellationEmails({
+      order,
+      reason: finalReason,
+      cancelledBy: 'CUSTOMER'
+    }).catch(err => console.error('Cancellation email error:', err));
+
+    revalidatePath('/account/orders');
+    revalidatePath('/my-orders');
+    revalidatePath(`/account/orders/${order.order_number}`);
+
+    return {
+      success: true,
+      message: 'Order has been successfully cancelled.'
+    };
+  } catch (err) {
+    console.error('[cancelOrderCustomerAction] Error:', err);
+    return { success: false, message: err.message || 'Failed to cancel order.' };
+  }
+}
+
+/**
  * addAdminOrderTrackingEventAction — Adds a tracking event and updates order status/courier info
  */
 export async function addAdminOrderTrackingEventAction({
@@ -830,7 +970,9 @@ export async function addAdminOrderTrackingEventAction({
   status,
   courierName,
   trackingNumber,
+  shippingDate,
   estimatedDelivery,
+  courierWebsite,
   title,
   description,
   location
@@ -843,10 +985,10 @@ export async function addAdminOrderTrackingEventAction({
 
     const supabase = createAdminClient();
 
-    // 1. Fetch current order details
+    // 1. Fetch current order details with items
     const { data: order, error: orderErr } = await supabase
       .from('orders')
-      .select('*')
+      .select('*, order_items(*)')
       .eq('id', orderId)
       .single();
 
@@ -858,7 +1000,39 @@ export async function addAdminOrderTrackingEventAction({
     const updateData = { order_status: status };
     if (courierName !== undefined) updateData.courier_name = courierName;
     if (trackingNumber !== undefined) updateData.tracking_number = trackingNumber;
+    if (shippingDate !== undefined) updateData.shipping_date = shippingDate;
     if (estimatedDelivery !== undefined) updateData.estimated_delivery = estimatedDelivery;
+    if (courierWebsite !== undefined) updateData.courier_website = courierWebsite;
+
+    if (status === 'Cancelled') {
+      updateData.cancelled_at = new Date().toISOString();
+      updateData.cancelled_by = admin.email || 'ADMIN';
+      if (description) updateData.cancellation_reason = description;
+      
+      // Restock inventory if not already cancelled
+      if (order.order_status !== 'Cancelled') {
+        const items = order.order_items || [];
+        for (const item of items) {
+          if (item.product_id) {
+            const { data: prod } = await supabase
+              .from('products')
+              .select('stock_quantity')
+              .eq('id', item.product_id)
+              .single();
+            if (prod) {
+              await supabase
+                .from('products')
+                .update({ stock_quantity: (prod.stock_quantity || 0) + item.quantity })
+                .eq('id', item.product_id);
+            }
+          }
+        }
+      }
+    }
+
+    if (status === 'Refunded' || status === 'Refund Initiated') {
+      updateData.refund_status = status;
+    }
 
     await supabase.from('orders').update(updateData).eq('id', orderId);
 
@@ -874,41 +1048,56 @@ export async function addAdminOrderTrackingEventAction({
         title: eventTitle,
         description: eventDesc,
         location: location || 'Warehouse Hub',
-        created_by_admin: admin.email || 'Admin'
+        created_by_admin: admin.email || 'Admin',
+        courier_name: courierName || order.courier_name,
+        tracking_number: trackingNumber || order.tracking_number,
+        estimated_delivery: estimatedDelivery || order.estimated_delivery,
+        shipping_date: shippingDate || order.shipping_date,
+        courier_website: courierWebsite || order.courier_website
       })
       .select('*')
       .single();
 
-    // 4. Send email alert to customer if email is valid
-    if (order.customer_email) {
-      const emailSubject = `Order #${order.order_number} Update: ${eventTitle}`;
-      const emailText = `Hello ${order.customer_name},\n\nYour order #${order.order_number} status has been updated to: ${status}.\n\nDetails: ${eventDesc}\n${estimatedDelivery ? `Expected Delivery: ${estimatedDelivery}\n` : ''}\nTrack your shipment live at: https://anantarts.in/order-tracking?order=${order.order_number}\n\nThank you for choosing Anant Arts!`;
+    // 4. Send Email & WhatsApp Notifications
+    const updatedOrder = {
+      ...order,
+      order_status: status,
+      courier_name: courierName !== undefined ? courierName : order.courier_name,
+      tracking_number: trackingNumber !== undefined ? trackingNumber : order.tracking_number,
+      estimated_delivery: estimatedDelivery !== undefined ? estimatedDelivery : order.estimated_delivery
+    };
 
-      sendEmail({
-        to: order.customer_email,
-        subject: emailSubject,
-        text: emailText,
-        html: `<div style="font-family: sans-serif; padding: 20px; color: #333;"><p>Hello <strong>${order.customer_name}</strong>,</p><p>Your order <strong>#${order.order_number}</strong> status is now: <span style="color: #D4AF37; font-weight: bold;">${status}</span>.</p><p>${eventDesc}</p>${estimatedDelivery ? `<p><strong>Expected Delivery:</strong> ${estimatedDelivery}</p>` : ''}<p style="margin-top: 20px;"><a href="https://anantarts.in/order-tracking?order=${order.order_number}" style="background: #D4AF37; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Track Shipment Live</a></p></div>`
-      }).catch(err => console.error('Email alert sending error:', err));
+    if (status === 'Cancelled') {
+      sendOrderCancellationEmails({
+        order: updatedOrder,
+        reason: eventDesc,
+        cancelledBy: admin.email || 'ADMIN'
+      }).catch(e => console.error('Admin cancellation email error:', e));
+    } else {
+      sendDeliveryStatusEmail({
+        order: updatedOrder,
+        status,
+        trackingNumber: updateData.tracking_number,
+        courierName: updateData.courier_name,
+        estimatedDelivery: updateData.estimated_delivery,
+        notes: eventDesc,
+        items: order.order_items || []
+      }).catch(err => console.error('Delivery status email error:', err));
     }
 
-    // 5. Send WhatsApp delivery notification to customer
     if (order.customer_phone) {
-      const updatedOrderObj = {
-        ...order,
-        courier_name: courierName !== undefined ? courierName : order.courier_name,
-        tracking_number: trackingNumber !== undefined ? trackingNumber : order.tracking_number,
-        estimated_delivery: estimatedDelivery !== undefined ? estimatedDelivery : order.estimated_delivery
-      };
-      sendCustomerDeliveryWhatsAppNotification(updatedOrderObj, {
+      sendCustomerDeliveryWhatsAppNotification(updatedOrder, {
         status,
         title: eventTitle,
         description: eventDesc,
         location: location || 'Warehouse Hub'
-      }).catch(err => console.error('WhatsApp delivery alert sending error:', err));
+      }).catch(err => console.error('WhatsApp delivery alert error:', err));
     }
 
-    await logAudit(admin.email, 'UPDATE_ORDER_TRACKING', { orderId, status, title: eventTitle });
+    await logAudit(admin.email, 'UPDATE_ORDER_TRACKING', { orderId, status, title: eventTitle, courierName, trackingNumber });
+
+    revalidatePath('/admin/delivery');
+    revalidatePath('/admin/orders');
 
     return { success: true, message: 'Tracking status updated & event recorded successfully!', event: newEvent };
   } catch (err) {

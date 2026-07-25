@@ -31,53 +31,21 @@ export async function POST(req) {
     }
 
     if (action === 'cancel') {
-      // Update order status to Cancelled
-      const { error: updateErr } = await supabase
-        .from('orders')
-        .update({ order_status: 'Cancelled' })
-        .eq('id', order.id);
+      const reason = data?.reason || 'Customer cancelled order';
+      const customReason = data?.customReason || '';
 
-      if (updateErr) {
-        return NextResponse.json({ message: 'Failed to cancel the order.' }, { status: 500 });
+      const { cancelOrderCustomerAction } = await import('@/app/actions');
+      const result = await cancelOrderCustomerAction({
+        orderId: order.id,
+        reason,
+        customReason
+      });
+
+      if (!result.success) {
+        return NextResponse.json({ message: result.message }, { status: 400 });
       }
 
-      // Restock inventory
-      const { data: items } = await supabase
-        .from('order_items')
-        .select('*')
-        .eq('order_id', order.id);
-
-      if (items && items.length > 0) {
-        for (const item of items) {
-          if (item.product_id) {
-            const { data: prod } = await supabase
-              .from('products')
-              .select('stock_quantity')
-              .eq('id', item.product_id)
-              .single();
-
-            if (prod) {
-              const restoredStock = prod.stock_quantity + item.quantity;
-              await supabase
-                .from('products')
-                .update({ stock_quantity: restoredStock })
-                .eq('id', item.product_id);
-            }
-          }
-        }
-      }
-
-      // Create admin notification
-      await supabase
-        .from('notifications')
-        .insert({
-          message: `🚫 Order Cancelled: Customer cancelled order ${order.order_number}.`,
-          is_read: 0,
-          type: 'info',
-          link: `/admin/orders`
-        });
-
-      return NextResponse.json({ success: true, message: 'Order successfully cancelled.' });
+      return NextResponse.json({ success: true, message: result.message });
 
     } else if (action === 'update_shipping') {
       const { name, phone, address, city, state, zip } = data || {};

@@ -102,18 +102,48 @@ export default function TrackingTimeline({ order, trackingEvents = [] }) {
           <div>
             <span style={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.75rem' }}>Courier Partner</span>
             <strong style={{ color: '#FFF' }}>{courierName}</strong>
+            {order.courier_website && (
+              <a href={order.courier_website} target="_blank" rel="noopener noreferrer" style={{ color: '#D4AF37', fontSize: '0.72rem', display: 'block', marginTop: '2px' }}>
+                Visit Courier Website ↗
+              </a>
+            )}
           </div>
           <div>
             <span style={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.75rem' }}>Tracking / AWB No</span>
             <strong style={{ color: '#D4AF37' }}>{trackingNumber || 'Assigned upon dispatch'}</strong>
           </div>
           <div>
-            <span style={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.75rem' }}>Payment Status</span>
-            <strong style={{ color: order.payment_status === 'Captured' || order.payment_status === 'Paid' ? '#81C784' : '#FFB74D' }}>
-              {order.payment_status ? order.payment_status.toUpperCase() : 'PENDING'}
+            <span style={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.75rem' }}>Payment &amp; Refund Status</span>
+            <strong style={{ color: order.refund_status === 'Refund Pending' ? '#FFB74D' : (order.payment_status === 'Captured' || order.payment_status === 'Paid' ? '#81C784' : '#E57373') }}>
+              {order.refund_status && order.refund_status !== 'none' ? order.refund_status.toUpperCase() : (order.payment_status ? order.payment_status.toUpperCase() : 'PENDING')}
             </strong>
           </div>
         </div>
+
+        {isCancelled && (
+          <div style={{
+            background: 'rgba(211, 47, 47, 0.15)',
+            border: '1px solid rgba(211, 47, 47, 0.4)',
+            padding: '16px',
+            borderRadius: '8px',
+            marginTop: '8px',
+            fontSize: '0.85rem'
+          }}>
+            <strong style={{ color: '#FF8A80', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              🔴 Order Cancelled {order.cancelled_by ? `by ${order.cancelled_by}` : ''}
+            </strong>
+            {order.cancelled_at && (
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.78rem', display: 'block', marginTop: '4px' }}>
+                Date: {new Date(order.cancelled_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            {order.cancellation_reason && (
+              <p style={{ margin: '6px 0 0 0', color: '#FFCDD2', fontSize: '0.82rem', lineHeight: '1.4' }}>
+                <strong>Reason:</strong> {order.cancellation_reason}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Stepper Timeline Card (Amazon/Flipkart Style) */}
