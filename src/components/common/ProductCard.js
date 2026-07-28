@@ -161,7 +161,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
             </div>
           </div>
 
-          {/* Action Buttons with Touch Targets (44–48px) */}
+          {/* Action Buttons with 46px Touch Targets */}
           <div className="product-card-actions">
             <button 
               onClick={handleAddToCart}
@@ -219,7 +219,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
                 <button 
                   onClick={handleAddToCart}
                   className="btn-gold" 
-                  style={{ flex: 1, justifyContent: 'center', minHeight: '44px' }}
+                  style={{ flex: 1, justifyContent: 'center', minHeight: '46px' }}
                   disabled={product.stock_quantity <= 0}
                 >
                   <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Add to Cart
@@ -227,7 +227,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
                 <button 
                   onClick={handleBuyNow}
                   className="btn-outline-gold" 
-                  style={{ flex: 1, justifyContent: 'center', minHeight: '44px' }}
+                  style={{ flex: 1, justifyContent: 'center', minHeight: '46px' }}
                   disabled={product.stock_quantity <= 0}
                 >
                   Buy Now
@@ -280,7 +280,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
             </table>
 
             <div style={{ marginTop: '20px', textAlign: 'right' }}>
-              <button onClick={() => setCompareOpen(false)} className="btn-gold" style={{ padding: '8px 20px', fontSize: '0.8rem' }}>
+              <button onClick={() => setCompareOpen(false)} className="btn-gold" style={{ padding: '8px 20px', fontSize: '0.8rem', minHeight: '44px' }}>
                 Close Summary
               </button>
             </div>

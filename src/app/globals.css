@@ -3070,15 +3070,15 @@ html, body, .site-wrapper {
 
 @media (max-width: 640px) {
   .shop-by-category-section {
-    padding: 2.2rem 1rem 0 1rem !important;
+    padding: 2rem 1rem 0 1rem !important;
   }
   .category-cards-grid {
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
   }
   .featured-collection-card {
-    height: 195px !important;
-    padding: 16px !important;
+    height: 185px !important;
+    padding: 14px !important;
   }
   .category-card-title {
     font-size: 1.1rem !important;
@@ -3094,8 +3094,15 @@ html, body, .site-wrapper {
   .category-explore-btn {
     padding: 6px 12px !important;
     font-size: 0.72rem !important;
-    min-height: 38px !important;
+    min-height: 44px !important;
   }
 }
+
+/* Touch Button Minimum Height 46px */
+.btn-gold, .btn-outline-gold, .touch-btn-primary {
+  min-height: 46px !important;
+  box-sizing: border-box !important;
+}
+
 
 
