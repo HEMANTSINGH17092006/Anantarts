@@ -59,17 +59,18 @@ export const getCategories = unstable_cache(
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .eq('is_hidden', 0)
-      .order('sort_order', { ascending: true });
+      .or('is_hidden.eq.0,is_hidden.is.null')
+      .order('sort_order', { ascending: true, nullsFirst: false });
     if (error) {
       console.error('Error fetching categories:', error);
       return [];
     }
-    return data;
+    return data || [];
   },
   ['categories-list'],
   { tags: ['categories'], revalidate: 3600 }
 );
+
 
 // 4. Get Testimonials (Cached)
 export const getTestimonials = unstable_cache(

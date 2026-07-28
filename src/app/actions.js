@@ -432,6 +432,9 @@ export async function addOrUpdateCategory(formData) {
 
     await logAudit(admin.email, id ? 'UPDATE_CATEGORY' : 'CREATE_CATEGORY', { id, name });
     revalidateTag('categories');
+    revalidatePath('/', 'layout');
+    revalidatePath('/shop');
+    revalidatePath('/collections');
     return { success: true };
   } catch (err) {
     return { success: false, message: err.message };
@@ -447,7 +450,11 @@ export async function deleteCategory(id) {
 
     await logAudit(admin.email, 'DELETE_CATEGORY', { id });
     revalidateTag('categories');
+    revalidatePath('/', 'layout');
+    revalidatePath('/shop');
+    revalidatePath('/collections');
     return { success: true };
+
   } catch (err) {
     return { success: false, message: err.message };
   }

@@ -1,6 +1,7 @@
 import { 
   getSettings, 
   getProducts, 
+  getCategories,
   getTestimonials
 } from '@/lib/db-helpers';
 
@@ -24,20 +25,22 @@ import BulkEnquiryForm from '@/components/home/BulkEnquiryForm';
 export const revalidate = 3600; // Cache home page for up to 1 hour
 
 export default async function Home() {
-  const testimonials = await getTestimonials();
-
-  // Fetch product showcases
-  const bestsellerProducts = await getProducts({ tag: 'Best Seller', limit: 8 });
-  const newArrivalProducts = await getProducts({ tag: 'New Arrival', limit: 10 });
-  const featuredProducts = await getProducts({ limit: 10 });
+  // Fetch active categories and testimonials directly from Database
+  const [categories, testimonials, bestsellerProducts, newArrivalProducts, featuredProducts] = await Promise.all([
+    getCategories(),
+    getTestimonials(),
+    getProducts({ tag: 'Best Seller', limit: 8 }),
+    getProducts({ tag: 'New Arrival', limit: 10 }),
+    getProducts({ limit: 10 })
+  ]);
 
   return (
     <>
       {/* 1. GRAND FULL-WIDTH HERO SLIDER */}
       <HeroBanner />
 
-      {/* 2. FEATURED CATEGORIES (RICH FULL-BLEED IMAGE CARDS) */}
-      <ShopByCategory />
+      {/* 2. DYNAMIC ADMIN-SYNCHRONIZED CATEGORIES */}
+      <ShopByCategory categories={categories} />
 
       {/* 3. NEW ARRIVALS SLIDER */}
       <NewArrivalsSlider products={newArrivalProducts.length > 0 ? newArrivalProducts : featuredProducts} />
