@@ -86,7 +86,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
         </button>
 
         {/* Badges Top Left Inside Image */}
-        <div className="product-badge-group">
+        <div className="product-badge-group" style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {discountPercent > 0 && (
             <span className="product-badge badge-sale">-{discountPercent}% OFF</span>
           )}
@@ -126,14 +126,14 @@ export default function ProductCard({ product, isListView = false, onCompareClic
         </Link>
 
         {/* Product Information Body */}
-        <div className="product-card-info">
+        <div className="product-card-info" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, padding: '16px' }}>
           <div>
             {/* Category & Rating */}
-            <div className="product-card-meta">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
               <span className="category-label">
                 {product.category_name || 'Handcrafted'}
               </span>
-              <div className="rating-badge">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', color: '#D4AF37', fontWeight: '700' }}>
                 <i className="fas fa-star"></i>
                 <span>4.9</span>
               </div>
@@ -145,39 +145,46 @@ export default function ProductCard({ product, isListView = false, onCompareClic
             </Link>
 
             {/* Material & Stock Status */}
-            <div className="product-card-submeta">
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'flex', gap: '6px', alignItems: 'center' }}>
               {product.material && <span>{product.material.split('&')[0].trim()}</span>}
-              <span className={product.stock_quantity > 0 ? 'stock-in' : 'stock-out'}>
-                • {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
+              <span style={{ color: product.stock_quantity > 0 ? 'var(--success)' : 'var(--danger)', fontWeight: '600' }}>
+                • {product.stock_quantity > 0 ? (product.stock_quantity <= 5 ? `Only ${product.stock_quantity} left` : 'In Stock') : 'Out of Stock'}
               </span>
             </div>
 
             {/* Price Row */}
-            <div className="product-price">
-              <span className="current">{formatPrice(activePrice)}</span>
+            <div className="product-price" style={{ marginBottom: '14px' }}>
+              <span className="current" style={{ fontWeight: '700', fontSize: '1.1rem' }}>{formatPrice(activePrice)}</span>
               {product.discount_price > 0 && (
-                <span className="original">{formatPrice(product.price)}</span>
+                <>
+                  <span className="original">{formatPrice(product.price)}</span>
+                  <span className="discount" style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: '600', marginLeft: '6px' }}>
+                    ({discountPercent}% OFF)
+                  </span>
+                </>
               )}
             </div>
           </div>
 
-          {/* Action Buttons with 46px Touch Targets */}
-          <div className="product-card-actions">
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button 
               onClick={handleAddToCart}
-              className="btn-gold touch-btn-primary"
+              className="btn-gold" 
+              style={{ width: '100%', padding: '10px', fontSize: '0.8rem', justifyContent: 'center', borderRadius: '6px' }}
               disabled={product.stock_quantity <= 0}
             >
               <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i>
-              {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added!' : 'Add to Cart'}
+              {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added to Cart!' : 'Add to Cart'}
             </button>
 
             <button 
               onClick={handleBuyNow}
-              className="btn-outline-gold touch-btn-secondary"
+              className="btn-outline-gold" 
+              style={{ width: '100%', padding: '9px', fontSize: '0.78rem', justifyContent: 'center', borderRadius: '6px', color: 'var(--text-dark)', borderColor: 'var(--primary-gold)' }}
               disabled={product.stock_quantity <= 0}
             >
-              <i className="fas fa-bolt" style={{ marginRight: '4px', color: '#D4AF37' }}></i> Buy Now
+              <i className="fas fa-bolt" style={{ marginRight: '6px', color: '#D4AF37' }}></i> Buy Now
             </button>
           </div>
         </div>
@@ -219,7 +226,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
                 <button 
                   onClick={handleAddToCart}
                   className="btn-gold" 
-                  style={{ flex: 1, justifyContent: 'center', minHeight: '46px' }}
+                  style={{ flex: 1, justifyContent: 'center' }}
                   disabled={product.stock_quantity <= 0}
                 >
                   <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Add to Cart
@@ -227,7 +234,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
                 <button 
                   onClick={handleBuyNow}
                   className="btn-outline-gold" 
-                  style={{ flex: 1, justifyContent: 'center', minHeight: '46px' }}
+                  style={{ flex: 1, justifyContent: 'center' }}
                   disabled={product.stock_quantity <= 0}
                 >
                   Buy Now
@@ -280,7 +287,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
             </table>
 
             <div style={{ marginTop: '20px', textAlign: 'right' }}>
-              <button onClick={() => setCompareOpen(false)} className="btn-gold" style={{ padding: '8px 20px', fontSize: '0.8rem', minHeight: '44px' }}>
+              <button onClick={() => setCompareOpen(false)} className="btn-gold" style={{ padding: '8px 20px', fontSize: '0.8rem' }}>
                 Close Summary
               </button>
             </div>
