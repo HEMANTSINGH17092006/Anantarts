@@ -8,7 +8,7 @@ const CATEGORIES = [
     slug: 'spiritual-collection', 
     image: '/uploads/category-spiritual-collection.png', 
     tag: 'Divine Idols',
-    desc: '24K gold & sterling silver electroplated sacred statues.'
+    desc: '24K gold & sterling silver electroplated sacred statues & temple art.'
   },
   { 
     name: 'Wooden Handicrafts', 
@@ -72,14 +72,14 @@ const CATEGORIES = [
     slug: 'customized-gifts', 
     image: '/uploads/category-customized-products.png', 
     tag: 'Personalized',
-    desc: 'Bespoke custom engraved gifts tailored to your specifications.'
+    desc: 'Bespoke custom engraved gifts tailored to your exact specifications.'
   }
 ];
 
 export default function ShopByCategory() {
   return (
     <section className="shop-by-category-section">
-      <div className="section-heading" style={{ marginTop: 0, marginBottom: '2rem' }}>
+      <div className="section-heading" style={{ marginTop: 0, marginBottom: '2.5rem' }}>
         <h2>Shop by Category</h2>
         <div className="gold-line"></div>
         <p>Explore handcrafted artisanal creations across core lifestyle, home décor, and gifting domains.</p>
@@ -106,18 +106,18 @@ export default function ShopByCategory() {
               className="collection-bg-zoom"
             />
 
-            {/* Subtle Dark Gradient Overlay (Bottom 35-40% only) */}
+            {/* Dark Gradient Overlay */}
             <div style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(20,17,15,0.88) 100%)',
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(20,17,15,0.85) 100%)',
               zIndex: 2
             }} />
 
             {/* Card Content */}
             <div className="category-card-content">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                <span style={{ fontSize: '1.2rem' }}>{cat.icon}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '1.4rem' }}>{cat.icon}</span>
                 <span className="category-badge">
                   {cat.tag}
                 </span>
