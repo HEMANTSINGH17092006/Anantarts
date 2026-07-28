@@ -5,28 +5,28 @@ import Link from 'next/link';
 const HERO_SLIDES = [
   {
     title: 'Exquisite Hand-Carved Wooden Handicrafts',
-    subtitle: 'Preserving ancient Rajasthani woodworking heritage with hand-chiselled rosewood wall panels, wooden temples, and serving trays.',
+    subtitle: 'Preserving ancient Rajasthani woodworking heritage with hand-chiselled rosewood wall panels & temples.',
     image: '/uploads/artisan-cast.png',
     shopLink: '/shop?category=wooden-handicrafts',
     exploreLink: '/collections'
   },
   {
-    title: 'Luxury Handcrafted Lifestyle & Décor Marketplace',
-    subtitle: 'Discover master artisanal creations across wooden handicrafts, 24K gold electroplated art, home accents, and bespoke corporate gifting.',
+    title: 'Luxury Handcrafted Lifestyle & Décor',
+    subtitle: 'Discover master artisanal creations across wooden handicrafts & 24K gold electroplated art.',
     image: '/uploads/mandir-hero-bg.jpg',
     shopLink: '/shop',
     exploreLink: '/collections'
   },
   {
     title: 'Timeless Electroplated Home Décor',
-    subtitle: 'High-lustre 24K gold and sterling silver electroplated showpieces, table accents, and statement centerpieces.',
+    subtitle: 'High-lustre 24K gold and sterling silver electroplated showpieces & statement centerpieces.',
     image: '/uploads/artisan-chisel.png',
     shopLink: '/shop?category=home-decor',
     exploreLink: '/collections'
   },
   {
     title: 'Distinguished Corporate & Customized Gifting',
-    subtitle: 'Executive desk organizers, logo embossed identity plaques, and bespoke presentation packaging engineered for bulk orders.',
+    subtitle: 'Executive desk organizers, logo embossed identity plaques & bespoke presentation boxes.',
     image: '/uploads/artisan-electroplate.png',
     shopLink: '/corporate-gifts',
     exploreLink: '/occasions'
@@ -87,7 +87,7 @@ export default function HeroBanner() {
           {/* Prominent CTAs */}
           <div className="hero-cta-group">
             <Link href={slide.shopLink} className="btn-gold hero-btn-primary">
-              <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Shop Collection
+              <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Shop Now
             </Link>
             <Link href={slide.exploreLink} className="btn-outline-gold hero-btn-secondary">
               <i className="fas fa-th-large" style={{ marginRight: '6px' }}></i> Explore All

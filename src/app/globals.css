@@ -3104,5 +3104,125 @@ html, body, .site-wrapper {
   box-sizing: border-box !important;
 }
 
+/* Mobile Sticky Search Bar */
+.mobile-search-bar-container {
+  display: none;
+  position: sticky;
+  top: 64px;
+  z-index: 990;
+  background: #191512;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+.mobile-search-input-wrapper {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 24px;
+  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.82rem;
+}
+.mobile-search-icon {
+  color: #D4AF37;
+  font-size: 0.95rem;
+}
+.mobile-search-placeholder {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mobile-filter-icon {
+  color: #D4AF37;
+  font-size: 0.9rem;
+}
+
+/* Horizontal Scrollable Category Bar */
+.horizontal-category-bar-wrapper {
+  background: #14110F;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+.horizontal-category-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.horizontal-category-scroll::-webkit-scrollbar {
+  display: none;
+}
+.category-pill-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.category-pill-item:hover, .category-pill-item:active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: #D4AF37;
+  color: #D4AF37;
+}
+
+@media (max-width: 768px) {
+  .mobile-search-bar-container {
+    display: block !important;
+  }
+}
+
+/* Compact Promotional Banner (180-220px on Mobile) */
+@media (max-width: 640px) {
+  .hero-banner-container {
+    height: 210px !important;
+    min-height: 200px !important;
+    border-radius: 12px !important;
+    margin: 10px 12px !important;
+    width: calc(100% - 24px) !important;
+    box-shadow: var(--shadow-md);
+  }
+  .hero-banner-content {
+    padding: 0 1rem !important;
+  }
+  .hero-badge {
+    display: none !important;
+  }
+  .hero-title-text {
+    font-size: 1.15rem !important;
+    margin-bottom: 4px !important;
+  }
+  .hero-subtitle-text {
+    font-size: 0.72rem !important;
+    margin-bottom: 10px !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .hero-btn-primary, .hero-btn-secondary {
+    padding: 6px 12px !important;
+    font-size: 0.7rem !important;
+    min-height: 36px !important;
+  }
+  .hero-slide-indicators {
+    bottom: 8px !important;
+    left: 1rem !important;
+  }
+}
+
+
 
 

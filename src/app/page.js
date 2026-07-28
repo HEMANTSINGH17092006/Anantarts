@@ -4,16 +4,15 @@ import {
   getTestimonials
 } from '@/lib/db-helpers';
 
-// Import the 13 Homepage Showcase Components in exact sequence
+// Import Components in exact requested sequence
+import MobileSearchBar from '@/components/home/MobileSearchBar';
+import HorizontalCategoryBar from '@/components/home/HorizontalCategoryBar';
 import HeroBanner from '@/components/home/HeroBanner';
+import TrendingCarousel from '@/components/home/TrendingCarousel';
 import ShopByCategory from '@/components/home/ShopByCategory';
 import NewArrivalsSlider from '@/components/home/NewArrivalsSlider';
 import BestSellersGrid from '@/components/home/BestSellersGrid';
-import TrendingCarousel from '@/components/home/TrendingCarousel';
-import WoodenShowcase from '@/components/home/WoodenShowcase';
-import SpiritualShowcase from '@/components/home/SpiritualShowcase';
-import CorporateShowcase from '@/components/home/CorporateShowcase';
-import HomeDecorShowcase from '@/components/home/HomeDecorShowcase';
+import ShopByMaterial from '@/components/home/ShopByMaterial';
 import WhyChooseUs from '@/components/home/WhyChooseUs';
 import CustomerReviews from '@/components/home/CustomerReviews';
 import InstagramGallery from '@/components/home/InstagramGallery';
@@ -33,43 +32,40 @@ export default async function Home() {
 
   return (
     <>
-      {/* 1. PREMIUM HERO BANNER */}
+      {/* 1. STICKY MOBILE SEARCH BAR */}
+      <MobileSearchBar />
+
+      {/* 2. HORIZONTAL SCROLLABLE CATEGORY ICONS BAR */}
+      <HorizontalCategoryBar />
+
+      {/* 3. PROMOTIONAL BANNER SLIDER (COMPACT 180-220PX ON MOBILE) */}
       <HeroBanner />
 
-      {/* 2. SHOP BY CATEGORY */}
-      <ShopByCategory />
-
-      {/* 3. NEW ARRIVALS SLIDER */}
-      <NewArrivalsSlider products={newArrivalProducts.length > 0 ? newArrivalProducts : featuredProducts} />
-
-      {/* 4. BEST SELLERS GRID */}
-      <BestSellersGrid products={bestsellerProducts.length > 0 ? bestsellerProducts : featuredProducts} />
-
-      {/* 5. TRENDING PRODUCTS CAROUSEL */}
+      {/* 4. TRENDING PRODUCTS */}
       <TrendingCarousel products={featuredProducts} />
 
-      {/* 6. WOODEN HANDICRAFTS SHOWCASE */}
-      <WoodenShowcase />
+      {/* 5. FEATURED COLLECTIONS */}
+      <ShopByCategory />
 
-      {/* 7. SPIRITUAL COLLECTION SHOWCASE */}
-      <SpiritualShowcase />
+      {/* 6. NEW ARRIVALS SLIDER */}
+      <NewArrivalsSlider products={newArrivalProducts.length > 0 ? newArrivalProducts : featuredProducts} />
 
-      {/* 8. CORPORATE GIFTING SHOWCASE */}
-      <CorporateShowcase />
+      {/* 7. BEST SELLERS GRID */}
+      <BestSellersGrid products={bestsellerProducts.length > 0 ? bestsellerProducts : featuredProducts} />
 
-      {/* 9. HOME DECOR SHOWCASE */}
-      <HomeDecorShowcase />
+      {/* 8. SHOP BY MATERIAL */}
+      <ShopByMaterial />
 
-      {/* 10. WHY CHOOSE ANANT ARTS */}
+      {/* 9. WHY CHOOSE ANANT ARTS */}
       <WhyChooseUs />
 
-      {/* 11. CUSTOMER REVIEWS */}
+      {/* 10. CUSTOMER REVIEWS */}
       <CustomerReviews testimonials={testimonials} />
 
-      {/* 12. INSTAGRAM GALLERY */}
+      {/* 11. INSTAGRAM GALLERY */}
       <InstagramGallery />
 
-      {/* 13. LUXURY NEWSLETTER */}
+      {/* 12. LUXURY NEWSLETTER */}
       <LuxuryNewsletter />
 
       {/* Bulk Enquiry Form Section */}
