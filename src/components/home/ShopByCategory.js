@@ -78,35 +78,18 @@ const CATEGORIES = [
 
 export default function ShopByCategory() {
   return (
-    <section style={{ maxWidth: '1280px', margin: '0 auto', padding: 'var(--section-padding-y) 2rem 0 2rem' }}>
-      <div className="section-heading" style={{ marginTop: 0, marginBottom: '2.5rem' }}>
+    <section className="shop-by-category-section">
+      <div className="section-heading" style={{ marginTop: 0, marginBottom: '2rem' }}>
         <h2>Shop by Category</h2>
         <div className="gold-line"></div>
         <p>Explore handcrafted artisanal creations across core lifestyle, home décor, and gifting domains.</p>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-        gap: '1.75rem'
-      }}>
+      <div className="category-cards-grid">
         {CATEGORIES.map((cat, idx) => (
           <Link
             key={idx}
             href={`/shop?category=${cat.slug}`}
-            style={{
-              position: 'relative',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              height: '280px',
-              border: '1px solid var(--primary-gold-border)',
-              boxShadow: 'var(--shadow-md)',
-              textDecoration: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-end',
-              padding: '24px'
-            }}
             className="featured-collection-card"
           >
             {/* Background Image with Zoom Effect */}
@@ -132,46 +115,23 @@ export default function ShopByCategory() {
             }} />
 
             {/* Card Content */}
-            <div style={{ position: 'relative', zIndex: 3, color: '#FFFFFF' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '1.4rem' }}>{cat.icon}</span>
-                <span style={{
-                  fontSize: '0.68rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  background: 'rgba(212, 175, 55, 0.25)',
-                  border: '1px solid #D4AF37',
-                  color: '#D4AF37',
-                  padding: '3px 10px',
-                  borderRadius: '12px',
-                  fontWeight: '600'
-                }}>
+            <div className="category-card-content">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '1.2rem' }}>{cat.icon}</span>
+                <span className="category-badge">
                   {cat.tag}
                 </span>
               </div>
 
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', color: '#FFFFFF', margin: '0 0 4px 0', fontWeight: '600' }}>
+              <h3 className="category-card-title">
                 {cat.name}
               </h3>
 
-              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)', margin: '0 0 14px 0', lineHeight: '1.4' }}>
+              <p className="category-card-desc">
                 {cat.desc}
               </p>
 
-              <span 
-                className="btn-outline-gold" 
-                style={{ 
-                  fontSize: '0.8rem', 
-                  padding: '8px 18px', 
-                  color: '#FFFFFF', 
-                  borderColor: '#D4AF37',
-                  background: 'rgba(20, 17, 15, 0.5)',
-                  backdropFilter: 'blur(4px)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
+              <span className="btn-outline-gold category-explore-btn">
                 Explore Collection &rarr;
               </span>
             </div>

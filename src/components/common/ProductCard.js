@@ -74,50 +74,19 @@ export default function ProductCard({ product, isListView = false, onCompareClic
 
   return (
     <>
-      <div 
-        className={`product-card luxury-shimmer ${isListView ? 'list-view-card' : ''}`}
-        style={{
-          borderRadius: '12px',
-          overflow: 'hidden',
-          background: '#FFFFFF',
-          border: '1px solid var(--primary-gold-border)',
-          boxShadow: 'var(--shadow-md)',
-          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-          position: 'relative',
-          display: isListView ? 'flex' : 'flex',
-          flexDirection: isListView ? 'row' : 'column',
-          gap: isListView ? '20px' : '0'
-        }}
-      >
+      <div className={`product-card luxury-shimmer ${isListView ? 'list-view-card' : ''}`}>
+        
         {/* Wishlist Icon Top Right Inside Image */}
         <button 
           className={`wishlist-badge-btn ${inWish ? 'active' : ''}`}
           onClick={handleWishlist}
           aria-label="Add to wishlist"
-          style={{
-            position: 'absolute',
-            top: '12px',
-            right: '12px',
-            zIndex: 10,
-            background: 'rgba(255, 255, 255, 0.92)',
-            border: '1px solid var(--primary-gold-border)',
-            borderRadius: '50%',
-            width: '36px',
-            height: '36px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            color: inWish ? '#E74C3C' : 'var(--text-dark)',
-            transition: 'all 0.2s ease',
-            boxShadow: 'var(--shadow-sm)'
-          }}
         >
           <i className={inWish ? "fas fa-heart" : "far fa-heart"}></i>
         </button>
 
         {/* Badges Top Left Inside Image */}
-        <div style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="product-badge-group">
           {discountPercent > 0 && (
             <span className="product-badge badge-sale">-{discountPercent}% OFF</span>
           )}
@@ -128,30 +97,28 @@ export default function ProductCard({ product, isListView = false, onCompareClic
             <span className="product-badge badge-new">New</span>
           )}
           {isLimited && (
-            <span className="product-badge" style={{ background: '#705814', color: '#FFE494' }}>
-              Limited Edition
-            </span>
+            <span className="product-badge badge-limited">Limited</span>
           )}
         </div>
 
-        {/* Product Image Frame (60% height in grid view) */}
-        <Link href={`/product/${product.slug}`} className="product-card-link" style={{ flex: isListView ? '0 0 240px' : 'none' }}>
-          <div className="product-card-image" style={{ position: 'relative', overflow: 'hidden', height: isListView ? '100%' : '260px', minHeight: '220px' }}>
+        {/* Product Image Frame */}
+        <Link href={`/product/${product.slug}`} className="product-card-link">
+          <div className="product-card-image">
             <Image 
               src={product.image_path || '/images/placeholder.jpg'} 
               alt={product.name} 
               fill 
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               style={{ objectFit: 'cover' }}
               priority={isBestSeller || isNewArrival}
             />
 
             {/* Quick Actions Hover Overlay */}
-            <div className="product-card-overlay-actions" style={{ zIndex: 3, gap: '8px' }}>
-              <button onClick={handleQuickView} className="btn-quickview" title="Quick View" style={{ padding: '8px 12px', fontSize: '0.78rem' }}>
-                <i className="fas fa-eye" style={{ marginRight: '4px' }}></i> Quick View
+            <div className="product-card-overlay-actions">
+              <button onClick={handleQuickView} className="btn-quickview" title="Quick View">
+                <i className="fas fa-eye" style={{ marginRight: '4px' }}></i> View
               </button>
-              <button onClick={handleCompare} className="btn-quickview" title="Compare" style={{ padding: '8px 12px', fontSize: '0.78rem', background: 'rgba(212,175,55,0.9)' }}>
+              <button onClick={handleCompare} className="btn-quickview btn-compare-overlay" title="Compare">
                 <i className="fas fa-columns" style={{ marginRight: '4px' }}></i> Compare
               </button>
             </div>
@@ -159,78 +126,58 @@ export default function ProductCard({ product, isListView = false, onCompareClic
         </Link>
 
         {/* Product Information Body */}
-        <div className="product-card-info" style={{ padding: '18px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="product-card-info">
           <div>
             {/* Category & Rating */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span className="category-label" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
-                {product.category_name || 'Handcrafted Art'}
+            <div className="product-card-meta">
+              <span className="category-label">
+                {product.category_name || 'Handcrafted'}
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', color: '#D4AF37' }}>
+              <div className="rating-badge">
                 <i className="fas fa-star"></i>
-                <span style={{ fontWeight: '700', color: 'var(--text-dark)' }}>4.9</span>
+                <span>4.9</span>
               </div>
             </div>
 
-            {/* Product Title (Max 2 lines) */}
+            {/* Product Title */}
             <Link href={`/product/${product.slug}`}>
-              <h3 className="product-card-title" style={{
-                fontSize: '0.96rem',
-                fontWeight: '600',
-                height: '42px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                marginBottom: '6px',
-                color: 'var(--text-dark)',
-                lineHeight: '1.38'
-              }}>{product.name}</h3>
+              <h3 className="product-card-title">{product.name}</h3>
             </Link>
 
-            {/* Material, Dimensions & Stock Status */}
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              {product.material && <span><i className="fas fa-cube" style={{ fontSize: '0.65rem', marginRight: '3px' }}></i>{product.material.split('&')[0].trim()}</span>}
-              {product.dimensions && <span>• {product.dimensions}</span>}
-              <span style={{ color: product.stock_quantity > 0 ? 'var(--success)' : 'var(--danger)', fontWeight: '600' }}>
-                • {product.stock_quantity > 0 ? (product.stock_quantity <= 5 ? `Only ${product.stock_quantity} left` : 'In Stock') : 'Out of Stock'}
+            {/* Material & Stock Status */}
+            <div className="product-card-submeta">
+              {product.material && <span>{product.material.split('&')[0].trim()}</span>}
+              <span className={product.stock_quantity > 0 ? 'stock-in' : 'stock-out'}>
+                • {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
               </span>
             </div>
 
             {/* Price Row */}
-            <div className="product-price" style={{ marginBottom: '14px' }}>
-              <span className="current" style={{ fontWeight: '700', fontSize: '1.1rem' }}>{formatPrice(activePrice)}</span>
+            <div className="product-price">
+              <span className="current">{formatPrice(activePrice)}</span>
               {product.discount_price > 0 && (
-                <>
-                  <span className="original">{formatPrice(product.price)}</span>
-                  <span className="discount" style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: '600', marginLeft: '6px' }}>
-                    ({discountPercent}% OFF)
-                  </span>
-                </>
+                <span className="original">{formatPrice(product.price)}</span>
               )}
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Action Buttons with Touch Targets (44–48px) */}
+          <div className="product-card-actions">
             <button 
               onClick={handleAddToCart}
-              className="btn-gold" 
-              style={{ width: '100%', padding: '10px', fontSize: '0.8rem', justifyContent: 'center', borderRadius: '6px' }}
+              className="btn-gold touch-btn-primary"
               disabled={product.stock_quantity <= 0}
             >
               <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i>
-              {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added to Cart!' : 'Add to Cart'}
+              {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added!' : 'Add to Cart'}
             </button>
 
             <button 
               onClick={handleBuyNow}
-              className="btn-outline-gold" 
-              style={{ width: '100%', padding: '9px', fontSize: '0.78rem', justifyContent: 'center', borderRadius: '6px', color: 'var(--text-dark)', borderColor: 'var(--primary-gold)' }}
+              className="btn-outline-gold touch-btn-secondary"
               disabled={product.stock_quantity <= 0}
             >
-              <i className="fas fa-bolt" style={{ marginRight: '6px', color: '#D4AF37' }}></i> Buy Now
+              <i className="fas fa-bolt" style={{ marginRight: '4px', color: '#D4AF37' }}></i> Buy Now
             </button>
           </div>
         </div>
@@ -272,7 +219,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
                 <button 
                   onClick={handleAddToCart}
                   className="btn-gold" 
-                  style={{ flex: 1, justifyContent: 'center' }}
+                  style={{ flex: 1, justifyContent: 'center', minHeight: '44px' }}
                   disabled={product.stock_quantity <= 0}
                 >
                   <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Add to Cart
@@ -280,7 +227,7 @@ export default function ProductCard({ product, isListView = false, onCompareClic
                 <button 
                   onClick={handleBuyNow}
                   className="btn-outline-gold" 
-                  style={{ flex: 1, justifyContent: 'center' }}
+                  style={{ flex: 1, justifyContent: 'center', minHeight: '44px' }}
                   disabled={product.stock_quantity <= 0}
                 >
                   Buy Now

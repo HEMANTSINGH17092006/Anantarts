@@ -46,14 +46,7 @@ export default function HeroBanner() {
   const slide = HERO_SLIDES[currentIndex];
 
   return (
-    <section style={{
-      position: 'relative',
-      width: '100%',
-      height: '84vh',
-      minHeight: '540px',
-      overflow: 'hidden',
-      backgroundColor: '#14110F'
-    }}>
+    <section className="hero-banner-container">
       {/* Slide Backgrounds with Ken Burns Slow Zoom */}
       {HERO_SLIDES.map((s, idx) => (
         <div
@@ -73,107 +66,44 @@ export default function HeroBanner() {
         />
       ))}
 
-      {/* Subtle Left-Side Gradient Overlay (30% opacity, keeps right 55% clear for main product) */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(90deg, rgba(14,11,9,0.88) 0%, rgba(14,11,9,0.58) 45%, rgba(14,11,9,0.1) 100%)',
-        zIndex: 2
-      }} />
+      {/* Subtle Left-Side Gradient Overlay */}
+      <div className="hero-gradient-overlay" />
 
-      {/* Left-Aligned Product-Focused Content */}
-      <div style={{
-        position: 'relative',
-        zIndex: 3,
-        maxWidth: '1380px',
-        margin: '0 auto',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 3rem'
-      }}>
-        <div style={{
-          maxWidth: '660px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          textAlign: 'left'
-        }}>
-          <span style={{
-            color: '#D4AF37',
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
-            fontSize: '0.8rem',
-            fontWeight: '700',
-            marginBottom: '1.2rem',
-            background: 'rgba(212,175,55,0.18)',
-            padding: '6px 18px',
-            borderRadius: '20px',
-            border: '1px solid rgba(212,175,55,0.4)',
-            boxShadow: '0 0 12px rgba(212,175,55,0.2)'
-          }}>
+      {/* Product-Focused Content */}
+      <div className="hero-banner-content">
+        <div className="hero-text-wrapper">
+          <span className="hero-badge">
             ✨ Master Artisanal Craftsmanship
           </span>
 
-          <h1 style={{
-            fontFamily: 'var(--font-heading)',
-            fontSize: '2.8rem',
-            color: '#FFFFFF',
-            lineHeight: '1.18',
-            marginBottom: '1.25rem',
-            textShadow: '0 4px 16px rgba(0,0,0,0.8)',
-            fontWeight: '700'
-          }}>
+          <h1 className="hero-title-text">
             {slide.title}
           </h1>
 
-          <p style={{
-            fontSize: '1.05rem',
-            color: 'rgba(255,255,255,0.92)',
-            lineHeight: '1.65',
-            marginBottom: '2.5rem',
-            maxWidth: '620px',
-            textShadow: '0 2px 10px rgba(0,0,0,0.7)'
-          }}>
+          <p className="hero-subtitle-text">
             {slide.subtitle}
           </p>
 
           {/* Prominent CTAs */}
-          <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap' }}>
-            <Link href={slide.shopLink} className="btn-gold" style={{ padding: '14px 32px', fontSize: '0.92rem', borderRadius: '6px', boxShadow: '0 6px 20px rgba(212, 175, 55, 0.35)' }}>
-              <i className="fas fa-shopping-bag" style={{ marginRight: '8px' }}></i> Shop Collection
+          <div className="hero-cta-group">
+            <Link href={slide.shopLink} className="btn-gold hero-btn-primary">
+              <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Shop Collection
             </Link>
-            <Link href={slide.exploreLink} className="btn-outline-gold" style={{ color: '#FFFFFF', borderColor: '#D4AF37', background: 'rgba(18,14,12,0.6)', padding: '14px 28px', fontSize: '0.92rem', borderRadius: '6px', backdropFilter: 'blur(6px)' }}>
-              <i className="fas fa-th-large" style={{ marginRight: '8px' }}></i> Explore All
+            <Link href={slide.exploreLink} className="btn-outline-gold hero-btn-secondary">
+              <i className="fas fa-th-large" style={{ marginRight: '6px' }}></i> Explore All
             </Link>
           </div>
         </div>
       </div>
 
       {/* Slide Indicators */}
-      <div style={{
-        position: 'absolute',
-        bottom: '28px',
-        left: '3rem',
-        zIndex: 4,
-        display: 'flex',
-        gap: '10px'
-      }}>
+      <div className="hero-slide-indicators">
         {HERO_SLIDES.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
             aria-label={`Slide ${idx + 1}`}
-            style={{
-              width: idx === currentIndex ? '36px' : '10px',
-              height: '10px',
-              borderRadius: '5px',
-              background: idx === currentIndex ? '#D4AF37' : 'rgba(255,255,255,0.5)',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              boxShadow: idx === currentIndex ? '0 0 10px rgba(212,175,55,0.8)' : 'none'
-            }}
+            className={`hero-indicator-dot ${idx === currentIndex ? 'active' : ''}`}
           />
         ))}
       </div>
