@@ -171,7 +171,7 @@ export const getProductBySlug = unstable_cache(
 // because filters change frequently, or we can use custom cache keys if needed.
 export async function getProducts(params = {}) {
   const supabase = getSupabaseDirect();
-  const { category, search, sort, maxPrice, inStock, tag, all, limit } = params;
+  const { category, search, sort, minPrice, maxPrice, inStock, tag, material, occasion, festival, gift_type, color, all, limit } = params;
   
   let query = supabase
     .from('products')
@@ -190,12 +190,34 @@ export async function getProducts(params = {}) {
   }
 
   if (search) {
-    query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,description.ilike.%${search}%`);
+    query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,description.ilike.%${search}%,material.ilike.%${search}%,tags.ilike.%${search}%`);
+  }
+
+  if (material) {
+    query = query.ilike('material', `%${material}%`);
+  }
+
+  if (occasion) {
+    query = query.ilike('occasion', `%${occasion}%`);
+  }
+
+  if (festival) {
+    query = query.ilike('festival', `%${festival}%`);
+  }
+
+  if (gift_type) {
+    query = query.ilike('gift_type', `%${gift_type}%`);
+  }
+
+  if (color) {
+    query = query.ilike('color', `%${color}%`);
+  }
+
+  if (minPrice) {
+    query = query.gte('price', parseFloat(minPrice));
   }
 
   if (maxPrice) {
-    // Standard logic in application layer to filter by maxPrice, 
-    // but in PostgreSQL we can use a gte/lte check.
     query = query.lte('price', parseFloat(maxPrice));
   }
 

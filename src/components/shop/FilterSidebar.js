@@ -1,291 +1,240 @@
 'use client';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-export default function FilterSidebar({ categories = [], initialMaxPrice = 50000 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+export default function FilterSidebar({
+  categories = [],
+  selectedCategory = '',
+  onSelectCategory,
+  selectedMaterial = '',
+  onSelectMaterial,
+  selectedOccasion = '',
+  onSelectOccasion,
+  selectedColor = '',
+  onSelectColor,
+  minPrice = 0,
+  maxPrice = 50000,
+  onPriceChange,
+  inStockOnly = false,
+  onInStockChange,
+  onClearAll
+}) {
+  const [openSections, setOpenSections] = useState({
+    category: true,
+    material: true,
+    price: true,
+    color: false,
+    availability: true,
+    rating: false,
+    offers: false,
+    occasion: false,
+    brand: false
+  });
 
-  // Local state for filters
-  const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
-  const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || initialMaxPrice);
-  const [inStock, setInStock] = useState(searchParams.get('inStock') === '1');
-  const [sort, setSort] = useState(searchParams.get('sort') || 'latest');
-  const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '');
-  
-  // Mobile collapsing state
-  const [isMobile, setIsMobile] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Synchronize state with URL search params when they change (e.g. Back button)
-  useEffect(() => {
-    setSearch(searchParams.get('search') || '');
-    setSelectedCategory(searchParams.get('category') || '');
-    setMaxPrice(searchParams.get('maxPrice') || initialMaxPrice);
-    setInStock(searchParams.get('inStock') === '1');
-    setSort(searchParams.get('sort') || 'latest');
-    setSelectedTag(searchParams.get('tag') || '');
-  }, [searchParams]);
-
-  const updateFilters = (newFilters) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    // Merge new filters
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value === null || value === '' || value === false) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
-
-    // Reset page if applicable
-    params.delete('page');
-    router.push(`${pathname}?${params.toString()}`);
+  const toggleSection = (sec) => {
+    setOpenSections(prev => ({ ...prev, [sec]: !prev[sec] }));
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    updateFilters({ search });
-  };
-
-  const handleCategoryChange = (slug) => {
-    const nextCategory = selectedCategory === slug ? '' : slug;
-    setSelectedCategory(nextCategory);
-    updateFilters({ category: nextCategory });
-  };
-
-  const handleTagChange = (tag) => {
-    const nextTag = selectedTag === tag ? '' : tag;
-    setSelectedTag(nextTag);
-    updateFilters({ tag: nextTag });
-  };
-
-  const handlePriceChange = (e) => {
-    const val = e.target.value;
-    setMaxPrice(val);
-  };
-
-  const handlePriceMouseUp = () => {
-    updateFilters({ maxPrice });
-  };
-
-  const handleInStockChange = (e) => {
-    const val = e.target.checked;
-    setInStock(val);
-    updateFilters({ inStock: val ? '1' : '' });
-  };
-
-  const handleSortChange = (e) => {
-    const val = e.target.value;
-    setSort(val);
-    updateFilters({ sort: val });
-  };
-
-  const handleClearAll = () => {
-    setSearch('');
-    setSelectedCategory('');
-    setMaxPrice(initialMaxPrice);
-    setInStock(false);
-    setSelectedTag('');
-    setSort('latest');
-    router.push(pathname);
-  };
+  const MATERIALS_LIST = ['Wood', 'Resin', 'Metal', 'Marble', 'Brass', 'Silver Plated', 'Gold Plated', 'MDF', 'Glass', 'Mixed Materials'];
+  const OCCASIONS_LIST = ['Housewarming', 'Wedding', 'Anniversary', 'Birthday', 'Corporate Events', 'Diwali', 'Ganesh Chaturthi', 'Christmas', 'New Year'];
+  const COLORS_LIST = ['Gold', 'Silver', 'Antique Bronze', 'Natural Wood', 'White Marble', 'Black', 'Multi Color'];
 
   return (
-    <div className="filter-sidebar-container" style={{
-      background: 'var(--bg-white)',
+    <aside style={{
+      background: '#FFFFFF',
+      borderRadius: '12px',
       border: '1px solid var(--primary-gold-border)',
-      borderRadius: '8px',
-      padding: isMobile ? '12px 16px' : '24px',
-      width: '100%'
+      boxShadow: 'var(--shadow-sm)',
+      padding: '20px',
+      position: 'sticky',
+      top: '90px',
+      alignSelf: 'start'
     }}>
-      {isMobile && (
-        <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
+      {/* Sidebar Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--primary-gold-border)', paddingBottom: '12px' }}>
+        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', margin: 0, color: 'var(--text-dark)', fontWeight: '600' }}>
+          <i className="fas fa-filter" style={{ color: 'var(--primary-gold)', marginRight: '8px', fontSize: '0.9rem' }}></i> Filters
+        </h3>
+        <button
+          onClick={onClearAll}
           style={{
-            width: '100%',
             background: 'none',
             border: 'none',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            cursor: 'pointer',
-            padding: '4px 0',
-            color: 'var(--text-dark)',
+            color: 'var(--danger)',
+            fontSize: '0.78rem',
             fontWeight: '600',
-            fontSize: '0.95rem',
-            fontFamily: 'var(--font-heading)'
+            cursor: 'pointer',
+            padding: 0
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <i className="fas fa-filter" style={{ color: 'var(--primary-gold)', fontSize: '0.85rem' }}></i> 
-            Filter & Sort Products
-          </span>
-          <i className={`fas fa-chevron-${isCollapsed ? 'down' : 'up'}`} style={{ color: 'var(--primary-gold)', fontSize: '0.85rem' }}></i>
+          Clear All
         </button>
-      )}
+      </div>
 
-      {(!isMobile || !isCollapsed) && (
-        <div style={{ marginTop: isMobile ? '16px' : '0' }}>
-          {/* Search Bar */}
-          <div style={{ marginBottom: '24px' }}>
-            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Search Idols</h4>
-            <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="text"
-                placeholder="Type search terms..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  border: '1px solid var(--primary-gold-border)',
-                  fontSize: '0.85rem'
-                }}
-              />
-              <button type="submit" className="btn-gold" style={{ padding: '8px 12px' }}>
-                <i className="fas fa-search"></i>
-              </button>
-            </form>
-          </div>
-
-          {/* Sort */}
-          <div style={{ marginBottom: '24px' }}>
-            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Sort By</h4>
-            <select
-              value={sort}
-              onChange={handleSortChange}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '4px',
-                border: '1px solid var(--primary-gold-border)',
-                fontSize: '0.85rem',
-                background: 'white',
-                outline: 'none'
-              }}
+      {/* 1. Category Accordion */}
+      <div style={{ marginBottom: '14px', borderBottom: '1px solid var(--bg-cream-dark)', paddingBottom: '10px' }}>
+        <button
+          onClick={() => toggleSection('category')}
+          style={accordionHeaderStyle}
+        >
+          <span>Category</span>
+          <i className={`fas fa-chevron-${openSections.category ? 'up' : 'down'}`} style={{ fontSize: '0.75rem' }}></i>
+        </button>
+        {openSections.category && (
+          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <button
+              onClick={() => onSelectCategory('')}
+              style={filterItemStyle(selectedCategory === '')}
             >
-              <option value="latest">Newest Arrivals</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-            </select>
+              • All Categories
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => onSelectCategory(cat.slug)}
+                style={filterItemStyle(selectedCategory === cat.slug)}
+              >
+                • {cat.name}
+              </button>
+            ))}
           </div>
+        )}
+      </div>
 
-          {/* Categories */}
-          <div style={{ marginBottom: '24px' }}>
-            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Deities</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {categories.map((cat) => (
-                <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategory === cat.slug}
-                    onChange={() => handleCategoryChange(cat.slug)}
-                    style={{ accentColor: 'var(--primary-gold)' }}
-                  />
-                  <span>{cat.name}</span>
-                </label>
-              ))}
-            </div>
+      {/* 2. Material Accordion */}
+      <div style={{ marginBottom: '14px', borderBottom: '1px solid var(--bg-cream-dark)', paddingBottom: '10px' }}>
+        <button onClick={() => toggleSection('material')} style={accordionHeaderStyle}>
+          <span>Material</span>
+          <i className={`fas fa-chevron-${openSections.material ? 'up' : 'down'}`} style={{ fontSize: '0.75rem' }}></i>
+        </button>
+        {openSections.material && (
+          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {MATERIALS_LIST.map((mat, idx) => (
+              <button
+                key={idx}
+                onClick={() => onSelectMaterial(selectedMaterial === mat ? '' : mat)}
+                style={filterItemStyle(selectedMaterial === mat)}
+              >
+                • {mat}
+              </button>
+            ))}
           </div>
+        )}
+      </div>
 
-          {/* Tags Filter */}
-          <div style={{ marginBottom: '24px' }}>
-            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', marginBottom: '10px' }}>Featured Tags</h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {['Best Seller', 'New Arrival', 'Featured', 'Festival Special'].map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => handleTagChange(tag)}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '16px',
-                    border: '1px solid var(--primary-gold)',
-                    fontSize: '0.72rem',
-                    cursor: 'pointer',
-                    background: selectedTag === tag ? 'var(--gold-gradient)' : 'transparent',
-                    color: selectedTag === tag ? 'var(--text-dark)' : 'var(--text-dark)',
-                    fontWeight: '500',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Price Slider */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', margin: 0 }}>Max Price</h4>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--primary-gold-hover)' }}>
-                ₹{Number(maxPrice).toLocaleString('en-IN')}
-              </span>
+      {/* 3. Price Accordion */}
+      <div style={{ marginBottom: '14px', borderBottom: '1px solid var(--bg-cream-dark)', paddingBottom: '10px' }}>
+        <button onClick={() => toggleSection('price')} style={accordionHeaderStyle}>
+          <span>Price Range</span>
+          <i className={`fas fa-chevron-${openSections.price ? 'up' : 'down'}`} style={{ fontSize: '0.75rem' }}></i>
+        </button>
+        {openSections.price && (
+          <div style={{ marginTop: '10px', fontSize: '0.82rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontWeight: '600' }}>
+              <span>Max Price: ₹{maxPrice.toLocaleString('en-IN')}</span>
             </div>
             <input
               type="range"
-              min="1000"
+              min="500"
               max="50000"
-              step="1000"
+              step="500"
               value={maxPrice}
-              onChange={handlePriceChange}
-              onMouseUp={handlePriceMouseUp}
-              onTouchEnd={handlePriceMouseUp}
+              onChange={(e) => onPriceChange(Number(e.target.value))}
               style={{ width: '100%', accentColor: 'var(--primary-gold)' }}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              <span>₹1,000</span>
-              <span>₹50,000</span>
-            </div>
           </div>
+        )}
+      </div>
 
-          {/* Stock Toggle */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={inStock}
-                onChange={handleInStockChange}
-                style={{ accentColor: 'var(--primary-gold)' }}
-              />
-              <strong>In Stock Only</strong>
-            </label>
+      {/* 4. Availability Accordion */}
+      <div style={{ marginBottom: '14px', borderBottom: '1px solid var(--bg-cream-dark)', paddingBottom: '10px' }}>
+        <button onClick={() => toggleSection('availability')} style={accordionHeaderStyle}>
+          <span>Availability</span>
+          <i className={`fas fa-chevron-${openSections.availability ? 'up' : 'down'}`} style={{ fontSize: '0.75rem' }}></i>
+        </button>
+        {openSections.availability && (
+          <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="checkbox"
+              id="instock-chk"
+              checked={inStockOnly}
+              onChange={(e) => onInStockChange(e.target.checked)}
+              style={{ accentColor: 'var(--primary-gold)', width: '16px', height: '16px' }}
+            />
+            <label htmlFor="instock-chk" style={{ fontSize: '0.84rem', cursor: 'pointer' }}>In Stock Only</label>
           </div>
+        )}
+      </div>
 
-          {/* Clear Button */}
-          <button
-            onClick={handleClearAll}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid var(--text-muted)',
-              background: 'transparent',
-              borderRadius: '4px',
-              fontSize: '0.8rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              color: 'var(--text-dark)',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <i className="fas fa-undo" style={{ marginRight: '6px' }}></i> Clear All Filters
-          </button>
-        </div>
-      )}
-    </div>
+      {/* 5. Occasion Accordion */}
+      <div style={{ marginBottom: '14px', borderBottom: '1px solid var(--bg-cream-dark)', paddingBottom: '10px' }}>
+        <button onClick={() => toggleSection('occasion')} style={accordionHeaderStyle}>
+          <span>Occasion</span>
+          <i className={`fas fa-chevron-${openSections.occasion ? 'up' : 'down'}`} style={{ fontSize: '0.75rem' }}></i>
+        </button>
+        {openSections.occasion && (
+          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {OCCASIONS_LIST.map((occ, idx) => (
+              <button
+                key={idx}
+                onClick={() => onSelectOccasion(selectedOccasion === occ ? '' : occ)}
+                style={filterItemStyle(selectedOccasion === occ)}
+              >
+                • {occ}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 6. Color Accordion */}
+      <div style={{ marginBottom: '14px' }}>
+        <button onClick={() => toggleSection('color')} style={accordionHeaderStyle}>
+          <span>Finish &amp; Color</span>
+          <i className={`fas fa-chevron-${openSections.color ? 'up' : 'down'}`} style={{ fontSize: '0.75rem' }}></i>
+        </button>
+        {openSections.color && (
+          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {COLORS_LIST.map((col, idx) => (
+              <button
+                key={idx}
+                onClick={() => onSelectColor(selectedColor === col ? '' : col)}
+                style={filterItemStyle(selectedColor === col)}
+              >
+                • {col}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </aside>
   );
+}
+
+const accordionHeaderStyle = {
+  width: '100%',
+  background: 'none',
+  border: 'none',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  fontWeight: '600',
+  fontSize: '0.88rem',
+  color: 'var(--text-dark)',
+  cursor: 'pointer',
+  padding: '4px 0'
+};
+
+function filterItemStyle(isActive) {
+  return {
+    background: isActive ? 'var(--primary-gold-light)' : 'transparent',
+    border: 'none',
+    textAlign: 'left',
+    padding: '6px 8px',
+    borderRadius: '4px',
+    fontSize: '0.82rem',
+    color: isActive ? 'var(--primary-gold-hover)' : 'var(--text-muted)',
+    fontWeight: isActive ? '600' : '400',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  };
 }

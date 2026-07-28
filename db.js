@@ -508,6 +508,16 @@ async function initDb() {
 
 
   await addColumn('categories', 'type', "TEXT DEFAULT 'deity'");
+  await addColumn('categories', 'parent_id', 'INTEGER');
+  await addColumn('categories', 'banner_path', 'TEXT');
+  await addColumn('categories', 'description', 'TEXT');
+  await addColumn('categories', 'is_featured', 'INTEGER DEFAULT 0');
+
+  await addColumn('products', 'occasion', 'TEXT');
+  await addColumn('products', 'festival', 'TEXT');
+  await addColumn('products', 'gift_type', 'TEXT');
+  await addColumn('products', 'color', 'TEXT');
+
   await addColumn('orders', 'tracking_number', 'TEXT');
   await addColumn('orders', 'courier_name', 'TEXT');
   await addColumn('orders', 'estimated_delivery', 'TEXT');
@@ -574,16 +584,19 @@ async function seedDefaultData() {
     console.log('Default admin seeded: admin@anantarts.in / admin123');
   }
 
-  // 2. Seed default Categories (Rebranded)
+  // 2. Seed default Categories (Rebranded Multi-Category Marketplace)
   const requiredCategories = [
-    { name: 'Spiritual Collection', slug: 'spiritual-collection', image_path: '/uploads/category-spiritual-collection.png', sort_order: 1 },
-    { name: 'Home Décor', slug: 'home-decor', image_path: '/uploads/category-home-decor.png', sort_order: 2 },
-    { name: 'Corporate Gifts', slug: 'corporate-gifts', image_path: '/uploads/category-corporate-gifts.png', sort_order: 3 },
-    { name: 'Decorative Figurines', slug: 'decorative-figurines', image_path: '/uploads/category-decorative-figurines.png', sort_order: 4 },
-    { name: 'Festive Gifts', slug: 'festive-gifts', image_path: '/uploads/category-festive-gifts.png', sort_order: 5 },
-    { name: 'Customized Products', slug: 'customized-products', image_path: '/uploads/category-customized-products.png', sort_order: 6 },
-    { name: 'Premium Collectibles', slug: 'premium-collectibles', image_path: '/uploads/category-premium-collectibles.png', sort_order: 7 },
-    { name: 'New Arrivals', slug: 'new-arrivals', image_path: '/uploads/category-new-arrivals.png', sort_order: 8 }
+    { name: 'Spiritual Collection', slug: 'spiritual-collection', image_path: '/uploads/category-spiritual-collection.png', sort_order: 1, is_featured: 1 },
+    { name: 'Wooden Handicrafts', slug: 'wooden-handicrafts', image_path: '/uploads/category-wooden-handicrafts.png', sort_order: 2, is_featured: 1 },
+    { name: 'Home Décor', slug: 'home-decor', image_path: '/uploads/category-home-decor.png', sort_order: 3, is_featured: 1 },
+    { name: 'Corporate Gifts', slug: 'corporate-gifts', image_path: '/uploads/category-corporate-gifts.png', sort_order: 4, is_featured: 1 },
+    { name: 'Customized Gifts', slug: 'customized-gifts', image_path: '/uploads/category-customized-products.png', sort_order: 5, is_featured: 1 },
+    { name: 'Festival Collection', slug: 'festival-collection', image_path: '/uploads/category-festive-gifts.png', sort_order: 6, is_featured: 1 },
+    { name: 'Car Dashboard Accessories', slug: 'car-dashboard-accessories', image_path: '/uploads/category-car-accessories.png', sort_order: 7, is_featured: 1 },
+    { name: 'Return Gifts', slug: 'return-gifts', image_path: '/uploads/category-return-gifts.png', sort_order: 8, is_featured: 1 },
+    { name: 'Office Décor', slug: 'office-decor', image_path: '/uploads/category-office-decor.png', sort_order: 9, is_featured: 1 },
+    { name: 'Best Sellers', slug: 'best-sellers', image_path: '/uploads/category-best-sellers.png', sort_order: 10, is_featured: 1 },
+    { name: 'New Arrivals', slug: 'new-arrivals', image_path: '/uploads/category-new-arrivals.png', sort_order: 11, is_featured: 1 }
   ];
 
   let categoryMap = {};

@@ -387,24 +387,46 @@ export async function addOrUpdateCategory(formData) {
     const name = formData.get('name');
     const sort_order = parseInt(formData.get('sort_order') || 0);
     const is_hidden = formData.get('is_hidden') === '1' ? 1 : 0;
+    const is_featured = formData.get('is_featured') === '1' ? 1 : 0;
+    const parent_id_val = formData.get('parent_id');
+    const parent_id = parent_id_val && parent_id_val !== '' ? parseInt(parent_id_val) : null;
+    const description = formData.get('description') || '';
     const categorySlug = slugify(name);
 
     const imageFile = formData.get('image');
-    let imageUrl = formData.get('existing_image');
+    let imageUrl = formData.get('existing_image') || '';
     if (imageFile && imageFile.size > 0) {
       imageUrl = await uploadImageToSupabase(imageFile);
     }
 
+    const bannerFile = formData.get('banner_image');
+    let bannerUrl = formData.get('existing_banner_image') || '';
+    if (bannerFile && bannerFile.size > 0) {
+      bannerUrl = await uploadImageToSupabase(bannerFile);
+    }
+
+    const categoryData = {
+      name,
+      slug: categorySlug,
+      image_path: imageUrl,
+      banner_path: bannerUrl,
+      description,
+      parent_id,
+      sort_order,
+      is_hidden,
+      is_featured
+    };
+
     if (id) {
       const { error } = await supabase
         .from('categories')
-        .update({ name, slug: categorySlug, image_path: imageUrl, sort_order, is_hidden })
+        .update(categoryData)
         .eq('id', id);
       if (error) throw error;
     } else {
       const { error } = await supabase
         .from('categories')
-        .insert({ name, slug: categorySlug, image_path: imageUrl, sort_order, is_hidden });
+        .insert(categoryData);
       if (error) throw error;
     }
 
@@ -1635,7 +1657,7 @@ export async function getTrendingAndSuggestionsAction(searchQuery = '') {
           product_images(image_path, is_primary)
         `)
         .eq('is_published', 1)
-        .ilike('name', `%${q}%`)
+        .or(`name.ilike.%${q}%,material.ilike.%${q}%,tags.ilike.%${q}%,description.ilike.%${q}%,occasion.ilike.%${q}%,festival.ilike.%${q}%`)
         .limit(6);
 
       suggestions = (suggestionsRaw || []).map(p => {

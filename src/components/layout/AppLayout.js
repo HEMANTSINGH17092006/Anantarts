@@ -8,6 +8,7 @@ import CartDrawer from './CartDrawer';
 import SearchDrawer from './SearchDrawer';
 import WishlistDrawer from './WishlistDrawer';
 import MenuDrawer from './MenuDrawer';
+import MobileBottomNav from './MobileBottomNav';
 
 export default function AppLayout({ children, settings = {} }) {
   const pathname = usePathname();
@@ -62,6 +63,13 @@ export default function AppLayout({ children, settings = {} }) {
           onWishlistClick={() => toggleTab('wishlist')}
           onMenuClick={() => toggleTab('menu')}
           activeTab={activeTab}
+        />
+
+        {/* Mobile Bottom Navigation Bar */}
+        <MobileBottomNav 
+          onCartClick={() => toggleTab('cart')}
+          onWishlistClick={() => toggleTab('wishlist')}
+          onMenuClick={() => toggleTab('menu')}
         />
       </div>
     </AppProviders>
