@@ -4,7 +4,7 @@ import {
   getTestimonials
 } from '@/lib/db-helpers';
 
-// Import Components in clean, grand homepage sequence
+// Import Core Homepage Components
 import HeroBanner from '@/components/home/HeroBanner';
 import ShopByCategory from '@/components/home/ShopByCategory';
 import NewArrivalsSlider from '@/components/home/NewArrivalsSlider';
@@ -36,7 +36,7 @@ export default async function Home() {
       {/* 1. GRAND FULL-WIDTH HERO SLIDER */}
       <HeroBanner />
 
-      {/* 2. FEATURED CATEGORIES (RICH IMAGE CARDS) */}
+      {/* 2. FEATURED CATEGORIES (RICH FULL-BLEED IMAGE CARDS) */}
       <ShopByCategory />
 
       {/* 3. NEW ARRIVALS SLIDER */}
