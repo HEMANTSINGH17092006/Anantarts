@@ -104,8 +104,9 @@ export default function NewsletterExitModals() {
             <span className="exit-intent-logo" style={{ fontSize: '3rem', color: 'var(--primary-gold)' }}>✨</span>
             <h2 className="newsletter-title" style={{ fontSize: '1.6rem', margin: '1rem 0' }}>Adorn Your Mandir</h2>
             <p className="newsletter-desc" style={{ fontSize: '0.85rem', marginBottom: '1.5rem', color: 'var(--text-muted)' }}>
-              Don't miss out on placing these positive energies in your home. Use coupon code <strong style={{ color: 'var(--primary-gold-hover)' }}>DIVINE10</strong> for a flat 10% off today.
+              Don&apos;t miss out on placing these positive energies in your home. Use coupon code <strong style={{ color: 'var(--primary-gold-hover)' }}>DIVINE10</strong> for a flat 10% off today.
             </p>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button onClick={() => setShowExitIntent(false)} className="btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
                 Continue Shopping

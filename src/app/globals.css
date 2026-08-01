@@ -57,13 +57,14 @@
 
 /* ==================== RESET & BASE ==================== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body {
   font-family: var(--font-body);
   color: var(--text-dark);
   background: var(--bg-cream);
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
@@ -100,6 +101,13 @@ button { cursor: pointer; font-family: var(--font-body); }
   100% { transform: translateX(-50%); }
 }
 
+@media (max-width: 480px) {
+  .announcement-bar {
+    padding: 4px 0 !important;
+    font-size: 0.68rem !important;
+  }
+}
+
 /* ==================== HEADER ==================== */
 .site-header {
   background: var(--bg-white);
@@ -116,15 +124,20 @@ button { cursor: pointer; font-family: var(--font-body); }
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 2rem;
+  flex-wrap: wrap;
 }
-.logo-group { display: flex; align-items: center; gap: 0.75rem; }
-.logo-group img { height: 48px; width: auto; }
+.logo-group { display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex-shrink: 1; overflow: hidden; }
+.logo-group img { height: 48px; width: auto; flex-shrink: 0; }
+.logo-text { min-width: 0; overflow: hidden; }
 .logo-text h1 {
   font-family: var(--font-heading);
   font-size: 1.5rem;
   color: var(--text-dark);
   letter-spacing: 1px;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .logo-text span {
   font-size: 0.65rem;
@@ -132,6 +145,9 @@ button { cursor: pointer; font-family: var(--font-body); }
   letter-spacing: 3px;
   color: var(--primary-gold);
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .main-nav ul {
   display: flex;
@@ -159,7 +175,7 @@ button { cursor: pointer; font-family: var(--font-body); }
   transition: width var(--transition-normal);
 }
 .main-nav a:hover::after { width: 100%; }
-.header-actions { display: flex; align-items: center; gap: 1.25rem; }
+.header-actions { display: flex; align-items: center; gap: 1.25rem; flex-shrink: 0; }
 .header-icon {
   color: var(--text-dark);
   font-size: 1.15rem;
@@ -391,6 +407,7 @@ button { cursor: pointer; font-family: var(--font-body); }
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 .product-price .current {
   font-size: 1.15rem;
@@ -408,6 +425,7 @@ button { cursor: pointer; font-family: var(--font-body); }
   font-size: 0.75rem;
   color: var(--success);
   font-weight: 600;
+  white-space: nowrap;
 }
 .product-card-actions {
   display: flex;
@@ -2708,6 +2726,7 @@ html, body, .site-wrapper {
   box-sizing: border-box !important;
 }
 
+
 /* Category Card Background Hover Zoom */
 .collection-bg-zoom {
   transition: transform 0.5s ease !important;
@@ -2716,8 +2735,300 @@ html, body, .site-wrapper {
   transform: scale(1.08) !important;
 }
 
+/* ==================== LUXURY REDESIGN COMPONENT STYLES ==================== */
 
+/* Header Glassmorphism */
+.site-header {
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease;
+}
+.site-header.scrolled {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
 
+/* Sticky Purchase Bar (Product Page) */
+.sticky-purchase-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.12);
+  padding: 12px 24px;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sticky-purchase-bar.visible {
+  transform: translateY(0);
+}
+.sticky-purchase-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sticky-purchase-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sticky-purchase-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+.sticky-purchase-details h4 {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+.sticky-purchase-price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sticky-purchase-price .price-active {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--saffron-dark);
+}
+.sticky-purchase-price .price-original {
+  font-size: 0.9rem;
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+.sticky-purchase-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
+/* Saffron & Gold Luxury Buttons */
+.btn-saffron {
+  background: var(--saffron-gradient);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 6px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 15px rgba(230, 126, 34, 0.25);
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-saffron:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(230, 126, 34, 0.35);
+  background: linear-gradient(135deg, #D35400 0%, #E67E22 100%);
+}
 
+.btn-outline-gold {
+  background: transparent;
+  color: var(--text-dark) !important;
+  font-weight: 600;
+  padding: 11px 24px;
+  border-radius: 6px;
+  border: 1.5px solid var(--primary-gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+.btn-outline-gold:hover {
+  background: var(--primary-gold-light);
+  color: var(--primary-gold-hover) !important;
+  border-color: var(--primary-gold-hover);
+  transform: translateY(-2px);
+}
 
+/* Shipping Progress Bar (Cart Drawer) */
+.free-shipping-banner {
+  background: linear-gradient(135deg, #FFF8F0 0%, #FFFBF7 100%);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.shipping-progress-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.shipping-progress-track {
+  height: 6px;
+  background: rgba(212, 175, 55, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.shipping-progress-fill {
+  height: 100%;
+  background: var(--gold-gradient);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* Micro Animations */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+.pulse-gold {
+  animation: pulseGlow 2s infinite;
+}
+
+/* Mobile Bottom Navigation Offset adjustment */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 64px;
+  }
+  .sticky-purchase-bar {
+    bottom: 60px;
+    padding: 10px 16px;
+  }
+  .sticky-purchase-details h4 {
+    max-width: 160px;
+    font-size: 0.9rem;
+  }
+
+  /* Prevent Cumulative Layout Shift (CLS) on product card images */
+  .product-card-image {
+    aspect-ratio: 1 / 1 !important;
+    position: relative !important;
+    overflow: hidden !important;
+    background: #FDFBF7 !important;
+  }
+
+  /* ===== FIX #3: FLOATING BUTTON COLLISIONS ===== */
+  /* WhatsApp float: 90px above bottom nav (62px nav + 28px gap) */
+  .whatsapp-float {
+    bottom: 90px !important;
+    right: 16px !important;
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 24px !important;
+    z-index: 9980 !important;
+  }
+
+  /* ===== FIX #5: HEADER LOGO/TAGLINE & ACTION ICONS ===== */
+  .header-container {
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+  .logo-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+  .logo-group img,
+  .header-logo-img {
+    height: 36px !important;
+    width: auto !important;
+    flex-shrink: 0 !important;
+  }
+  .logo-text {
+    min-width: 0 !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+  .header-site-title {
+    font-size: clamp(1rem, 4.5vw, 1.25rem) !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    letter-spacing: 0.5px !important;
+    line-height: 1.15 !important;
+    font-weight: 700 !important;
+  }
+  .header-site-tagline {
+    font-size: clamp(0.52rem, 2.2vw, 0.65rem) !important;
+    letter-spacing: 0.8px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: 100% !important;
+    display: block !important;
+    line-height: 1.2 !important;
+    margin-top: 1px !important;
+  }
+  .header-actions {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+  .desktop-only-icon,
+  .mobile-header-hide-icon {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  .header-icon,
+  .mobile-menu-btn {
+    min-height: 38px !important;
+    min-width: 38px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    font-size: 1.15rem !important;
+  }
+}
+
+/* ===== MOBILE SMALL SCREEN FIXES (360-430px) ===== */
+@media (max-width: 430px) {
+
+  /* ===== FIX #4: PRODUCT CARD DISCOUNT TEXT OVERFLOW ===== */
+  .product-price {
+    flex-wrap: wrap !important;
+    gap: 2px 6px !important;
+    line-height: 1.4 !important;
+  }
+  .product-price .current {
+    font-size: 1rem !important;
+  }
+  .product-price .original {
+    font-size: 0.78rem !important;
+    margin-left: 0 !important;
+  }
+  .product-price .discount {
+    font-size: 0.68rem !important;
+    margin-left: 0 !important;
+    white-space: nowrap !important;
+  }
+}

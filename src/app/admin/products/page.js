@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminProductsPage() {
+  let categories = [];
+  let products = [];
   try {
     const supabase = createAdminClient();
 
@@ -12,10 +14,10 @@ export default async function AdminProductsPage() {
       supabase.from('products').select(`*, categories(name, slug), product_images(image_path, is_primary)`).order('created_at', { ascending: false })
     ]);
 
-    const categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : [];
+    categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : [];
     const productsData = Array.isArray(productsRes?.data) ? productsRes.data : [];
 
-    const products = productsData.map(product => {
+    products = productsData.map(product => {
       if (!product) return {};
       const primaryImg = product.product_images?.find(img => img.is_primary === 1) || product.product_images?.[0];
       return {
@@ -25,10 +27,9 @@ export default async function AdminProductsPage() {
         image_path: primaryImg?.image_path || '/images/placeholder.jpg'
       };
     });
-
-    return <ProductManager initialProducts={products} categories={categories} />;
   } catch (err) {
     console.error('[AdminProductsPage] Error:', err);
-    return <ProductManager initialProducts={[]} categories={[]} />;
   }
+  return <ProductManager initialProducts={products} categories={categories} />;
 }
+

@@ -44,11 +44,16 @@ export default function ShopCatalogClient({ initialProducts = [], categories = [
 
     // 2. Category
     if (selectedCategory) {
-      const catSlug = selectedCategory.toLowerCase();
-      result = result.filter(p =>
-        p.category_slug?.toLowerCase() === catSlug ||
-        p.category_name?.toLowerCase() === catSlug
-      );
+      const catSlug = selectedCategory.toLowerCase().trim();
+      result = result.filter(p => {
+        const pSlug = (p.category_slug || '').toLowerCase();
+        const pName = (p.category_name || '').toLowerCase();
+        const pNormalizedName = pName.replace(/\s+/g, '-');
+        return pSlug === catSlug || 
+               pName === catSlug || 
+               pNormalizedName.includes(catSlug) || 
+               catSlug.includes(pNormalizedName);
+      });
     }
 
     // 3. Material

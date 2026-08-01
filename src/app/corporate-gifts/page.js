@@ -97,7 +97,7 @@ export default function CorporateGiftsPage() {
           <p>Premium 24K gold electroplated idols customized for corporate milestones, Diwali celebrations, and VIP patrons.</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'flex-start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '3rem', alignItems: 'flex-start' }}>
           
           {/* Left Column: Info list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

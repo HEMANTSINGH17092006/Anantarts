@@ -7,10 +7,6 @@ export default function SystemHealthDashboard() {
   const [locks, setLocks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -27,6 +23,12 @@ export default function SystemHealthDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    Promise.resolve().then(() => fetchData());
+  }, []);
+
+
 
   const runRecovery = async () => {
     if (!confirm('Run recovery cron job now?')) return;

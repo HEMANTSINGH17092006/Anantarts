@@ -26,25 +26,29 @@ export default function SearchDrawer({ isOpen, onClose }) {
       document.body.style.overflow = 'hidden';
       
       // Load recent searches
-      const saved = localStorage.getItem('anant_recent_searches');
-      if (saved) {
-        try {
-          setRecentSearches(JSON.parse(saved));
-        } catch (e) {}
-      }
+      try {
+        const saved = localStorage.getItem('anant_recent_searches');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          Promise.resolve().then(() => setRecentSearches(parsed));
+        }
+      } catch (e) {}
 
       // Fetch trending products
-      setLoading(true);
+      Promise.resolve().then(() => setLoading(true));
       getTrendingAndSuggestionsAction('').then(res => {
         if (res.success) {
           setTrending(res.trending || []);
         }
         setLoading(false);
       });
+
     } else {
       document.body.style.overflow = 'unset';
-      setSearchQuery('');
-      setSuggestions([]);
+      Promise.resolve().then(() => {
+        setSearchQuery('');
+        setSuggestions([]);
+      });
     }
 
     return () => {
@@ -61,9 +65,10 @@ export default function SearchDrawer({ isOpen, onClose }) {
         }
       });
     } else {
-      setSuggestions([]);
+      Promise.resolve().then(() => setSuggestions([]));
     }
   }, [searchQuery]);
+
 
   const saveRecentSearch = (query) => {
     if (!query.trim()) return;

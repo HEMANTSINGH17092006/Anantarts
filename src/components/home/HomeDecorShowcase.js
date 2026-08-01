@@ -2,12 +2,12 @@
 import Link from 'next/link';
 
 const HOME_DECOR_ITEMS = [
-  { name: 'Table Decor', icon: '🛋️', query: 'table decor', desc: 'Centerpiece sculptures & high-lustre metallic tabletop accents.' },
+  { name: 'Table Decor', icon: '🏺', query: 'table decor', desc: 'Centerpiece sculptures & high-lustre metallic tabletop accents.' },
   { name: 'Wall Art', icon: '🖼️', query: 'wall art', desc: 'Hand-carved wooden wall panels & 24K gold foil wall art plaques.' },
   { name: 'Showpieces', icon: '✨', query: 'showpiece', desc: 'Intricate decorative statues, peacock sculptures & abstract art.' },
   { name: 'Luxury Decor', icon: '👑', query: 'luxury', desc: 'Collector-grade electroplated artifacts designed for grand foyers.' },
   { name: 'Lighting Decor', icon: '🕯️', query: 'lighting', desc: 'Brass candle stands, traditional thali lamps & mood lanterns.' },
-  { name: 'Vases', icon: '🏺', query: 'vase', desc: 'Electroplated brass & metallic ceramic display vases.' }
+  { name: 'Vases', icon: '🏆', query: 'vase', desc: 'Electroplated brass & metallic ceramic display vases.' }
 ];
 
 export default function HomeDecorShowcase() {
@@ -21,7 +21,7 @@ export default function HomeDecorShowcase() {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
         gap: '1.75rem'
       }}>
         {HOME_DECOR_ITEMS.map((item, idx) => (

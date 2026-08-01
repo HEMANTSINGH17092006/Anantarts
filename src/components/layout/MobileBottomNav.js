@@ -1,12 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCart, useWishlist } from '../context/AppContext';
+import { useCart } from '../context/AppContext';
 
-export default function MobileBottomNav({ onCartClick, onSearchClick, onWishlistClick, onMenuClick }) {
+export default function MobileBottomNav({ onCartClick, onMenuClick }) {
   const pathname = usePathname();
   const { cartCount } = useCart();
-  const { wishlistCount } = useWishlist();
 
   return (
     <div 
@@ -23,7 +22,7 @@ export default function MobileBottomNav({ onCartClick, onSearchClick, onWishlist
         display: 'none', // Controlled via CSS media query @media (max-width: 768px) { display: flex; }
         justifyContent: 'space-around',
         alignItems: 'center',
-        padding: '0 6px',
+        padding: '0 8px',
         boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
         fontFamily: "'Poppins', sans-serif"
       }}
@@ -33,7 +32,7 @@ export default function MobileBottomNav({ onCartClick, onSearchClick, onWishlist
         href="/" 
         style={navItemStyle(pathname === '/')}
       >
-        <i className="fas fa-home" style={{ fontSize: '1.1rem' }}></i>
+        <i className="fas fa-home" style={{ fontSize: '1.15rem' }}></i>
         <span>Home</span>
       </Link>
 
@@ -42,49 +41,28 @@ export default function MobileBottomNav({ onCartClick, onSearchClick, onWishlist
         onClick={onMenuClick}
         style={navButtonStyle(pathname.startsWith('/collections') || pathname === '/shop')}
       >
-        <i className="fas fa-th-large" style={{ fontSize: '1.1rem' }}></i>
+        <i className="fas fa-th-large" style={{ fontSize: '1.15rem' }}></i>
         <span>Categories</span>
       </button>
 
-      {/* 3. Search */}
-      <button 
-        onClick={onSearchClick}
-        style={navButtonStyle(false)}
-      >
-        <i className="fas fa-search" style={{ fontSize: '1.1rem' }}></i>
-        <span>Search</span>
-      </button>
-
-      {/* 4. Wishlist */}
-      <button 
-        onClick={onWishlistClick} 
-        style={navButtonStyle(false)}
-      >
-        <i className="far fa-heart" style={{ fontSize: '1.1rem' }}></i>
-        <span>Wishlist</span>
-        {wishlistCount > 0 && (
-          <span style={badgeStyle}>{wishlistCount}</span>
-        )}
-      </button>
-
-      {/* 5. Cart */}
+      {/* 3. Cart */}
       <button 
         onClick={onCartClick} 
         style={navButtonStyle(false)}
       >
-        <i className="fas fa-shopping-bag" style={{ fontSize: '1.1rem' }}></i>
+        <i className="fas fa-shopping-bag" style={{ fontSize: '1.15rem' }}></i>
         <span>Cart</span>
         {cartCount > 0 && (
           <span style={badgeStyle}>{cartCount}</span>
         )}
       </button>
 
-      {/* 6. Account */}
+      {/* 4. Account */}
       <Link 
         href="/account" 
         style={navItemStyle(pathname.startsWith('/account'))}
       >
-        <i className="fas fa-user-circle" style={{ fontSize: '1.1rem' }}></i>
+        <i className="fas fa-user-circle" style={{ fontSize: '1.15rem' }}></i>
         <span>Account</span>
       </Link>
     </div>
@@ -96,11 +74,13 @@ function navItemStyle(isActive) {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '2px',
+    gap: '3px',
     color: isActive ? '#D4AF37' : 'rgba(255,255,255,0.7)',
-    fontSize: '0.68rem',
+    fontSize: '0.72rem',
     textDecoration: 'none',
-    fontWeight: isActive ? '600' : '400'
+    fontWeight: isActive ? '600' : '400',
+    flex: '1 1 0',
+    minWidth: 0
   };
 }
 
@@ -111,25 +91,27 @@ function navButtonStyle(isActive) {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '2px',
+    gap: '3px',
     color: isActive ? '#D4AF37' : 'rgba(255,255,255,0.7)',
-    fontSize: '0.68rem',
+    fontSize: '0.72rem',
     cursor: 'pointer',
     position: 'relative',
-    padding: 0
+    padding: 0,
+    flex: '1 1 0',
+    minWidth: 0
   };
 }
 
 const badgeStyle = {
   position: 'absolute',
   top: '-4px',
-  right: '2px',
+  right: '12px',
   background: '#D4AF37',
   color: '#14110F',
   fontSize: '0.6rem',
   fontWeight: '700',
-  width: '15px',
-  height: '15px',
+  width: '16px',
+  height: '16px',
   borderRadius: '50%',
   display: 'flex',
   alignItems: 'center',

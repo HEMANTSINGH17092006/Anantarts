@@ -31,7 +31,7 @@ export default function Footer({
     console.error(e);
   }
 
-  const instUrl = socialLinks.instagram || 'https://www.instagram.com/arts_by_anant';
+  const instUrl = socialLinks.instagram || 'https://www.instagram.com/anantarts.in?igsh=MXB0d215YzVtZ3Q0aw==';
   const fbUrl = socialLinks.facebook || '';
   const ytUrl = socialLinks.youtube || '';
 
@@ -146,81 +146,6 @@ export default function Footer({
           <i className="fab fa-whatsapp"></i>
         </a>
       )}
-
-      {/* Mobile Glassmorphism Navigation Bar: Home | Search | Wishlist | Cart | Account */}
-      <div className="mobile-action-dock">
-        {/* 1. Home */}
-        <Link 
-          href="/" 
-          onClick={() => { if (activeTab) onCartClick(); }}
-          className={`mobile-action-dock-item ${pathname === '/' && activeTab === null ? 'active' : ''}`}
-        >
-          <i className="fas fa-home"></i>
-          <span>Home</span>
-        </Link>
-
-        {/* 2. Search */}
-        <button 
-          onClick={onSearchClick} 
-          className={`mobile-action-dock-item ${activeTab === 'search' ? 'active' : ''}`}
-          style={{ background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}
-        >
-          <i className="fas fa-search"></i>
-          <span>Search</span>
-        </button>
-
-        {/* 3. Wishlist */}
-        <button 
-          onClick={onWishlistClick} 
-          className={`mobile-action-dock-item ${activeTab === 'wishlist' ? 'active' : ''}`}
-          style={{ background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', position: 'relative', padding: 0 }}
-        >
-          <i className="fas fa-heart"></i>
-          {wishlistCount > 0 && (
-            <span style={{
-              position: 'absolute', top: '2px', right: '18%',
-              background: 'var(--primary-gold)', color: '#000',
-              borderRadius: '50%', width: '16px', height: '16px',
-              fontSize: '0.62rem', fontWeight: '700',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              {wishlistCount}
-            </span>
-          )}
-          <span>Wishlist</span>
-        </button>
-
-        {/* 4. Cart */}
-        <button 
-          onClick={onCartClick} 
-          className={`mobile-action-dock-item ${activeTab === 'cart' ? 'active' : ''}`}
-          style={{ position: 'relative', background: 'none', border: 'none', color: 'inherit', width: '100%', fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}
-        >
-          <i className="fas fa-shopping-bag"></i>
-          {cartCount > 0 && (
-            <span style={{
-              position: 'absolute', top: '2px', right: '22%',
-              background: 'var(--primary-gold)', color: '#000',
-              borderRadius: '50%', width: '16px', height: '16px',
-              fontSize: '0.62rem', fontWeight: '700',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              {cartCount}
-            </span>
-          )}
-          <span>Cart</span>
-        </button>
-
-        {/* 5. Account */}
-        <Link 
-          href="/account" 
-          onClick={() => { if (activeTab) onCartClick(); }}
-          className={`mobile-action-dock-item ${pathname.startsWith('/account') && activeTab === null ? 'active' : ''}`}
-        >
-          <i className="fas fa-user-circle"></i>
-          <span>Account</span>
-        </Link>
-      </div>
     </footer>
   );
 }

@@ -180,11 +180,11 @@ export default function ProductCard({ product, isListView = false, onCompareClic
 
             <button 
               onClick={handleBuyNow}
-              className="btn-outline-gold" 
-              style={{ width: '100%', padding: '9px', fontSize: '0.78rem', justifyContent: 'center', borderRadius: '6px', color: 'var(--text-dark)', borderColor: 'var(--primary-gold)' }}
+              className="btn-saffron" 
+              style={{ width: '100%', padding: '9px', fontSize: '0.78rem', justifyContent: 'center', borderRadius: '6px' }}
               disabled={product.stock_quantity <= 0}
             >
-              <i className="fas fa-bolt" style={{ marginRight: '6px', color: '#D4AF37' }}></i> Buy Now
+              <i className="fas fa-bolt" style={{ marginRight: '6px' }}></i> Buy Now
             </button>
           </div>
         </div>

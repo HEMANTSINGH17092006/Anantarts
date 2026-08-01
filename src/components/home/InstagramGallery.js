@@ -26,7 +26,7 @@ export default function InstagramGallery() {
         {INSTA_POSTS.map((post, idx) => (
           <a
             key={idx}
-            href="https://instagram.com"
+            href="https://www.instagram.com/anantarts.in?igsh=MXB0d215YzVtZ3Q0aw=="
             target="_blank"
             rel="noopener noreferrer"
             style={{

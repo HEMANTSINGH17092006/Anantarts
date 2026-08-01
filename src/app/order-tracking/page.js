@@ -37,11 +37,15 @@ function OrderTrackingContent() {
 
   useEffect(() => {
     if (urlOrder) {
-      setOrderNumber(urlOrder);
-      if (urlPhone) setPhone(urlPhone);
-      trackOrder(urlOrder, urlPhone || '');
+      Promise.resolve().then(() => {
+        setOrderNumber(urlOrder);
+        if (urlPhone) setPhone(urlPhone);
+        trackOrder(urlOrder, urlPhone || '');
+      });
     }
   }, [urlOrder, urlPhone]);
+
+
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

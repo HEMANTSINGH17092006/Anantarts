@@ -229,19 +229,6 @@ export default function CheckoutPage() {
       .catch(err => console.error('Failed to fetch customer profile', err));
   }, []);
 
-  const handleSelectAddress = (addr) => {
-    setSelectedAddressId(addr.id);
-    setName(addr.name || authUser?.name || '');
-    setPhone(addr.phone || authUser?.phone || '');
-    setAddress(addr.address || '');
-    setCity(addr.city || '');
-    setState(addr.state || '');
-    setZip(addr.pincode || '');
-    
-    // Clear errors for fields that are filled
-    setErrors({});
-  };
-
   useEffect(() => {
     fetch('/api/razorpay/health')
       .then(res => res.json())
@@ -267,6 +254,10 @@ export default function CheckoutPage() {
       return `${index + 1}. ${item.product_name || item.name} × ${item.quantity}`;
     }).join('\n');
 
+    const formattedOrderDate = orderSuccess.created_at
+      ? new Date(orderSuccess.created_at).toLocaleString('en-IN')
+      : new Date().toLocaleString('en-IN');
+
     const templateData = {
       order_id: orderSuccess.order_number,
       customer_name: orderSuccess.customer_name,
@@ -277,7 +268,7 @@ export default function CheckoutPage() {
       payment_method: orderSuccess.payment_method,
       payment_status: orderSuccess.payment_status,
       full_address: orderSuccess.shipping_address,
-      order_date: new Date(orderSuccess.created_at || Date.now()).toLocaleString('en-IN'),
+      order_date: formattedOrderDate,
       admin_order_link: typeof window !== 'undefined' ? `${window.location.origin}/admin/orders` : ''
     };
 

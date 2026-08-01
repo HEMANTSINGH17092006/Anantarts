@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOrdersPage() {
+  let orders = [];
   try {
     const supabase = createAdminClient();
 
@@ -35,34 +36,33 @@ export default async function AdminOrdersPage() {
 
     if (error) {
       console.error('[AdminOrdersPage] Single Query Error:', error);
-      return <OrderManager initialOrders={[]} />;
-    }
+    } else {
+      orders = (rawOrders || []).map(order => {
+        const items = (order.order_items || []).map(item => {
+          const productImgs = item.products?.product_images || [];
+          const primaryImg = productImgs.find(img => img.is_primary === 1) || productImgs[0];
+          return {
+            id: item.id,
+            order_id: item.order_id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            price: item.price,
+            quantity: item.quantity,
+            total_price: item.total_price || (item.price * item.quantity),
+            image_path: primaryImg?.image_path || '/images/placeholder.jpg'
+          };
+        });
 
-    const orders = (rawOrders || []).map(order => {
-      const items = (order.order_items || []).map(item => {
-        const productImgs = item.products?.product_images || [];
-        const primaryImg = productImgs.find(img => img.is_primary === 1) || productImgs[0];
         return {
-          id: item.id,
-          order_id: item.order_id,
-          product_id: item.product_id,
-          product_name: item.product_name,
-          price: item.price,
-          quantity: item.quantity,
-          total_price: item.total_price || (item.price * item.quantity),
-          image_path: primaryImg?.image_path || '/images/placeholder.jpg'
+          ...order,
+          items
         };
       });
-
-      return {
-        ...order,
-        items
-      };
-    });
-
-    return <OrderManager initialOrders={orders} />;
+    }
   } catch (err) {
     console.error('[AdminOrdersPage] Exception:', err);
-    return <OrderManager initialOrders={[]} />;
   }
+
+  return <OrderManager initialOrders={orders} />;
 }
+

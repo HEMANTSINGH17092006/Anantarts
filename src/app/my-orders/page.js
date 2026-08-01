@@ -25,15 +25,6 @@ export default function MyOrdersPage() {
   const [editError, setEditError] = useState('');
   const [updating, setUpdating] = useState(false);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('anant_patron_info');
-    if (saved) {
-      setSavedPatron(saved);
-      fetchOrders(saved);
-    }
-  }, []);
-
   const fetchOrders = async (contact) => {
     setLoading(true);
     setError('');
@@ -54,6 +45,19 @@ export default function MyOrdersPage() {
       setLoading(false);
     }
   };
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('anant_patron_info');
+    if (saved) {
+      Promise.resolve().then(() => {
+        setSavedPatron(saved);
+        fetchOrders(saved);
+      });
+    }
+  }, []);
+
+
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
@@ -276,7 +280,7 @@ export default function MyOrdersPage() {
               <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
                 <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🪷</div>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', marginBottom: '8px' }}>No Orders Found</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>We couldn't find any orders matching "{activeTab}" status under your profile.</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>We couldn&apos;t find any orders matching &quot;{activeTab}&quot; status under your profile.</p>
               </div>
             ) : (
               /* ORDERS LIST */

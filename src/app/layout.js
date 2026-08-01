@@ -3,6 +3,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { getSettings } from '@/lib/db-helpers';
 import { Playfair_Display, Poppins } from 'next/font/google';
 import Script from 'next/script';
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -175,36 +176,8 @@ function OrganizationSchema({ settings }) {
   );
 }
 
-// Google Analytics Script Component
-function GoogleAnalytics() {
-  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-  if (!gaId || gaId === 'G-XXXXXXXXXX') return null;
-
-  return (
-    <>
-      <Script
-        strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-      />
-      <Script
-        id="google-analytics"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${gaId}', {
-              page_path: window.location.pathname,
-              anonymize_ip: true,
-              cookie_flags: 'SameSite=None;Secure'
-            });
-          `,
-        }}
-      />
-    </>
-  );
-}
+// Google Analytics Measurement ID
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-C7VE8CYW57';
 
 // Microsoft Clarity Script Component
 function MicrosoftClarity() {
@@ -249,7 +222,7 @@ export default async function RootLayout({ children }) {
           {children}
         </AppLayout>
         {/* Analytics Scripts (loaded after interactive) */}
-        <GoogleAnalytics />
+        {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
         <MicrosoftClarity />
       </body>
     </html>

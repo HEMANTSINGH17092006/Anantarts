@@ -10,8 +10,9 @@ export default function OrderManager({ initialOrders = [] }) {
 
   const [orders, setOrders] = useState(initialOrders);
   useEffect(() => {
-    setOrders(initialOrders);
+    Promise.resolve().then(() => setOrders(initialOrders));
   }, [initialOrders]);
+
 
   const [activeTab, setActiveTab] = useState('All');
   const [paymentFilter, setPaymentFilter] = useState('All');
@@ -60,7 +61,8 @@ export default function OrderManager({ initialOrders = [] }) {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `anant_arts_orders_${Date.now()}.csv`);
+    link.setAttribute("download", `anant_arts_orders_${new Date().getTime()}.csv`);
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -766,7 +768,8 @@ export default function OrderManager({ initialOrders = [] }) {
                       <div key={evt.id || idx} style={{ borderBottom: '1px solid #EEE', paddingBottom: '4px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#333' }}>
                           <strong>{evt.title || evt.status}</strong>
-                          <span style={{ color: '#888' }}>{new Date(evt.timestamp || Date.now()).toLocaleString('en-IN')}</span>
+                          <span style={{ color: '#888' }}>{evt.timestamp ? new Date(evt.timestamp).toLocaleString('en-IN') : 'Recently'}</span>
+
                         </div>
                         {evt.location && <div style={{ color: '#666', fontSize: '0.7rem' }}>📍 {evt.location}</div>}
                         {evt.description && <div style={{ color: '#555', fontSize: '0.72rem' }}>{evt.description}</div>}

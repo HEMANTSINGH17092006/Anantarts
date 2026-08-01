@@ -23,7 +23,7 @@ export default async function BlogListingPage() {
             <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>Check back soon for insights on divine Indian crafts.</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '2rem' }}>
             {blogs.map((blog) => (
               <div 
                 key={blog.id} 

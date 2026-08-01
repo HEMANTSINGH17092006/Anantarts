@@ -48,7 +48,7 @@ async function injectCommonLayout() {
   const address = websiteSettings.contact_address || 'Bhoirwadi, Dombivli East, Maharashtra, India';
   const waNumber = websiteSettings.whatsapp_number || '917275819354';
   
-  let social = { instagram: 'https://www.instagram.com/arts_by_anant' };
+  let social = { instagram: 'https://www.instagram.com/anantarts.in?igsh=MXB0d215YzVtZ3Q0aw==' };
   try {
     if (websiteSettings.social_links) {
       social = JSON.parse(websiteSettings.social_links);

@@ -73,6 +73,27 @@ export default function CartDrawer({ isOpen, onClose }) {
           </div>
         ) : (
           <>
+            {/* Free Shipping Progress Bar */}
+            {(() => {
+              const THRESHOLD = 5000;
+              const progress = Math.min(100, Math.round((subtotal / THRESHOLD) * 100));
+              const remaining = THRESHOLD - subtotal;
+              return (
+                <div className="free-shipping-banner" style={{ margin: '16px 20px 0 20px' }}>
+                  <div className="shipping-progress-text">
+                    {remaining <= 0 ? (
+                      <span style={{ color: 'var(--success)' }}>🎉 Congratulations! You unlocked FREE Express Shipping!</span>
+                    ) : (
+                      <span>🚚 Add <strong>{formatPrice(remaining)}</strong> more for <strong>FREE Express Shipping</strong></span>
+                    )}
+                  </div>
+                  <div className="shipping-progress-track">
+                    <div className="shipping-progress-fill" style={{ width: `${progress}%` }}></div>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="cart-drawer-items">
               {cart.map((item) => {
                 const activePrice = item.discount_price && item.discount_price > 0 ? item.discount_price : item.price;

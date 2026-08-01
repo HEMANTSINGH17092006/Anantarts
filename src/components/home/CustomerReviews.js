@@ -40,7 +40,7 @@ export default function CustomerReviews({ testimonials = [] }) {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))',
         gap: '2rem'
       }}>
         {items.map((test) => (
@@ -66,8 +66,9 @@ export default function CustomerReviews({ testimonials = [] }) {
               </div>
 
               <p style={{ fontStyle: 'italic', fontSize: '0.88rem', color: 'var(--text-dark)', lineHeight: '1.6', marginBottom: '20px' }}>
-                "{test.comment}"
+                &ldquo;{test.comment}&rdquo;
               </p>
+
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', borderTop: '1px solid var(--bg-cream-dark)', paddingTop: '16px' }}>

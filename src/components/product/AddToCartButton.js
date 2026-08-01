@@ -83,7 +83,7 @@ export default function AddToCartButton({ product }) {
         <button
           onClick={handleBuyNow}
           disabled={isOutOfStock}
-          className="btn-gold"
+          className="btn-saffron"
           style={{
             flex: '1 1 180px',
             justifyContent: 'center',

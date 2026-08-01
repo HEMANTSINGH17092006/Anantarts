@@ -5,8 +5,11 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
+  let errorState = null;
+  let renderContent = null;
   try {
     const supabase = createAdminClient();
+
 
     // 1. Parallel DB queries with safe array defaults
     let orders = [];
@@ -105,7 +108,7 @@ export default async function AdminDashboardPage() {
       return `${x},${y}`;
     }).join(' ');
 
-    return (
+    renderContent = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
         
         {/* Header Banner */}
@@ -437,14 +440,20 @@ export default async function AdminDashboardPage() {
     );
   } catch (err) {
     console.error('[AdminDashboardPage] CRITICAL ERROR:', err);
+    errorState = err;
+  }
+
+  if (errorState) {
     return (
       <div style={{ padding: '32px', background: 'white', borderRadius: '12px', border: '1px solid #FFCDD2', margin: '20px' }}>
         <h2 style={{ color: '#C62828', margin: '0 0 12px 0', fontFamily: 'sans-serif' }}>⚠️ Admin Dashboard Exception</h2>
         <p style={{ color: '#555', fontSize: '0.9rem' }}>An error occurred while fetching or rendering dashboard statistics:</p>
         <pre style={{ background: '#FFF3E0', padding: '16px', borderRadius: '6px', fontSize: '0.82rem', color: '#E65100', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
-          {err?.message}\n{err?.stack}
+          {errorState?.message}\n{errorState?.stack}
         </pre>
       </div>
     );
   }
+
+  return renderContent;
 }

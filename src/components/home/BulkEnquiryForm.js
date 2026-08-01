@@ -12,7 +12,6 @@ export default function BulkEnquiryForm() {
   const [message, setMessage] = useState('');
 
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -42,7 +41,7 @@ export default function BulkEnquiryForm() {
     return !isNaN(num) && num >= 1;
   };
 
-  useEffect(() => {
+  const errors = (() => {
     let newErrors = {};
     if (touched.name && !validateName(name)) {
       newErrors.name = 'Please enter a valid full name (letters & spaces only).';
@@ -56,8 +55,9 @@ export default function BulkEnquiryForm() {
     if (touched.quantity && !validateQuantity(quantity)) {
       newErrors.quantity = 'Estimated quantity must be at least 1.';
     }
-    setErrors(newErrors);
-  }, [name, email, phone, quantity, touched]);
+    return newErrors;
+  })();
+
 
   const isFormValid = validateName(name) && validateEmail(email) && validatePhone(phone) && validateQuantity(quantity);
 

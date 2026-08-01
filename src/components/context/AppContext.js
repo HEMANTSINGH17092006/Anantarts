@@ -17,15 +17,23 @@ export function AppProviders({ children }) {
       const savedWishlist = localStorage.getItem('anant_wishlist');
       const savedCoupon = localStorage.getItem('anant_coupon');
 
-      if (savedCart) setCart(JSON.parse(savedCart));
-      if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
-      if (savedCoupon) setCoupon(JSON.parse(savedCoupon));
+      const parsedCart = savedCart ? JSON.parse(savedCart) : [];
+      const parsedWishlist = savedWishlist ? JSON.parse(savedWishlist) : [];
+      const parsedCoupon = savedCoupon ? JSON.parse(savedCoupon) : null;
+
+      Promise.resolve().then(() => {
+        if (savedCart) setCart(parsedCart);
+        if (savedWishlist) setWishlist(parsedWishlist);
+        if (savedCoupon) setCoupon(parsedCoupon);
+        setLoading(false);
+      });
     } catch (e) {
       console.error('Error loading cart/wishlist from storage:', e);
-    } finally {
-      setLoading(false);
+      Promise.resolve().then(() => setLoading(false));
     }
   }, []);
+
+
 
   // Save cart to LocalStorage when changed
   useEffect(() => {

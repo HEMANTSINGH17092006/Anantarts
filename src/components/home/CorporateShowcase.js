@@ -2,12 +2,12 @@
 import Link from 'next/link';
 
 const CORPORATE_ITEMS = [
-  { name: 'Desk Organizers', icon: '💼', desc: 'Silver & gold plated pen stands, clock plaques & desktop caddies.' },
-  { name: 'Awards', icon: '🏆', desc: 'Precision electroplated recognition trophies & corporate identity plaques.' },
-  { name: 'Mementos', icon: '🎗️', desc: 'Commemorative brass tokens & milestone celebration souvenirs.' },
-  { name: 'Customized Gifts', icon: '✨', desc: 'Bespoke corporate gifts customized with your company logo & branding.' },
-  { name: 'Executive Gifts', icon: '✒️', desc: 'Luxury leatherette, velvet & wooden boxed premium gift sets.' },
-  { name: 'Bulk Orders', icon: '📦', desc: 'Tiered wholesale discounts for corporate orders from 10 to 500+ units.' }
+  { name: 'Desk Organizers', iconClass: 'fas fa-briefcase', desc: 'Silver & gold plated pen stands, clock plaques & desktop caddies.' },
+  { name: 'Awards', iconClass: 'fas fa-trophy', desc: 'Precision electroplated recognition trophies & corporate identity plaques.' },
+  { name: 'Mementos', iconClass: 'fas fa-medal', desc: 'Commemorative brass tokens & milestone celebration souvenirs.' },
+  { name: 'Customized Gifts', iconClass: 'fas fa-certificate', desc: 'Bespoke corporate gifts customized with your company logo & branding.' },
+  { name: 'Executive Gifts', iconClass: 'fas fa-pen-nib', desc: 'Luxury leatherette, velvet & wooden boxed premium gift sets.' },
+  { name: 'Bulk Orders', iconClass: 'fas fa-boxes', desc: 'Tiered wholesale discounts for corporate orders from 10 to 500+ units.' }
 ];
 
 export default function CorporateShowcase() {
@@ -38,7 +38,7 @@ export default function CorporateShowcase() {
         {/* Corporate Items Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
           gap: '1.75rem'
         }}>
           {CORPORATE_ITEMS.map((item, idx) => (
@@ -54,7 +54,20 @@ export default function CorporateShowcase() {
                 gap: '18px'
               }}
             >
-              <span style={{ fontSize: '2.4rem', lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+              <div style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '8px',
+                background: 'rgba(212, 175, 55, 0.15)',
+                color: '#D4AF37',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.25rem',
+                flexShrink: 0
+              }}>
+                <i className={item.iconClass}></i>
+              </div>
               <div>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.18rem', color: '#FFFFFF', margin: '0 0 6px 0', fontWeight: '600' }}>
                   {item.name}

@@ -25,16 +25,19 @@ export default function AdminLayout({ children }) {
   const [notifCounts, setNotifCounts] = useState({ authorizedPayments: 0, lowStock: 0, newOrders: 0 });
 
   useEffect(() => {
+    let active = true;
     if (pathname === '/admin/login') {
-      setLoading(false);
+      Promise.resolve().then(() => {
+        if (active) setLoading(false);
+      });
       return;
     }
     getAdminSessionAction().then(res => {
+      if (!active) return;
       if (res.success) {
         setCurrentUser(res.user);
-        // Fetch notifications
         getAdminNotificationsAction().then(nRes => {
-          if (nRes.success) {
+          if (active && nRes.success) {
             setNotifications(nRes.notifications || []);
             setNotifCounts(nRes.counts || { authorizedPayments: 0, lowStock: 0, newOrders: 0 });
           }
@@ -44,7 +47,9 @@ export default function AdminLayout({ children }) {
       }
       setLoading(false);
     });
+    return () => { active = false; };
   }, [pathname, router]);
+
 
   const handleLogout = async () => {
     setLoggingOut(true);

@@ -131,7 +131,7 @@ export default function BlogManager({ initialBlogs = [] }) {
       </div>
 
       {/* Listing Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1.5rem' }}>
         {initialBlogs.map((blog) => (
           <div key={blog.id} style={{
             background: 'white',

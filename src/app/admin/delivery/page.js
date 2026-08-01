@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDeliveryPage() {
+  let orders = [];
   try {
     const supabase = createAdminClient();
 
@@ -23,14 +24,13 @@ export default async function AdminDeliveryPage() {
       }
     });
 
-    const orders = rawOrders.map(order => ({
+    orders = rawOrders.map(order => ({
       ...order,
       items: itemsMap[order.id] || []
     }));
-
-    return <DeliveryManager initialOrders={orders} />;
   } catch (err) {
     console.error('[AdminDeliveryPage] Error:', err);
-    return <DeliveryManager initialOrders={[]} />;
   }
+  return <DeliveryManager initialOrders={orders} />;
 }
+

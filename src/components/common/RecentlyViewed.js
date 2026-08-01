@@ -58,12 +58,14 @@ export default function RecentlyViewed({ currentProductId }) {
         if (currentProductId) {
           list = list.filter(item => item.id !== currentProductId);
         }
-        setItems(list.slice(0, 4)); // Display top 4 items
+        const sliced = list.slice(0, 4);
+        Promise.resolve().then(() => setItems(sliced));
       }
     } catch (e) {
       console.error(e);
     }
   }, [currentProductId]);
+
 
   if (items.length === 0) return null;
 

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCart, useWishlist } from '../context/AppContext';
@@ -10,27 +10,47 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const siteName = settings.site_name || 'Anant Arts';
-  const tagline = settings.site_tagline || 'Premium Handcrafted Lifestyle';
+  const tagline = settings.site_tagline || 'Spiritual Luxury & Divine Handicrafts';
 
   return (
     <>
       {/* Top Announcement Bar */}
       <div className="announcement-bar">
         <div className="announcement-container">
-          <div className="announcement-item">✨ LUXURY HANDCRAFTED LIFESTYLE, HOME DÉCOR &amp; GIFTING DESTINATION</div>
-          <div className="announcement-item">⚜️ 24K GOLD &amp; STERLING SILVER ELECTROPLATED MASTERPIECES</div>
-          <div className="announcement-item">📦 FREE INSURED SHIPPING ON ORDERS ABOVE ₹10,000</div>
-          <div className="announcement-item">🪵 HAND-CARVED WOODEN HANDICRAFTS &amp; CUSTOM GIFTS</div>
-          {/* Repeat for seamless loop */}
-          <div className="announcement-item">✨ LUXURY HANDCRAFTED LIFESTYLE, HOME DÉCOR &amp; GIFTING DESTINATION</div>
-          <div className="announcement-item">⚜️ 24K GOLD &amp; STERLING SILVER ELECTROPLATED MASTERPIECES</div>
+          <div className="announcement-item">✨ LUXURY HANDCRAFTED IDOLS &amp; DIVINE DÉCOR</div>
+          <div className="announcement-item">⚜️ 24K GOLD ELECTROPLATED MASTERPIECES</div>
+          <div className="announcement-item">📦 FREE INSURED SHIPPING ACROSS INDIA</div>
+          <div className="announcement-item">🪵 HAND-CARVED TEAKWOOD HANDICRAFTS</div>
         </div>
       </div>
 
       {/* Main Sticky Header */}
-      <header className="site-header">
+      <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
         <div className="header-container">
           
           {/* Logo Group */}
@@ -44,7 +64,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
 
           {/* CENTERED DESKTOP NAVIGATION */}
           <nav className="main-nav">
-            <ul style={{ display: 'flex', gap: '44px', alignItems: 'center', listStyle: 'none', margin: 0, padding: 0 }}>
+            <ul style={{ display: 'flex', gap: '36px', alignItems: 'center', listStyle: 'none', margin: 0, padding: 0 }}>
               
               {/* 1. Home */}
               <li>
@@ -52,7 +72,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
                   href="/" 
                   className={`nav-link-item ${pathname === '/' ? 'active' : ''}`}
                 >
-                  <span>🏠 Home</span>
+                  <span>Home</span>
                 </Link>
               </li>
 
@@ -62,13 +82,14 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
                   href="/shop" 
                   className={`nav-link-item ${pathname === '/shop' ? 'active' : ''}`}
                 >
-                  <span>🛍 All Products</span>
+                  <span>Shop Catalog</span>
                 </Link>
               </li>
 
               {/* 3. Categories (Mega Menu Trigger) */}
               <li 
                 onMouseEnter={() => setMegaMenuOpen(true)}
+                onMouseLeave={() => setMegaMenuOpen(false)}
                 style={{ position: 'relative' }}
               >
                 <button 
@@ -76,9 +97,32 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
                   className={`nav-link-item ${megaMenuOpen || pathname.startsWith('/collections') ? 'active' : ''}`}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: 0 }}
                 >
-                  <span>📂 Categories</span>
+                  <span>Collections</span>
                   <i className={`fas fa-chevron-${megaMenuOpen ? 'up' : 'down'}`} style={{ fontSize: '0.7rem', color: '#D4AF37' }}></i>
                 </button>
+
+                {/* Categories Mega Menu Dropdown */}
+                <MegaMenu isOpen={megaMenuOpen} onClose={() => setMegaMenuOpen(false)} />
+              </li>
+
+              {/* 4. Corporate Gifts */}
+              <li>
+                <Link 
+                  href="/corporate-gifts" 
+                  className={`nav-link-item ${pathname === '/corporate-gifts' ? 'active' : ''}`}
+                >
+                  <span>Corporate Gifts</span>
+                </Link>
+              </li>
+
+              {/* 5. About */}
+              <li>
+                <Link 
+                  href="/about" 
+                  className={`nav-link-item ${pathname === '/about' ? 'active' : ''}`}
+                >
+                  <span>Our Heritage</span>
+                </Link>
               </li>
 
             </ul>
@@ -86,24 +130,31 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
 
           {/* RIGHT SIDE ACTION ICONS */}
           <div className="header-actions">
-            <button className="header-icon" onClick={onSearchClick} aria-label="Search">
+            {/* Search Icon (Always present) */}
+            <button className="header-icon" onClick={onSearchClick} aria-label="Search" title="Search Idols & Decor">
               <i className="fas fa-search"></i>
             </button>
 
-            <button className="header-icon" onClick={onWishlistClick} aria-label="Wishlist" style={{ position: 'relative' }}>
-              <i className="far fa-heart"></i>
-              {wishlistCount > 0 && <span className="cart-count">{wishlistCount}</span>}
-            </button>
+            {/* Desktop Only Icons (Unmounted on mobile <=768px) */}
+            {!isMobile && (
+              <>
+                <button className="header-icon desktop-only-icon" onClick={onWishlistClick} aria-label="Wishlist" title="View Wishlist" style={{ position: 'relative' }}>
+                  <i className="far fa-heart"></i>
+                  {wishlistCount > 0 && <span className="cart-count">{wishlistCount}</span>}
+                </button>
 
-            <Link href="/account" className="header-icon" aria-label="My Account">
-              <i className="fas fa-user-circle"></i>
-            </Link>
+                <Link href="/account" className="header-icon desktop-only-icon" aria-label="My Account" title="My Account">
+                  <i className="fas fa-user-circle"></i>
+                </Link>
 
-            <button className="header-icon" onClick={onCartClick} aria-label="Cart" style={{ position: 'relative' }}>
-              <i className="fas fa-shopping-bag"></i>
-              {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
-            </button>
+                <button className="header-icon desktop-only-icon" onClick={onCartClick} aria-label="Cart" title="View Shopping Bag" style={{ position: 'relative' }}>
+                  <i className="fas fa-shopping-bag"></i>
+                  {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
+                </button>
+              </>
+            )}
 
+            {/* Mobile Hamburger Menu Icon (Always present on mobile) */}
             <button
               className="mobile-menu-btn"
               onClick={onMenuClick}
@@ -113,10 +164,8 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
             </button>
           </div>
         </div>
-
-        {/* Categories Mega Menu Dropdown */}
-        <MegaMenu isOpen={megaMenuOpen} onClose={() => setMegaMenuOpen(false)} />
       </header>
     </>
   );
 }
+

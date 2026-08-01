@@ -53,7 +53,7 @@ export default function CatalogGrid({ initialProducts = [] }) {
 
       <div className="products-grid" style={{
         padding: 0,
-        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(250px, 100%), 1fr))',
         gap: '1.5rem'
       }}>
         {displayedProducts.map((product) => (

@@ -111,7 +111,7 @@ export default function ContactPage() {
           <p>Reach out for support, custom order tracking, bulk catalogs, or Jaipur studio inquiries.</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'flex-start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '3rem', alignItems: 'flex-start' }}>
           
           {/* Left Column: Details */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

@@ -1,13 +1,13 @@
 export default function WhyChooseUs() {
   const TRUST_ITEMS = [
-    { title: 'Handmade Artistry', icon: '🔨', desc: 'Crafted by master traditional artisans preserving ancient heritage structures.' },
-    { title: 'Premium Quality', icon: '✨', desc: '24K gold & sterling silver electroplated under precise electrical bonding.' },
-    { title: 'Pan India Delivery', icon: '🚚', desc: 'Insured express logistics covering 25,000+ pin codes across India.' },
-    { title: 'Secure Payments', icon: '🔒', desc: '100% encrypted Razorpay gateway supporting UPI, Cards, NetBanking & COD.' },
-    { title: 'Luxury Packaging', icon: '📦', desc: 'Multi-layer wooden crate & velvet presentation boxes for damage-free transit.' },
-    { title: 'Custom Orders', icon: '🛠️', desc: 'Bespoke dimensions, personalized text engravings & logo integrations.' },
-    { title: 'Bulk Orders', icon: '📈', desc: 'Tiered wholesale volume pricing for corporate events & large functions.' },
-    { title: 'Trusted Brand', icon: '⭐', desc: 'Adored by over 50,000+ patrons, homes, temples, and corporate houses.' }
+    { title: 'Handmade Artistry', iconClass: 'fas fa-hammer', desc: 'Crafted by master traditional artisans preserving ancient heritage structures.' },
+    { title: 'Premium Quality', iconClass: 'fas fa-gem', desc: '24K gold & sterling silver electroplated under precise electrical bonding.' },
+    { title: 'Pan India Delivery', iconClass: 'fas fa-truck', desc: 'Insured express logistics covering 25,000+ pin codes across India.' },
+    { title: 'Secure Payments', iconClass: 'fas fa-shield-alt', desc: '100% encrypted Razorpay gateway supporting UPI, Cards, NetBanking & COD.' },
+    { title: 'Luxury Packaging', iconClass: 'fas fa-box-open', desc: 'Multi-layer wooden crate & velvet presentation boxes for damage-free transit.' },
+    { title: 'Custom Orders', iconClass: 'fas fa-tools', desc: 'Bespoke dimensions, personalized text engravings & logo integrations.' },
+    { title: 'Bulk Orders', iconClass: 'fas fa-chart-line', desc: 'Tiered wholesale volume pricing for corporate events & large functions.' },
+    { title: 'Trusted Brand', iconClass: 'fas fa-award', desc: 'Adored by over 50,000+ patrons, homes, temples, and corporate houses.' }
   ];
 
   return (
@@ -20,7 +20,7 @@ export default function WhyChooseUs() {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))',
         gap: '1.5rem'
       }}>
         {TRUST_ITEMS.map((item, idx) => (
@@ -37,10 +37,23 @@ export default function WhyChooseUs() {
               gap: '14px'
             }}
           >
-            <span style={{ fontSize: '2.2rem', lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '8px',
+              background: 'var(--primary-gold-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--primary-gold-hover)',
+              fontSize: '1.2rem',
+              flexShrink: 0
+            }}>
+              <i className={item.iconClass}></i>
+            </div>
             <div>
               <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.05rem', color: 'var(--text-dark)', margin: '0 0 4px 0', fontWeight: '600' }}>
-                ✓ {item.title}
+                {item.title}
               </h3>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.45' }}>
                 {item.desc}

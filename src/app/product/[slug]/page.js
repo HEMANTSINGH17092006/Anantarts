@@ -5,7 +5,7 @@ import ProductGallery from '@/components/product/ProductGallery';
 import ProductReviews from '@/components/product/ProductReviews';
 import ProductCard from '@/components/common/ProductCard';
 import { formatPrice } from '@/lib/utils';
-import AddToCartButton from '@/components/product/AddToCartButton';
+import ProductPurchaseWrapper from '@/components/product/ProductPurchaseWrapper';
 import RecentlyViewed, { RecentlyViewedLogger } from '@/components/common/RecentlyViewed';
 import FrequentlyBoughtTogether from '@/components/product/FrequentlyBoughtTogether';
 
@@ -183,7 +183,7 @@ export default async function ProductDetailPage({ params }) {
         </div>
 
         {/* Core Detail Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'flex-start', marginBottom: '4rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '3rem', alignItems: 'flex-start', marginBottom: '4rem' }}>
           
           {/* Left Column: Image Gallery */}
           <div>
@@ -308,14 +308,15 @@ export default async function ProductDetailPage({ params }) {
               </div>
             </div>
 
-            {/* Interactive Buy Buttons */}
-            <AddToCartButton product={{
+            {/* Interactive Buy Buttons with Sticky Purchase Bar */}
+            <ProductPurchaseWrapper product={{
               id: product.id,
               name: product.name,
               slug: product.slug,
               price: product.price,
               discount_price: product.discount_price,
-              image_path: product.images?.[0]?.image_path || '/images/placeholder.jpg',
+              image_path: product.images?.[0]?.image_path || product.image_path || '/images/placeholder.jpg',
+              images: product.images,
               sku: product.sku,
               stock_quantity: product.stock_quantity
             }} />

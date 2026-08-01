@@ -30,7 +30,7 @@ export default async function AccountOrdersPage() {
         <div style={{ textAlign: 'center', padding: '60px 20px', background: '#F9F9F9', borderRadius: '12px', border: '1px solid #EAEAEA' }}>
           <i className="fas fa-box-open" style={{ fontSize: '3rem', color: '#DDD', marginBottom: '16px' }}></i>
           <h3 style={{ margin: '0 0 8px', color: '#333' }}>No Orders Found</h3>
-          <p style={{ color: '#777', fontSize: '0.9rem', marginBottom: '24px' }}>Looks like you haven't placed an order yet.</p>
+          <p style={{ color: '#777', fontSize: '0.9rem', marginBottom: '24px' }}>Looks like you haven&apos;t placed an order yet.</p>
           <Link href="/shop" style={{ display: 'inline-block', background: 'var(--primary-gold)', color: '#FFF', padding: '12px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
             Start Shopping
           </Link>

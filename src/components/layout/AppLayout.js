@@ -68,7 +68,6 @@ export default function AppLayout({ children, settings = {} }) {
         {/* Mobile Bottom Navigation Bar */}
         <MobileBottomNav 
           onCartClick={() => toggleTab('cart')}
-          onWishlistClick={() => toggleTab('wishlist')}
           onMenuClick={() => toggleTab('menu')}
         />
       </div>
