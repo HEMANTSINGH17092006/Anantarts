@@ -88,7 +88,9 @@ export function constructMetadata({
 
   return {
     metadataBase: new URL(BASE_URL),
-    title: metaTitle,
+    title: {
+      absolute: metaTitle,
+    },
     description: metaDesc,
     keywords: mergedKeywords,
     authors,
