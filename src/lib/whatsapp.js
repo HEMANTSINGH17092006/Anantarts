@@ -200,7 +200,7 @@ export async function sendCustomerDeliveryWhatsAppNotification(order, event) {
       (order.tracking_number ? `🔖 *AWB / Tracking:* ${order.tracking_number}\n` : '') +
       (order.estimated_delivery ? `📅 *Expected Delivery:* ${order.estimated_delivery}\n` : '') +
       (event.location ? `📍 *Location:* ${event.location}\n` : '') +
-      `\n🔗 *Track Live:* https://anantarts.in/order-tracking?order=${order.order_number}\n\n` +
+      `\n🔗 *Track Live:* ${(process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').replace(/\/$/, '')}/order-tracking?order=${order.order_number}\n\n` +
       `Thank you for choosing Anant Arts!`;
 
     const supabase = createAdminClient();

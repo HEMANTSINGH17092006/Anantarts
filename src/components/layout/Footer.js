@@ -117,6 +117,10 @@ export default function Footer({
         </p>
       </div>
 
+      <div className="footer-credit">
+        Developed &amp; Managed by Growthly Digital Solutions
+      </div>
+
       {/* Floating WhatsApp button — positioned at bottom: 90px, automatically hidden when any drawer is active */}
       {!isDrawerOpen && (
         <a 

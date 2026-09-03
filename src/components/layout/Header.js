@@ -57,7 +57,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
           <Link href="/" className="logo-group">
             <img src="/uploads/logo.png" alt="Anant Arts Logo" className="header-logo-img" onError={(e) => { e.target.style.display = 'none'; }} />
             <div className="logo-text">
-              <h1 className="header-site-title">{siteName}</h1>
+              <span className="header-site-title">{siteName}</span>
               <span className="header-site-tagline">{tagline}</span>
             </div>
           </Link>

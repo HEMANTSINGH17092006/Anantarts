@@ -486,6 +486,38 @@ async function initDb() {
       created_by_admin TEXT,
       FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS import_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_email TEXT NOT NULL,
+      csv_file_path TEXT NOT NULL,
+      csv_hash TEXT,
+      report_file_path TEXT,
+      inventory_mode TEXT NOT NULL,
+      is_dry_run INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'pending',
+      total_rows INTEGER DEFAULT 0,
+      processed_rows INTEGER DEFAULT 0,
+      success_count INTEGER DEFAULT 0,
+      failed_count INTEGER DEFAULT 0,
+      missing_images_count INTEGER DEFAULT 0,
+      duplicate_count INTEGER DEFAULT 0,
+      batch_size INTEGER DEFAULT 50,
+      duration_ms INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS import_products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      import_session_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      action_type TEXT NOT NULL,
+      snapshot_file_path TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(import_session_id) REFERENCES import_sessions(id) ON DELETE CASCADE,
+      FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+    );
   `);
 
   // Run schema expansions / column additions
@@ -541,6 +573,37 @@ async function initDb() {
   await addColumn('order_tracking_events', 'updated_by_admin', 'TEXT');
   await addColumn('order_tracking_events', 'courier_website', 'TEXT');
   await addColumn('order_tracking_events', 'shipping_date', 'TEXT');
+
+  // Import System Schema Additions
+  await addColumn('import_sessions', 'admin_email', 'TEXT');
+  await addColumn('import_sessions', 'csv_file_path', 'TEXT');
+  await addColumn('import_sessions', 'csv_hash', 'TEXT');
+  await addColumn('import_sessions', 'report_file_path', 'TEXT');
+  await addColumn('import_sessions', 'inventory_mode', "TEXT DEFAULT 'skip'");
+  await addColumn('import_sessions', 'is_dry_run', 'INTEGER DEFAULT 0');
+  await addColumn('import_sessions', 'status', "TEXT DEFAULT 'pending'");
+  await addColumn('import_sessions', 'total_rows', 'INTEGER DEFAULT 0');
+  await addColumn('import_sessions', 'processed_rows', 'INTEGER DEFAULT 0');
+  await addColumn('import_sessions', 'success_count', 'INTEGER DEFAULT 0');
+  await addColumn('import_sessions', 'failed_count', 'INTEGER DEFAULT 0');
+  await addColumn('import_sessions', 'missing_images_count', 'INTEGER DEFAULT 0');
+  await addColumn('import_sessions', 'duplicate_count', 'INTEGER DEFAULT 0');
+  await addColumn('import_sessions', 'batch_size', 'INTEGER DEFAULT 50');
+  await addColumn('import_sessions', 'duration_ms', 'INTEGER DEFAULT 0');
+
+  await addColumn('import_products', 'import_session_id', 'INTEGER');
+  await addColumn('import_products', 'product_id', 'INTEGER');
+  await addColumn('import_products', 'action_type', 'TEXT');
+  await addColumn('import_products', 'snapshot_file_path', 'TEXT');
+
+  if (isPostgres) {
+    try {
+      await pool.query("NOTIFY pgrst, 'reload schema'");
+      console.log("[Migration] Sent 'NOTIFY pgrst, reload schema' to Supabase PostgREST.");
+    } catch (e) {
+      console.error("[Migration] Schema cache reload notification warning:", e.message);
+    }
+  }
   
   if (isPostgres) {
     try {

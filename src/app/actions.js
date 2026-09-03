@@ -1517,7 +1517,7 @@ export async function submitB2bEnquiry(prevState, formData) {
           <p style="font-weight: bold; color: #800020; margin-top: 4px;">Anant Arts Patron Support Team</p>
           <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
           <p style="font-size: 11px; color: #999; text-align: center; margin: 0;">
-            Jaipur Studio | Dombivli (Mumbai) | <a href="https://anantarts.in" style="color: #d4af37; text-decoration: none;">www.anantarts.in</a>
+            Jaipur Studio | Dombivli (Mumbai) | <a href="https://adrts.store" style="color: #d4af37; text-decoration: none;">adrts.store</a>
           </p>
         </div>
       `;

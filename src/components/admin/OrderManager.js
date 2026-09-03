@@ -294,7 +294,8 @@ export default function OrderManager({ initialOrders = [] }) {
       if (o.tracking_number) {
         text += `Tracking Number: ${o.tracking_number}\n`;
       }
-      text += `Track here: https://anantarts.in/order-tracking?order=${o.order_number}`;
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://anantarts.in';
+      text += `Track here: ${origin}/order-tracking?order=${o.order_number}`;
     } else if (o.order_status === 'Delivered') {
       text += `Your order ${o.order_number} has been safely delivered! May the divine idols bring health, peace, and abundance to your home. 🙏`;
     } else {

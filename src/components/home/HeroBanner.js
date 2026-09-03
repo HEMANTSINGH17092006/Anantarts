@@ -101,10 +101,10 @@ export default function HeroBanner() {
         }}>
           <span style={{
             color: '#D4AF37',
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
-            fontSize: '0.8rem',
-            fontWeight: '700',
+            letterSpacing: '0.5px',
+            textTransform: 'none',
+            fontSize: '0.85rem',
+            fontWeight: '600',
             marginBottom: '1.2rem',
             background: 'rgba(212,175,55,0.18)',
             padding: '6px 18px',

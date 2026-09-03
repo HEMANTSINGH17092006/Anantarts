@@ -86,7 +86,9 @@ export default function CustomerReviews({ testimonials = [] }) {
                 💎
               </div>
               <div>
-                <h4 style={{ fontSize: '0.92rem', fontWeight: '600', color: 'var(--text-dark)', margin: 0 }}>{test.name}</h4>
+                <p style={{ fontSize: '0.92rem', fontWeight: '600', color: 'var(--text-dark)', margin: 0 }}>
+                  <cite style={{ fontStyle: 'normal' }}>{test.name}</cite>
+                </p>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{test.role}</span>
               </div>
             </div>

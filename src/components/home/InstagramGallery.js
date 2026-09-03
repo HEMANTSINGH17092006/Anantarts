@@ -61,7 +61,7 @@ export default function InstagramGallery() {
               <i className="fab fa-instagram"></i>
             </div>
             <div style={{ position: 'absolute', bottom: '12px', left: '12px', right: '12px', color: '#FFF', zIndex: 3 }}>
-              <h4 style={{ fontSize: '0.8rem', fontWeight: '600', margin: '0 0 2px 0' }}>{post.title}</h4>
+              <h3 style={{ fontSize: '0.8rem', fontWeight: '600', margin: '0 0 2px 0' }}>{post.title}</h3>
               <span style={{ fontSize: '0.7rem', color: '#D4AF37' }}>{post.tag}</span>
             </div>
           </a>

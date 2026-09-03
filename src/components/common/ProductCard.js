@@ -115,10 +115,10 @@ export default function ProductCard({ product, isListView = false, onCompareClic
 
             {/* Quick Actions Hover Overlay */}
             <div className="product-card-overlay-actions">
-              <button onClick={handleQuickView} className="btn-quickview" title="Quick View">
+              <button onClick={handleQuickView} className="btn-quickview" title="Quick View" aria-label={`Quick view ${product.name}`}>
                 <i className="fas fa-eye" style={{ marginRight: '4px' }}></i> View
               </button>
-              <button onClick={handleCompare} className="btn-quickview btn-compare-overlay" title="Compare">
+              <button onClick={handleCompare} className="btn-quickview btn-compare-overlay" title="Compare" aria-label={`Compare ${product.name}`}>
                 <i className="fas fa-columns" style={{ marginRight: '4px' }}></i> Compare
               </button>
             </div>
@@ -166,13 +166,14 @@ export default function ProductCard({ product, isListView = false, onCompareClic
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons: Visual Hierarchy - Solid Primary & Outlined Secondary */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button 
               onClick={handleAddToCart}
               className="btn-gold" 
-              style={{ width: '100%', padding: '10px', fontSize: '0.8rem', justifyContent: 'center', borderRadius: '6px' }}
+              style={{ width: '100%', padding: '11px', fontSize: '0.82rem', justifyContent: 'center', borderRadius: '6px', fontWeight: '600' }}
               disabled={product.stock_quantity <= 0}
+              aria-label={`Add ${product.name} to Cart`}
             >
               <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i>
               {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added to Cart!' : 'Add to Cart'}
@@ -180,9 +181,10 @@ export default function ProductCard({ product, isListView = false, onCompareClic
 
             <button 
               onClick={handleBuyNow}
-              className="btn-saffron" 
-              style={{ width: '100%', padding: '9px', fontSize: '0.78rem', justifyContent: 'center', borderRadius: '6px' }}
+              className="btn-outline-gold" 
+              style={{ width: '100%', padding: '9px', fontSize: '0.8rem', justifyContent: 'center', borderRadius: '6px', fontWeight: '600' }}
               disabled={product.stock_quantity <= 0}
+              aria-label={`Buy ${product.name} Now with Instant Checkout`}
             >
               <i className="fas fa-bolt" style={{ marginRight: '6px' }}></i> Buy Now
             </button>

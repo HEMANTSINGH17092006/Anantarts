@@ -125,14 +125,14 @@ export default function SpiritualStorySection() {
             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem' }}>🪷</span>
               <div>
-                <h4 style={{ fontSize: '0.92rem', fontWeight: '700', margin: '0 0 2px 0' }}>100% Authentic</h4>
+                <h3 style={{ fontSize: '0.92rem', fontWeight: '700', margin: '0 0 2px 0' }}>100% Authentic</h3>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Genuine brass, teakwood &amp; gold plating.</p>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.4rem' }}>🛡️</span>
               <div>
-                <h4 style={{ fontSize: '0.92rem', fontWeight: '700', margin: '0 0 2px 0' }}>Damage-Free Transit</h4>
+                <h3 style={{ fontSize: '0.92rem', fontWeight: '700', margin: '0 0 2px 0' }}>Damage-Free Transit</h3>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Multi-layer wooden crate packaging.</p>
               </div>
             </div>

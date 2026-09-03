@@ -13,6 +13,7 @@ export async function sendEmail({ to, subject, html, text }) {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const from = process.env.SMTP_FROM || user || 'noreply@anantarts.in';
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').replace(/\/$/, '');
 
   if (!host || !user || !pass) {
     console.warn(
@@ -69,7 +70,7 @@ export async function sendEmail({ to, subject, html, text }) {
           <div style="background-color: #FAFAFA; padding: 30px; text-align: center; border-top: 1px solid #EAEAEA;">
             <p style="margin: 0; color: #666666; font-size: 12px;">
               Thank you for trusting Anant Arts.<br>
-              <a href="https://anantarts.in" style="color: #D4AF37; text-decoration: none; font-weight: 600;">Visit our Store</a>
+              <a href="${siteUrl}" style="color: #D4AF37; text-decoration: none; font-weight: 600;">Visit our Store</a>
             </p>
             <p style="margin: 16px 0 0 0; color: #999999; font-size: 10px;">
               &copy; ${new Date().getFullYear()} Anant Arts. All rights reserved.<br>

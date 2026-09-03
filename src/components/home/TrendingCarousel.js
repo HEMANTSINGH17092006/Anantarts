@@ -19,7 +19,7 @@ export default function TrendingCarousel({ products = [] }) {
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
           <div>
-            <span style={{ color: 'var(--primary-gold)', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: '700' }}>Viral &amp; Adored</span>
+            <span style={{ color: 'var(--primary-gold-hover)', letterSpacing: '0.5px', textTransform: 'none', fontSize: '0.85rem', fontWeight: '600' }}>Viral &amp; Adored</span>
             <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', color: 'var(--text-dark)', margin: '4px 0 0 0' }}>Trending Now</h2>
           </div>
 

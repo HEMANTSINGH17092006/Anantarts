@@ -1,6 +1,8 @@
 import { sendEmail } from '@/lib/email';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').replace(/\/$/, '');
+
 function getAdminEmail() {
   return process.env.ADMIN_EMAIL || process.env.CONTACT_EMAIL || process.env.SMTP_USER || 'anantarts39@gmail.com';
 }
@@ -123,7 +125,7 @@ export async function sendAdminNewOrderEmail(order, items = []) {
 
       <!-- View Order Action Button -->
       <div style="text-align: center; margin: 32px 0 16px 0;">
-        <a href="https://anantarts.in/admin/orders" 
+        <a href="${SITE_URL}/admin/orders" 
            style="display: inline-block; background-color: #8C2425; color: #FFFFFF; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(140, 36, 37, 0.3);">
           View Order in Admin Panel ➔
         </a>
@@ -168,7 +170,7 @@ export async function sendAdminLowStockEmail({ productName, sku, stockQuantity }
       </div>
 
       <div style="text-align: center; margin-top: 24px;">
-        <a href="https://anantarts.in/admin/products" 
+        <a href="${SITE_URL}/admin/products" 
            style="display: inline-block; background-color: #D4AF37; color: #111111; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">
           Update Inventory in Admin Panel ➔
         </a>
@@ -213,7 +215,7 @@ export async function sendAdminFailedPaymentEmail({ orderNumber, customerName, a
       </div>
 
       <div style="text-align: center;">
-        <a href="https://anantarts.in/admin/orders" 
+        <a href="${SITE_URL}/admin/orders" 
            style="display: inline-block; background-color: #8C2425; color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">
           View Orders Log ➔
         </a>
@@ -257,7 +259,7 @@ export async function sendAdminRefundEmail({ orderNumber, customerName, amount, 
       </div>
 
       <div style="text-align: center;">
-        <a href="https://anantarts.in/admin/orders" 
+        <a href="${SITE_URL}/admin/orders" 
            style="display: inline-block; background-color: #8C2425; color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">
           View Refunded Orders ➔
         </a>
@@ -313,7 +315,7 @@ export async function sendOrderCancellationEmails({ order, reason, cancelledBy =
         </div>
 
         <div style="text-align: center; margin-top: 20px;">
-          <a href="https://anantarts.in/order-tracking?order=${orderNumber}" 
+          <a href="${SITE_URL}/order-tracking?order=${orderNumber}" 
              style="display: inline-block; background-color: #D4AF37; color: #FFFFFF; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">
             View Order Status ➔
           </a>
@@ -346,7 +348,7 @@ export async function sendOrderCancellationEmails({ order, reason, cancelledBy =
       </div>
 
       <div style="text-align: center;">
-        <a href="https://anantarts.in/admin/delivery" 
+        <a href="${SITE_URL}/admin/delivery" 
            style="display: inline-block; background-color: #8C2425; color: #FFFFFF; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">
           Manage Orders &amp; Delivery Console ➔
         </a>
@@ -442,7 +444,7 @@ export async function sendDeliveryStatusEmail({ order, status, trackingNumber, c
       </div>
 
       <div style="text-align: center; margin-top: 24px;">
-        <a href="https://anantarts.in/order-tracking?order=${orderNumber}" 
+        <a href="${SITE_URL}/order-tracking?order=${orderNumber}" 
            style="display: inline-block; background-color: #D4AF37; color: #FFFFFF; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
           Track Live Shipment Status ➔
         </a>
@@ -453,7 +455,7 @@ export async function sendDeliveryStatusEmail({ order, status, trackingNumber, c
       to: order.customer_email,
       subject,
       html,
-      text: `Order #${orderNumber} status update: ${status}. Tracking No: ${trackingNumber || order.tracking_number || 'N/A'}. Track live at: https://anantarts.in/order-tracking?order=${orderNumber}`
+      text: `Order #${orderNumber} status update: ${status}. Tracking No: ${trackingNumber || order.tracking_number || 'N/A'}. Track live at: ${SITE_URL}/order-tracking?order=${orderNumber}`
     });
 
     logNotificationResult('delivery_status_email', order.customer_email, result.success, result.error, { orderNumber, status });
