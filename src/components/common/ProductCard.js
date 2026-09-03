@@ -113,19 +113,19 @@ export default function ProductCard({ product, isListView = false, onCompareClic
               priority={isBestSeller || isNewArrival}
             />
 
-            {/* Quick Actions Hover Overlay */}
+            {/* Quick Actions Hover Overlay (Issue #10: 44px touch targets) */}
             <div className="product-card-overlay-actions">
               <button onClick={handleQuickView} className="btn-quickview" title="Quick View" aria-label={`Quick view ${product.name}`}>
-                <i className="fas fa-eye" style={{ marginRight: '4px' }}></i> View
+                <i className="fas fa-eye"></i> View
               </button>
               <button onClick={handleCompare} className="btn-quickview btn-compare-overlay" title="Compare" aria-label={`Compare ${product.name}`}>
-                <i className="fas fa-columns" style={{ marginRight: '4px' }}></i> Compare
+                <i className="fas fa-columns"></i> Compare
               </button>
             </div>
           </div>
         </Link>
 
-        {/* Product Information Body */}
+        {/* Product Information Body (Issue #7: Streamlined, low-noise layout) */}
         <div className="product-card-info" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, padding: '16px' }}>
           <div>
             {/* Category & Rating */}
@@ -133,8 +133,8 @@ export default function ProductCard({ product, isListView = false, onCompareClic
               <span className="category-label">
                 {product.category_name || 'Handcrafted'}
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', color: '#D4AF37', fontWeight: '700' }}>
-                <i className="fas fa-star"></i>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.8rem', color: '#D4AF37', fontWeight: '700' }}>
+                <i className="fas fa-star" style={{ fontSize: '0.75rem' }}></i>
                 <span>4.9</span>
               </div>
             </div>
@@ -144,21 +144,20 @@ export default function ProductCard({ product, isListView = false, onCompareClic
               <h3 className="product-card-title">{product.name}</h3>
             </Link>
 
-            {/* Material & Stock Status */}
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'flex', gap: '6px', alignItems: 'center' }}>
-              {product.material && <span>{product.material.split('&')[0].trim()}</span>}
-              <span style={{ color: product.stock_quantity > 0 ? 'var(--success)' : 'var(--danger)', fontWeight: '600' }}>
-                • {product.stock_quantity > 0 ? (product.stock_quantity <= 5 ? `Only ${product.stock_quantity} left` : 'In Stock') : 'Out of Stock'}
-              </span>
-            </div>
+            {/* Material */}
+            {product.material && (
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                {product.material.split('&')[0].trim()}
+              </div>
+            )}
 
             {/* Price Row */}
             <div className="product-price" style={{ marginBottom: '14px' }}>
-              <span className="current" style={{ fontWeight: '700', fontSize: '1.1rem' }}>{formatPrice(activePrice)}</span>
+              <span className="current" style={{ fontWeight: '700', fontSize: '1.15rem' }}>{formatPrice(activePrice)}</span>
               {product.discount_price > 0 && (
                 <>
                   <span className="original">{formatPrice(product.price)}</span>
-                  <span className="discount" style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: '600', marginLeft: '6px' }}>
+                  <span className="discount" style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: '600', marginLeft: '6px' }}>
                     ({discountPercent}% OFF)
                   </span>
                 </>
@@ -166,27 +165,17 @@ export default function ProductCard({ product, isListView = false, onCompareClic
             </div>
           </div>
 
-          {/* Action Buttons: Visual Hierarchy - Solid Primary & Outlined Secondary */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Action Button: Dominant Primary CTA */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <button 
               onClick={handleAddToCart}
               className="btn-gold" 
-              style={{ width: '100%', padding: '11px', fontSize: '0.82rem', justifyContent: 'center', borderRadius: '6px', fontWeight: '600' }}
+              style={{ width: '100%', padding: '12px', fontSize: '0.85rem', justifyContent: 'center', borderRadius: '6px', fontWeight: '600' }}
               disabled={product.stock_quantity <= 0}
               aria-label={`Add ${product.name} to Cart`}
             >
               <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i>
               {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added to Cart!' : 'Add to Cart'}
-            </button>
-
-            <button 
-              onClick={handleBuyNow}
-              className="btn-outline-gold" 
-              style={{ width: '100%', padding: '9px', fontSize: '0.8rem', justifyContent: 'center', borderRadius: '6px', fontWeight: '600' }}
-              disabled={product.stock_quantity <= 0}
-              aria-label={`Buy ${product.name} Now with Instant Checkout`}
-            >
-              <i className="fas fa-bolt" style={{ marginRight: '6px' }}></i> Buy Now
             </button>
           </div>
         </div>

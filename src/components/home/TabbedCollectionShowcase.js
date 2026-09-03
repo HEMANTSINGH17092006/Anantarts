@@ -49,9 +49,11 @@ export default function TabbedCollectionShowcase({ products = [] }) {
         <span style={{
           color: 'var(--saffron-dark)',
           fontWeight: '700',
-          textTransform: 'uppercase',
-          letterSpacing: '2px',
-          fontSize: '0.8rem'
+          textTransform: 'none',
+          letterSpacing: '0.5px',
+          fontSize: '0.85rem',
+          display: 'inline-block',
+          marginBottom: '6px'
         }}>
           Handpicked Masterpieces
         </span>
