@@ -16,21 +16,24 @@ const FOUNDATIONAL_GUIDES = [
     category: 'Artisanal Metallurgy',
     readTime: '6 min read',
     excerpt: 'Explore how traditional Jaipur lost-wax brass sculpting fuses with modern multi-stage electro-deposition. Discover why molecular 24K gold bonding outlasts conventional gold foil leafing without tarnishing or peeling.',
-    link: '/materials'
+    link: '/materials',
+    ctaText: 'Explore Materials \u2192'
   },
   {
     title: 'Vastu Shastra Deity Orientation: Harmonizing Your Home Mandir',
     category: 'Vastu & Spirituality',
     readTime: '8 min read',
     excerpt: 'Detailed shastra guidelines on sanctifying Lord Ganesha in the northeast corner (Ishanya), positioning Goddess Lakshmi for prosperity, and setting up Radha Krishna idols for domestic harmony.',
-    link: '/consultation'
+    link: '/consultation',
+    ctaText: 'Book a Consultation \u2192'
   },
   {
     title: 'Sacred Gifting Etiquette: Selecting Auspicious Idols for Milestones',
     category: 'Gifting Traditions',
     readTime: '5 min read',
     excerpt: 'A comprehensive curation guide for Griha Pravesh housewarmings, wedding keepsakes, and executive corporate honors. Learn the spiritual blessings behind each sacred posture and material medium.',
-    link: '/occasions'
+    link: '/occasions',
+    ctaText: 'Explore Occasions \u2192'
   }
 ];
 
@@ -166,7 +169,7 @@ export default async function BlogListingPage() {
                 </div>
                 <div>
                   <Link href={guide.link} className="btn-secondary btn-sm" style={{ display: 'inline-block' }}>
-                    Learn More &rarr;
+                    {guide.ctaText}
                   </Link>
                 </div>
               </div>
