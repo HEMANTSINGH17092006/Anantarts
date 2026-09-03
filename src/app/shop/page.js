@@ -5,11 +5,25 @@ import { constructMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = constructMetadata({
-  title: 'Shop Premium 24K Gold & Silver Electroplated Hindu God Idols | Anant Arts',
-  description: 'Browse our complete catalog of handcrafted Lord Ganesha, Radha Krishna, Shiva, Hanuman, and Lakshmi murtis with 24K gold and pure silver electroplating.',
-  canonical: '/shop',
-});
+export async function generateMetadata({ searchParams }) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const hasFilters = Boolean(
+    resolvedParams?.category ||
+    resolvedParams?.material ||
+    resolvedParams?.occasion ||
+    resolvedParams?.search ||
+    resolvedParams?.minPrice ||
+    resolvedParams?.maxPrice ||
+    resolvedParams?.sort
+  );
+
+  return constructMetadata({
+    title: 'Shop Premium 24K Gold & Silver Electroplated Hindu God Idols | Anant Arts',
+    description: 'Browse our complete catalog of handcrafted Lord Ganesha, Radha Krishna, Shiva, Hanuman, and Lakshmi murtis with 24K gold and pure silver electroplating.',
+    canonical: '/shop',
+    noIndex: hasFilters,
+  });
+}
 
 export default async function ShopPage() {
   const categories = await getCategories();

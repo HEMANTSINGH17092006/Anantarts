@@ -123,7 +123,7 @@ export default function ContactClient({ defaultPhone, defaultEmail, defaultAddre
             <span style={{ fontSize: '2rem' }}>💬</span>
             <div>
               <strong style={{ display: 'block', fontSize: '0.9rem' }}>WhatsApp Direct</strong>
-              <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', color: '#25D366', fontWeight: '600' }}>Chat Online</a>
+              <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="nofollow noopener noreferrer" style={{ fontSize: '0.85rem', color: '#25D366', fontWeight: '600' }}>Chat Online</a>
             </div>
           </div>
         </div>
@@ -146,6 +146,18 @@ export default function ContactClient({ defaultPhone, defaultEmail, defaultAddre
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{address}</span>
             </div>
           </div>
+        </div>
+
+        <div style={{ background: 'var(--bg-cream)', padding: '20px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
+          <h3 style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--primary-gold-hover)', marginBottom: '6px' }}>
+            ⏰ Operational &amp; Support Hours
+          </h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 6px 0', lineHeight: '1.5' }}>
+            Monday to Saturday: 10:00 AM – 7:00 PM IST.
+          </p>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.5' }}>
+            Online inquiries submitted after hours or on Sundays are responded to within 24 hours.
+          </p>
         </div>
       </div>
 
