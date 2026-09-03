@@ -126,10 +126,10 @@ export function constructMetadata({
     },
     robots: {
       index: !noIndex,
-      follow: !noIndex,
+      follow: true,
       googleBot: {
         index: !noIndex,
-        follow: !noIndex,
+        follow: true,
         'max-video-preview': -1,
         'max-image-preview': 'large',
         'max-snippet': -1,
