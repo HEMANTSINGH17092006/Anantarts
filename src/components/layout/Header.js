@@ -5,6 +5,12 @@ import { usePathname } from 'next/navigation';
 import { useCart, useWishlist } from '../context/AppContext';
 import MegaMenu from './MegaMenu';
 
+const ANNOUNCEMENTS = [
+  '✨ Luxury 24K Gold Electroplated Idols & Spiritual Masterpieces',
+  '📦 Free Insured All-India Express Delivery & Secure Packaging',
+  '🪵 Authentic Hand-Carved Teakwood & Brass Heritage Decor'
+];
+
 export default function Header({ settings = {}, onCartClick, onSearchClick, onWishlistClick, onMenuClick, activeDrawer }) {
   const pathname = usePathname();
   const { cartCount } = useCart();
@@ -12,6 +18,14 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [announcementIdx, setAnnouncementIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAnnouncementIdx((prev) => (prev + 1) % ANNOUNCEMENTS.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,13 +53,12 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
 
   return (
     <>
-      {/* Top Announcement Bar */}
+      {/* Top Announcement Bar (Issue #9: Rotating low-noise message) */}
       <div className="announcement-bar">
         <div className="announcement-container">
-          <div className="announcement-item">✨ LUXURY HANDCRAFTED IDOLS &amp; DIVINE DÉCOR</div>
-          <div className="announcement-item">⚜️ 24K GOLD ELECTROPLATED MASTERPIECES</div>
-          <div className="announcement-item">📦 FREE INSURED SHIPPING ACROSS INDIA</div>
-          <div className="announcement-item">🪵 HAND-CARVED TEAKWOOD HANDICRAFTS</div>
+          <div className="announcement-item" style={{ transition: 'opacity 0.4s ease' }}>
+            {ANNOUNCEMENTS[announcementIdx]}
+          </div>
         </div>
       </div>
 
@@ -64,7 +77,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
 
           {/* CENTERED DESKTOP NAVIGATION */}
           <nav className="main-nav">
-            <ul style={{ display: 'flex', gap: '36px', alignItems: 'center', listStyle: 'none', margin: 0, padding: 0 }}>
+            <ul style={{ display: 'flex', gap: '32px', alignItems: 'center', listStyle: 'none', margin: 0, padding: 0 }}>
               
               {/* 1. Home */}
               <li>
@@ -86,7 +99,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
                 </Link>
               </li>
 
-              {/* 3. Categories (Mega Menu Trigger) */}
+              {/* 3. Categories (Mega Menu Trigger - Issue #23: Aligned baseline) */}
               <li 
                 onMouseEnter={() => setMegaMenuOpen(true)}
                 onMouseLeave={() => setMegaMenuOpen(false)}
@@ -95,7 +108,16 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
                 <button 
                   onClick={() => setMegaMenuOpen(!megaMenuOpen)}
                   className={`nav-link-item ${megaMenuOpen || pathname.startsWith('/collections') ? 'active' : ''}`}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: 0 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit',
+                    lineHeight: 'inherit',
+                    margin: 0,
+                    verticalAlign: 'middle'
+                  }}
                 >
                   <span>Collections</span>
                   <i className={`fas fa-chevron-${megaMenuOpen ? 'up' : 'down'}`} style={{ fontSize: '0.7rem', color: '#D4AF37' }}></i>

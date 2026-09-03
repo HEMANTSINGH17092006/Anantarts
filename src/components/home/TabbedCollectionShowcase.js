@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import ProductCard from '../common/ProductCard';
+import SectionHeader from '../common/SectionHeader';
 
 export default function TabbedCollectionShowcase({ products = [] }) {
   const [activeTab, setActiveTab] = useState('all');
@@ -42,31 +43,14 @@ export default function TabbedCollectionShowcase({ products = [] }) {
   const displayProducts = filteredProducts.slice(0, 8);
 
   return (
-    <section style={{ maxWidth: '1380px', margin: '0 auto', padding: '4rem 2rem' }}>
+    <section style={{ maxWidth: '1280px', margin: '0 auto', padding: 'var(--section-padding-y) 2rem 0 2rem' }}>
       
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-        <span style={{
-          color: 'var(--saffron-dark)',
-          fontWeight: '700',
-          textTransform: 'none',
-          letterSpacing: '0.5px',
-          fontSize: '0.85rem',
-          display: 'inline-block',
-          marginBottom: '6px'
-        }}>
-          Handpicked Masterpieces
-        </span>
-        <h2 style={{
-          fontFamily: 'var(--font-heading)',
-          fontSize: '2.4rem',
-          color: 'var(--text-dark)',
-          margin: '6px 0 12px 0'
-        }}>
-          Explore Divine Collections
-        </h2>
-        <div className="gold-line" style={{ margin: '0 auto' }}></div>
-      </div>
+      {/* Reusable Section Header (Issue #2) */}
+      <SectionHeader
+        eyebrow="Handpicked Masterpieces"
+        title="Explore Divine Collections"
+        subtitle="Switch between sacred idols, bestselling murtis, and traditional Rajasthan wooden handicrafts."
+      />
 
       {/* Tab Selector Buttons */}
       <div style={{

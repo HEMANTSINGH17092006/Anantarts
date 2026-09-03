@@ -1,3 +1,6 @@
+'use client';
+import SectionHeader from '../common/SectionHeader';
+
 export default function WhyChooseUs() {
   const TRUST_ITEMS = [
     { title: 'Handmade Artistry', iconClass: 'fas fa-hammer', desc: 'Crafted by master traditional artisans preserving ancient heritage structures.' },
@@ -12,11 +15,12 @@ export default function WhyChooseUs() {
 
   return (
     <section style={{ maxWidth: '1280px', margin: '0 auto', padding: 'var(--section-padding-y) 2rem 0 2rem' }}>
-      <div className="section-heading" style={{ marginTop: 0, marginBottom: '2.5rem' }}>
-        <h2>Why Choose Anant Arts</h2>
-        <div className="gold-line"></div>
-        <p>Uncompromising craftsmanship, insured delivery, and bespoke luxury tailored to your space.</p>
-      </div>
+      {/* Reusable Section Header (Issue #2) */}
+      <SectionHeader
+        eyebrow="Pillars of Excellence"
+        title="Why Choose Anant Arts"
+        subtitle="Uncompromising craftsmanship, insured express delivery, and bespoke luxury tailored to your sacred space."
+      />
 
       <div style={{
         display: 'grid',
@@ -28,34 +32,38 @@ export default function WhyChooseUs() {
             key={idx}
             style={{
               background: '#FFFFFF',
-              borderRadius: '10px',
-              padding: '24px 20px',
+              borderRadius: 'var(--radius-md, 10px)',
+              padding: '26px 22px',
               border: '1px solid var(--primary-gold-border)',
               boxShadow: 'var(--shadow-sm)',
               display: 'flex',
               alignItems: 'flex-start',
-              gap: '14px'
+              gap: '16px',
+              transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)'
             }}
           >
+            {/* Enhanced Luxury Icon Container (Issue #16) */}
             <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '8px',
-              background: 'var(--primary-gold-light)',
+              width: '52px',
+              height: '52px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.06) 100%)',
+              border: '1.5px solid var(--primary-gold-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--primary-gold-hover)',
-              fontSize: '1.2rem',
-              flexShrink: 0
+              color: 'var(--color-text-accent, #8C6D1F)',
+              fontSize: '1.35rem',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(197, 160, 89, 0.12)'
             }}>
               <i className={item.iconClass}></i>
             </div>
             <div>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.05rem', color: 'var(--text-dark)', margin: '0 0 4px 0', fontWeight: '600' }}>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.05rem', color: 'var(--color-text-primary, #1A1918)', margin: '0 0 4px 0', fontWeight: '600' }}>
                 {item.title}
               </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.45' }}>
+              <p style={{ fontSize: 'var(--text-sm, 0.875rem)', color: 'var(--color-text-muted, #6B655B)', margin: 0, lineHeight: '1.5' }}>
                 {item.desc}
               </p>
             </div>

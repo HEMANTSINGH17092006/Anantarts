@@ -1,4 +1,5 @@
 'use client';
+import SectionHeader from '../common/SectionHeader';
 
 const INSTA_POSTS = [
   { title: 'Rajasthani Teak Carving', tag: '@anantarts', image: '/uploads/artisan-mold.png' },
@@ -12,11 +13,12 @@ const INSTA_POSTS = [
 export default function InstagramGallery() {
   return (
     <section style={{ maxWidth: '1280px', margin: '0 auto', padding: 'var(--section-padding-y) 2rem 0 2rem' }}>
-      <div className="section-heading" style={{ marginTop: 0, marginBottom: '2.5rem' }}>
-        <h2>Artisan Studio Gallery</h2>
-        <div className="gold-line"></div>
-        <p>Follow <strong>@anantarts</strong> on Instagram for behind-the-scenes wax molding, gold electroplating, and customer setups.</p>
-      </div>
+      {/* Reusable Section Header (Issue #2) */}
+      <SectionHeader
+        eyebrow="Artisan Stories"
+        title="Artisan Studio Gallery"
+        subtitle="Follow @anantarts on Instagram for behind-the-scenes wax molding, gold electroplating, and patron sanctuary setups."
+      />
 
       <div style={{
         display: 'grid',

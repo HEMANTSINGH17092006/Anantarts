@@ -81,19 +81,19 @@ export default function HeroBanner() {
         zIndex: 2
       }} />
 
-      {/* Left-Aligned Product-Focused Content */}
+      {/* Left-Aligned Product-Focused Content (Issue #24: Aligned with header container) */}
       <div style={{
         position: 'relative',
         zIndex: 3,
-        maxWidth: '1380px',
+        maxWidth: '1280px',
         margin: '0 auto',
         height: '100%',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 3rem'
+        padding: '0 2rem'
       }}>
         <div style={{
-          maxWidth: '660px',
+          maxWidth: '640px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'flex-start',
@@ -103,12 +103,12 @@ export default function HeroBanner() {
             color: '#D4AF37',
             letterSpacing: '0.5px',
             textTransform: 'none',
-            fontSize: '0.85rem',
+            fontSize: 'var(--text-sm, 0.875rem)',
             fontWeight: '600',
             marginBottom: '1.2rem',
             background: 'rgba(212,175,55,0.18)',
             padding: '6px 18px',
-            borderRadius: '20px',
+            borderRadius: 'var(--radius-full)',
             border: '1px solid rgba(212,175,55,0.4)',
             boxShadow: '0 0 12px rgba(212,175,55,0.2)'
           }}>
@@ -117,7 +117,7 @@ export default function HeroBanner() {
 
           <h1 style={{
             fontFamily: 'var(--font-heading)',
-            fontSize: '2.8rem',
+            fontSize: 'clamp(2.2rem, 5vw, 3rem)',
             color: '#FFFFFF',
             lineHeight: '1.18',
             marginBottom: '1.25rem',
@@ -128,23 +128,23 @@ export default function HeroBanner() {
           </h1>
 
           <p style={{
-            fontSize: '1.05rem',
+            fontSize: 'var(--text-md, 1.125rem)',
             color: 'rgba(255,255,255,0.92)',
             lineHeight: '1.65',
-            marginBottom: '2.5rem',
-            maxWidth: '620px',
+            marginBottom: '2.25rem',
+            maxWidth: '600px',
             textShadow: '0 2px 10px rgba(0,0,0,0.7)'
           }}>
             {slide.subtitle}
           </p>
 
-          {/* Prominent CTAs */}
-          <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap' }}>
-            <Link href={slide.shopLink} className="btn-gold" style={{ padding: '14px 32px', fontSize: '0.92rem', borderRadius: '6px', boxShadow: '0 6px 20px rgba(212, 175, 55, 0.35)' }}>
-              <i className="fas fa-shopping-bag" style={{ marginRight: '8px' }}></i> Shop Collection
+          {/* Prominent CTAs (Issues #1, #7: Unified button variants) */}
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <Link href={slide.shopLink} className="btn-primary btn-lg">
+              <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Shop Collection
             </Link>
-            <Link href={slide.exploreLink} className="btn-outline-gold" style={{ color: '#FFFFFF', borderColor: '#D4AF37', background: 'rgba(18,14,12,0.6)', padding: '14px 28px', fontSize: '0.92rem', borderRadius: '6px', backdropFilter: 'blur(6px)' }}>
-              <i className="fas fa-th-large" style={{ marginRight: '8px' }}></i> Explore All
+            <Link href={slide.exploreLink} className="btn-secondary btn-lg" style={{ color: '#FFFFFF', borderColor: '#D4AF37', background: 'rgba(18,14,12,0.6)', backdropFilter: 'blur(6px)' }}>
+              <i className="fas fa-th-large" style={{ marginRight: '6px' }}></i> Explore All
             </Link>
           </div>
         </div>

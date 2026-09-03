@@ -144,15 +144,8 @@ export default function ProductCard({ product, isListView = false, onCompareClic
               <h3 className="product-card-title">{product.name}</h3>
             </Link>
 
-            {/* Material */}
-            {product.material && (
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                {product.material.split('&')[0].trim()}
-              </div>
-            )}
-
             {/* Price Row */}
-            <div className="product-price" style={{ marginBottom: '14px' }}>
+            <div className="product-price" style={{ marginBottom: '14px', marginTop: '8px' }}>
               <span className="current" style={{ fontWeight: '700', fontSize: '1.15rem' }}>{formatPrice(activePrice)}</span>
               {product.discount_price > 0 && (
                 <>

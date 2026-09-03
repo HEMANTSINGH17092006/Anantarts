@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import SectionHeader from '../common/SectionHeader';
 
 const FAQS = [
   {
@@ -35,28 +36,14 @@ export default function FaqAccordion() {
     <section style={{
       maxWidth: '1000px',
       margin: '0 auto',
-      padding: '4rem 2rem'
+      padding: 'var(--section-padding-y) 2rem'
     }}>
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <span style={{
-          color: 'var(--saffron-dark)',
-          fontWeight: '700',
-          textTransform: 'uppercase',
-          letterSpacing: '2px',
-          fontSize: '0.8rem'
-        }}>
-          Customer Assurance &amp; Queries
-        </span>
-        <h2 style={{
-          fontFamily: 'var(--font-heading)',
-          fontSize: '2.2rem',
-          color: 'var(--text-dark)',
-          margin: '6px 0 10px 0'
-        }}>
-          Frequently Asked Questions
-        </h2>
-        <div className="gold-line" style={{ margin: '0 auto' }}></div>
-      </div>
+      {/* Reusable Section Header (Issue #2, #18) */}
+      <SectionHeader
+        eyebrow="Customer Assurance &amp; Queries"
+        title="Frequently Asked Questions"
+        subtitle="Common questions regarding our electroplating process, care, shipping safety, and authenticity."
+      />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {FAQS.map((faq, idx) => {

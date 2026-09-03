@@ -104,39 +104,41 @@ a:hover { color: var(--primary-gold); }
 img { max-width: 100%; height: auto; display: block; }
 button { cursor: pointer; font-family: var(--font-body); }
 
-/* ==================== ANNOUNCEMENT BAR ==================== */
+/* ==================== ANNOUNCEMENT BAR (Issue #9: Low noise, rotating) ==================== */
 .announcement-bar {
   background: var(--luxury-gradient);
   color: var(--text-light);
-  padding: 8px 0;
-  font-size: 0.78rem;
+  padding: 8px 1rem;
+  font-size: var(--text-xs, 0.75rem);
   letter-spacing: 0.5px;
   overflow: hidden;
   border-bottom: 1px solid var(--primary-gold-border);
+  text-align: center;
+  position: relative;
 }
 .announcement-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 3rem;
-  max-width: 1400px;
+  max-width: 1280px;
   margin: 0 auto;
-  animation: scrollAnnouncement 20s linear infinite;
 }
-.announcement-item { white-space: nowrap; opacity: 0.9; }
-@keyframes scrollAnnouncement {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+.announcement-item {
+  white-space: nowrap;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 @media (max-width: 480px) {
   .announcement-bar {
-    padding: 4px 0 !important;
-    font-size: 0.68rem !important;
+    padding: 6px 0.5rem;
+    font-size: 0.72rem;
   }
 }
 
-/* ==================== HEADER ==================== */
+/* ==================== HEADER (Issue #13, #23, #24) ==================== */
 .site-header {
   background: var(--bg-white);
   border-bottom: 1px solid var(--primary-gold-border);
@@ -146,7 +148,7 @@ button { cursor: pointer; font-family: var(--font-body); }
   box-shadow: var(--shadow-sm);
 }
 .header-container {
-  max-width: 1400px;
+  max-width: 1280px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -190,26 +192,47 @@ button { cursor: pointer; font-family: var(--font-body); }
   gap: 2rem;
   align-items: center;
 }
+.nav-link-item,
 .main-nav a {
-  font-size: 0.85rem;
+  font-size: var(--text-sm, 0.875rem);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dark);
+  text-transform: none;
+  letter-spacing: 0.5px;
+  color: var(--color-text-primary, #1A1918);
   position: relative;
-  padding: 4px 0;
+  padding: 6px 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.2;
+  font-family: var(--font-body);
+  transition: color var(--transition-fast);
 }
+.nav-link-item::after,
 .main-nav a::after {
   content: '';
   position: absolute;
-  bottom: -2px;
+  bottom: 0;
   left: 0;
   width: 0;
   height: 2px;
   background: var(--primary-gold);
   transition: width var(--transition-normal);
 }
-.main-nav a:hover::after { width: 100%; }
+.nav-link-item:hover,
+.nav-link-item.active,
+.main-nav a:hover,
+.main-nav a.active {
+  color: var(--color-text-accent, #8C6D1F);
+  font-weight: 600;
+}
+.nav-link-item:hover::after,
+.nav-link-item.active::after,
+.main-nav a:hover::after,
+.main-nav a.active::after {
+  width: 100%;
+}
 .header-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 .header-icon {
   color: var(--text-dark);

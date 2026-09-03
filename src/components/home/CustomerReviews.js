@@ -1,4 +1,5 @@
 'use client';
+import SectionHeader from '../common/SectionHeader';
 
 export default function CustomerReviews({ testimonials = [] }) {
   const DEFAULT_TESTIMONIALS = [
@@ -32,11 +33,12 @@ export default function CustomerReviews({ testimonials = [] }) {
 
   return (
     <section style={{ maxWidth: '1280px', margin: '0 auto', padding: 'var(--section-padding-y) 2rem 0 2rem' }}>
-      <div className="section-heading" style={{ marginTop: 0, marginBottom: '2.5rem' }}>
-        <h2>Customer Reviews &amp; Experiences</h2>
-        <div className="gold-line"></div>
-        <p>Read genuine patron experiences from homeowners, interior designers, and corporate partners.</p>
-      </div>
+      {/* Reusable Section Header (Issue #2) */}
+      <SectionHeader
+        eyebrow="Patron Experiences"
+        title="Customer Reviews &amp; Testimonials"
+        subtitle="Read genuine patron experiences from devotional homeowners, interior designers, and corporate partners across India."
+      />
 
       <div style={{
         display: 'grid',
@@ -48,8 +50,8 @@ export default function CustomerReviews({ testimonials = [] }) {
             key={test.id}
             style={{
               background: '#FFFFFF',
-              borderRadius: '12px',
-              padding: '28px',
+              borderRadius: 'var(--radius-md, 10px)',
+              padding: '36px 30px',
               border: '1px solid var(--primary-gold-border)',
               boxShadow: 'var(--shadow-sm)',
               display: 'flex',
@@ -58,24 +60,23 @@ export default function CustomerReviews({ testimonials = [] }) {
             }}
           >
             <div>
-              {/* Rating */}
-              <div style={{ display: 'flex', gap: '4px', color: '#D4AF37', marginBottom: '14px', fontSize: '0.95rem' }}>
+              {/* Rating (Issue #21: Generous top room & balanced spacing) */}
+              <div style={{ display: 'flex', gap: '4px', color: '#D4AF37', marginBottom: '18px', fontSize: '0.95rem' }}>
                 {Array.from({ length: test.rating || 5 }).map((_, i) => (
                   <i key={i} className="fas fa-star"></i>
                 ))}
               </div>
 
-              <p style={{ fontStyle: 'italic', fontSize: '0.88rem', color: 'var(--text-dark)', lineHeight: '1.6', marginBottom: '20px' }}>
+              <p style={{ fontStyle: 'italic', fontSize: 'var(--text-base, 0.95rem)', color: 'var(--color-text-primary, #1A1918)', lineHeight: '1.75', marginBottom: '24px' }}>
                 &ldquo;{test.comment}&rdquo;
               </p>
-
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', borderTop: '1px solid var(--bg-cream-dark)', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', borderTop: '1px solid var(--bg-cream-dark)', paddingTop: '18px' }}>
               <div style={{
                 width: '44px',
                 height: '44px',
-                borderRadius: '50%',
+                borderRadius: 'var(--radius-full)',
                 backgroundColor: 'var(--primary-gold-light)',
                 display: 'flex',
                 alignItems: 'center',
@@ -86,10 +87,10 @@ export default function CustomerReviews({ testimonials = [] }) {
                 💎
               </div>
               <div>
-                <p style={{ fontSize: '0.92rem', fontWeight: '600', color: 'var(--text-dark)', margin: 0 }}>
+                <p style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--color-text-primary, #1A1918)', margin: 0 }}>
                   <cite style={{ fontStyle: 'normal' }}>{test.name}</cite>
                 </p>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{test.role}</span>
+                <span style={{ fontSize: 'var(--text-xs, 0.75rem)', color: 'var(--color-text-muted, #6B655B)' }}>{test.role}</span>
               </div>
             </div>
           </div>
