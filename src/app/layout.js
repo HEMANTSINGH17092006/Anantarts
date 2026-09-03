@@ -25,7 +25,7 @@ export async function generateMetadata() {
   const siteName = settings.site_name || 'Anant Arts';
   const tagline = settings.site_tagline || 'Bringing Divine Art to Every Home';
   const seoTitle = settings.seo_title || `${siteName} — Premium Electroplated Hindu God Idols | 24K Gold & Silver`;
-  const seoDescription = settings.seo_description || `${siteName} offers luxury electroplated idols of Hindu gods and goddesses. Handcrafted with 24K Gold, Sterling Silver, and Copper plating. ${tagline}.`;
+  const seoDescription = settings.seo_description || `Luxury 24K Gold and Pure Silver electroplated idols of Hindu gods and goddesses. Handcrafted brass and wooden temple art with insured pan-India delivery.`;
   const gscVerification = process.env.NEXT_PUBLIC_GSC_VERIFICATION;
 
   return {

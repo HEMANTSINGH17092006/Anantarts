@@ -1,4 +1,5 @@
 import { getSettings } from '@/lib/db-helpers';
+import Link from 'next/link';
 import { constructMetadata } from '@/lib/seo';
 
 export const metadata = constructMetadata({
@@ -89,6 +90,13 @@ Phone: <a href="tel:+917275819354">+91 72758 19354</a> (Mon–Sat, 10AM–6PM)</
           }}
           dangerouslySetInnerHTML={{ __html: content }}
         />
+
+        <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link href="/return-policy" className="btn-secondary btn-sm">Return Policy &rarr;</Link>
+          <Link href="/shipping-policy" className="btn-secondary btn-sm">Shipping Policy &rarr;</Link>
+          <Link href="/faq" className="btn-secondary btn-sm">FAQ Helpdesk &rarr;</Link>
+          <Link href="/shop" className="btn-primary btn-sm">Continue Shopping</Link>
+        </div>
       </div>
     </div>
   );

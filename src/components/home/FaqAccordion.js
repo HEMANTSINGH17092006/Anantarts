@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import SectionHeader from '../common/SectionHeader';
 
 const FAQS = [
@@ -107,6 +108,13 @@ export default function FaqAccordion() {
             </div>
           );
         })}
+      </div>
+
+      <div style={{ marginTop: '2.5rem', textAlign: 'center' }}>
+        <Link href="/faq" className="btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <span>View Complete FAQ Helpdesk &amp; Care Guidelines</span>
+          <span>&rarr;</span>
+        </Link>
       </div>
     </section>
   );

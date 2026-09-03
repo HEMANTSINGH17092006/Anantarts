@@ -24,8 +24,11 @@ export default async function ReturnPolicyPage() {
           {text}
         </div>
         
-        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-          <Link href="/shop" className="btn-primary btn-md">Continue Shopping</Link>
+        <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link href="/refund-policy" className="btn-secondary btn-sm">Refund Policy &rarr;</Link>
+          <Link href="/order-tracking" className="btn-secondary btn-sm">Live Order Tracking &rarr;</Link>
+          <Link href="/faq" className="btn-secondary btn-sm">FAQ &amp; Unboxing Guide &rarr;</Link>
+          <Link href="/shop" className="btn-primary btn-sm">Continue Shopping</Link>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { getSettings } from '@/lib/db-helpers';
+import Link from 'next/link';
 import { constructMetadata } from '@/lib/seo';
 
 export const metadata = constructMetadata({
@@ -35,16 +36,16 @@ By accessing and placing orders on anantarts.in, you accept and agree to be boun
 `;
 
   return (
-    <div style={{ background: 'var(--bg-cream)', padding: '5rem 0', minHeight: '60vh' }}>
-      <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0 2rem' }}>
+    <div style={{ background: 'var(--bg-cream)', minHeight: '80vh', padding: '4rem 1.5rem' }}>
+      <div style={{ maxWidth: '860px', margin: '0 auto' }}>
         
         {/* Page Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <span style={{ color: 'var(--primary-gold)', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '2px', textTransform: 'uppercase' }}>Legal</span>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.8rem)', marginTop: '8px', color: 'var(--text-dark)' }}>
-            Terms & Conditions
+            Terms &amp; Conditions
           </h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Last updated: July 2025</p>
+          <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Official Patron Purchase &amp; Service Agreement</p>
           <div style={{ width: '60px', height: '3px', background: 'var(--primary-gold)', margin: '1rem auto 0' }}></div>
         </div>
 
@@ -62,6 +63,13 @@ By accessing and placing orders on anantarts.in, you accept and agree to be boun
           }}
           dangerouslySetInnerHTML={{ __html: content }}
         />
+
+        <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link href="/privacy-policy" className="btn-secondary btn-sm">Privacy Policy &rarr;</Link>
+          <Link href="/refund-policy" className="btn-secondary btn-sm">Refund Policy &rarr;</Link>
+          <Link href="/shipping-policy" className="btn-secondary btn-sm">Shipping Policy &rarr;</Link>
+          <Link href="/shop" className="btn-primary btn-sm">Continue Shopping</Link>
+        </div>
       </div>
     </div>
   );

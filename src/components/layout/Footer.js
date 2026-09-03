@@ -31,7 +31,7 @@ export default function Footer({
     console.error(e);
   }
 
-  const instUrl = socialLinks.instagram || 'https://www.instagram.com/anantarts.in?igsh=MXB0d215YzVtZ3Q0aw==';
+  const instUrl = socialLinks.instagram || 'https://www.instagram.com/anantarts.in/';
   const fbUrl = socialLinks.facebook || '';
   const ytUrl = socialLinks.youtube || '';
 
@@ -158,7 +158,11 @@ export default function Footer({
           <ul className="footer-links">
             <li><Link href="/">Home</Link></li>
             <li><Link href="/shop">Shop All Idols</Link></li>
-            <li><Link href="/corporate-gifts">Corporate Gifts</Link></li>
+            <li><Link href="/collections">All Collections</Link></li>
+            <li><Link href="/materials">Shop by Material</Link></li>
+            <li><Link href="/occasions">Shop by Occasion</Link></li>
+            <li><Link href="/corporate-gifts">Corporate Gifting</Link></li>
+            <li><Link href="/consultation">Mandir Vastu Consultation</Link></li>
             <li><Link href="/blog">Artisan Blogs</Link></li>
             <li><Link href="/about">Our Story</Link></li>
             <li><Link href="/contact">Contact Support</Link></li>

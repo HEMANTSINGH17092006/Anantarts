@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import SectionHeader from '../common/SectionHeader';
 
 export default function WhyChooseUs() {
@@ -69,6 +70,13 @@ export default function WhyChooseUs() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Link href="/about" className="btn-secondary btn-sm">Our Artisan Story &rarr;</Link>
+        <Link href="/materials" className="btn-secondary btn-sm">Our Materials &amp; Plating &rarr;</Link>
+        <Link href="/consultation" className="btn-secondary btn-sm">Mandir Design Consultation &rarr;</Link>
+        <Link href="/shipping-policy" className="btn-secondary btn-sm">Insured Shipping Policy &rarr;</Link>
       </div>
     </section>
   );
