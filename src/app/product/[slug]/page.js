@@ -31,16 +31,33 @@ export async function generateMetadata({ params }) {
   let title = product.seo_title;
   if (!title) {
     const rawName = (product.name || '').trim();
-    if (rawName.length > 42) {
-      const truncated = rawName.slice(0, 42).replace(/\s+\S*$/, '');
+    const isIdol = /ganesha|krishna|shiva|durga|hanuman|ram|balaji|kamdhenu|shyam/i.test(rawName);
+    const isWood = /wood/i.test(product.material || '') || /wood/i.test(rawName);
+
+    let candidate = rawName;
+    if (rawName.length < 30) {
+      if (isIdol && !/idol|murti|statue/i.test(rawName)) {
+        candidate = `${rawName} Idol for Home Temple`;
+      } else if (isWood && !/handicraft|decor|organizer|set/i.test(rawName)) {
+        candidate = `Handcrafted ${rawName}`;
+      }
+    }
+
+    if (candidate.length > 42) {
+      const truncated = candidate.slice(0, 42).replace(/\s+\S*$/, '');
       title = `${truncated} | Anant Arts`;
     } else {
-      title = `${rawName} | Anant Arts`;
+      title = `${candidate} | Anant Arts`;
     }
   }
 
+  const isWood = /wood/i.test(product.material || '') || /wood/i.test(product.name || '');
+  const productKeywordType = isWood ? 'handcrafted wooden home décor' : 'handcrafted 24K gold and silver spiritual idol';
+
   const description = product.seo_description ||
-    (product.description ? product.description.slice(0, 155) : `Buy ${product.name} — handcrafted 24K gold electroplated deity idol with insured all-India delivery.`);
+    (product.description && product.description.length > 25
+      ? product.description.slice(0, 150).replace(/\s+\S*$/, '') + '...'
+      : `Buy ${product.name} online at Anant Arts. Premium ${productKeywordType} with insured pan-India delivery.`);
 
   const primaryImage = product.images?.[0]?.image_path || `${BASE_URL}/og-image.jpg`;
   const canonicalUrl = `${BASE_URL}/product/${product.slug}`;

@@ -4,9 +4,18 @@ import { constructMetadata } from '@/lib/seo';
 export const revalidate = 3600;
 
 export const metadata = constructMetadata({
-  title: 'Shop by Occasion — Sacred Gifting & Festivals | Anant Arts',
-  description: 'Curated 24K gold and silver electroplated gifting collections for Griha Pravesh housewarmings, weddings, Diwali festivities, anniversaries, and corporate honors.',
+  title: 'Premium Gifts India — Diwali, Wedding & Housewarming Gifting | Anant Arts',
+  description: 'Discover premium gifts in India by Anant Arts. Thoughtfully handcrafted Diwali gifts, wedding gifts, housewarming presents, and personalized festive keepsakes.',
   canonical: '/occasions',
+  keywords: [
+    'premium gifts India',
+    'Diwali gifts',
+    'wedding gifts India',
+    'anniversary gifts',
+    'housewarming gifts',
+    'festive gifts India',
+    'personalized gifts'
+  ]
 });
 
 export default function OccasionsPage() {
@@ -33,7 +42,7 @@ export default function OccasionsPage() {
             Celebrations &amp; Milestones
           </span>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: 'var(--text-dark)', marginTop: '8px', marginBottom: '12px' }}>
-            Shop by Occasion &amp; Sacred Moments
+            Premium Gifts India for Auspicious Occasions
           </h1>
           <div className="gold-line" style={{ margin: '0 auto 16px auto' }}></div>
           <p style={{ color: 'var(--text-muted)', maxWidth: '680px', margin: '0 auto', fontSize: '0.95rem' }}>

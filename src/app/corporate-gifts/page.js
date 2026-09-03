@@ -5,9 +5,18 @@ import Link from 'next/link';
 export const revalidate = 3600;
 
 export const metadata = constructMetadata({
-  title: 'Corporate Gifting & Bulk Orders | 24K Gold Electroplated Art | Anant Arts',
-  description: 'Custom logo engraved 24K gold and pure silver electroplated idols, executive presentation boxes, and tiered wholesale pricing for corporate celebrations and VIP gifting.',
+  title: 'Corporate Gifts India — Premium & Customized Business Gifting | Anant Arts',
+  description: 'Explore premium corporate gifts in India by Anant Arts. Custom logo-engraved 24K gold electroplated idols, luxury desk sets, and executive hampers for clients and teams.',
   canonical: '/corporate-gifts',
+  keywords: [
+    'corporate gifts India',
+    'premium corporate gifts',
+    'customized corporate gifts',
+    'corporate gifts for clients',
+    'employee gifts',
+    'corporate gifting solutions',
+    'luxury corporate gifts'
+  ]
 });
 
 export default function CorporateGiftsPage() {
@@ -21,7 +30,7 @@ export default function CorporateGiftsPage() {
             B2B &amp; Executive Solutions
           </span>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: 'var(--text-dark)', marginTop: '8px', marginBottom: '12px' }}>
-            Bespoke Corporate Gifting
+            Corporate Gifts India — Premium &amp; Customized Executive Gifting
           </h1>
           <div className="gold-line" style={{ margin: '0 auto 16px auto' }}></div>
           <p style={{ color: 'var(--text-muted)', maxWidth: '650px', margin: '0 auto', fontSize: '0.95rem' }}>

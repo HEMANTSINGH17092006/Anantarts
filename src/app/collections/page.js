@@ -6,9 +6,17 @@ import { constructMetadata } from '@/lib/seo';
 export const revalidate = 3600;
 
 export const metadata = constructMetadata({
-  title: 'Explore All Collections | 24K Gold & Silver Handcrafted Art | Anant Arts',
-  description: 'Explore our complete portfolio of handcrafted collections: Spiritual Murti Collection, Rajasthan Wooden Handicrafts, Luxury Home Décor, and Corporate Executive Gifting.',
+  title: 'Handcrafted Home Décor & Artisanal Collections | Anant Arts',
+  description: 'Explore handcrafted home decor, traditional Indian wooden handicrafts, 24K gold spiritual idols, and luxury decorative items curated for elegant homes.',
   canonical: '/collections',
+  keywords: [
+    'handcrafted home decor',
+    'Indian home decor',
+    'luxury home decor',
+    'decorative items for home',
+    'handcrafted decor',
+    'traditional home decor'
+  ]
 });
 
 export default async function CollectionsPage() {
@@ -35,7 +43,7 @@ export default async function CollectionsPage() {
             Artisanal Portfolio
           </span>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: 'var(--text-dark)', marginTop: '8px', marginBottom: '12px' }}>
-            Explore Our Collections
+            Handcrafted Home Décor &amp; Artisanal Collections
           </h1>
           <div className="gold-line" style={{ margin: '0 auto 16px auto' }}></div>
           <p style={{ color: 'var(--text-muted)', maxWidth: '680px', margin: '0 auto', fontSize: '0.95rem' }}>

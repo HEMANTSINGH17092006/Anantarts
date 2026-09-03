@@ -5,9 +5,16 @@ import { constructMetadata } from '@/lib/seo';
 export const revalidate = 3600; // Cache about page for up to 1 hour
 
 export const metadata = constructMetadata({
-  title: 'About Anant Arts | Handcrafted 24K Gold & Silver Electroplated Sculptures',
-  description: 'Learn the sacred heritage and artisanal process behind Anant Arts. Combining centuries-old Jaipur lost-wax brass sculpting with 24K pure gold electroplating.',
+  title: 'About Anant Arts — Authentic Indian Handicraft Brand & Heritage',
+  description: 'Discover Anant Arts, a premier Indian handicraft brand celebrating traditional Indian craftsmanship, heritage artisans, and 24K gold electroplated art.',
   canonical: '/about',
+  keywords: [
+    'Indian handicraft brand',
+    'handcrafted products India',
+    'traditional Indian craftsmanship',
+    'Indian artisans',
+    'handmade Indian decor'
+  ]
 });
 
 export default async function AboutPage() {
@@ -25,7 +32,7 @@ export default async function AboutPage() {
             Sacred Lineage &amp; Innovation
           </span>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: 'var(--text-dark)', marginTop: '8px', marginBottom: '12px' }}>
-            About Anant Arts
+            About Anant Arts — Authentic Indian Handicraft Heritage
           </h1>
           <div className="gold-line" style={{ margin: '0 auto 16px auto' }}></div>
           <p style={{ color: 'var(--text-muted)', maxWidth: '650px', margin: '0 auto', fontSize: '0.95rem' }}>

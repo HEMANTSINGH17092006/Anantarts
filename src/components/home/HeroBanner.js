@@ -4,8 +4,8 @@ import Link from 'next/link';
 
 const HERO_SLIDES = [
   {
-    title: 'Exquisite Hand-Carved Wooden Handicrafts',
-    subtitle: 'Preserving ancient Rajasthani woodworking heritage with hand-chiselled rosewood wall panels, wooden temples, and serving trays.',
+    title: 'Indian Handicrafts Online — Handcrafted Luxury Home Décor',
+    subtitle: 'Preserving ancient Indian artisanship with handcrafted home decor, traditional wooden handicrafts, and luxury 24K gold electroplated creations.',
     image: '/uploads/artisan-cast.png',
     shopLink: '/shop?category=wooden-handicrafts',
     exploreLink: '/collections'

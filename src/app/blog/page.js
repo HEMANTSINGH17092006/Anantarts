@@ -5,9 +5,16 @@ import { constructMetadata } from '@/lib/seo';
 export const revalidate = 3600; // Cache blog listing for up to 1 hour
 
 export const metadata = constructMetadata({
-  title: 'Artisan Blog & Temple Vastu Guides | Anant Arts',
-  description: 'Read expert articles on Hindu temple deity placement, Jaipur sculpting lineages, 24K gold electroplating maintenance, and sacred Vastu Shastra decor.',
+  title: 'Indian Handicrafts Blog & Temple Vastu Wisdom | Anant Arts',
+  description: 'Explore our Indian handicrafts blog for home decor ideas, traditional handicraft guides, temple Vastu shastra insights, and 24K gold idol care tips.',
   canonical: '/blog',
+  keywords: [
+    'Indian handicrafts blog',
+    'Indian handicrafts',
+    'home decor ideas',
+    'handicraft ideas',
+    'Indian art and crafts'
+  ]
 });
 
 const FOUNDATIONAL_GUIDES = [
@@ -50,7 +57,7 @@ export default async function BlogListingPage() {
             Wisdom &amp; Craftsmanship
           </span>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: 'var(--text-dark)', marginTop: '8px', marginBottom: '12px' }}>
-            Artisan Blogs &amp; Temple Vastu Guides
+            Indian Handicrafts Blog &amp; Temple Vastu Wisdom
           </h1>
           <div className="gold-line" style={{ margin: '0 auto 16px auto' }}></div>
           <p style={{ color: 'var(--text-muted)', maxWidth: '680px', margin: '0 auto', fontSize: '0.95rem' }}>

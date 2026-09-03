@@ -18,10 +18,17 @@ export async function generateMetadata({ searchParams }) {
   );
 
   return constructMetadata({
-    title: 'Shop Premium 24K Gold & Silver Electroplated Hindu God Idols | Anant Arts',
-    description: 'Browse our complete catalog of handcrafted Lord Ganesha, Radha Krishna, Shiva, Hanuman, and Lakshmi murtis with 24K gold and pure silver electroplating.',
+    title: 'Handicrafts Online India — Handcrafted Idols & Décor | Anant Arts',
+    description: 'Shop authentic handicrafts online in India. Explore master-crafted 24K gold god idols, handmade wooden home décor, and traditional Indian handicrafts with insured shipping.',
     canonical: '/shop',
     noIndex: hasFilters,
+    keywords: [
+      'handicrafts online India',
+      'Indian handicrafts online',
+      'handmade handicrafts',
+      'handcrafted products',
+      'traditional handicrafts India'
+    ]
   });
 }
 

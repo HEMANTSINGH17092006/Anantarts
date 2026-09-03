@@ -2,8 +2,8 @@
 import Link from 'next/link';
 
 export default function CollectionHero({ categoryName, categoryDescription, categoryBanner }) {
-  const title = categoryName ? `${categoryName}` : 'Handcrafted Lifestyle & Art Marketplace';
-  const subtitle = categoryDescription || 'Discover handcrafted masterpieces, wooden handicrafts, 24K gold electroplated art, and luxury home accents designed for modern spaces.';
+  const title = categoryName ? `${categoryName}` : 'Handicrafts Online India — Handcrafted Idols & Décor';
+  const subtitle = categoryDescription || 'Shop authentic handicrafts online in India. Explore master-crafted 24K gold god idols, handmade wooden home décor, and traditional Indian handicrafts with insured shipping.';
   const bgImage = categoryBanner || '/uploads/mandir-hero-bg.jpg';
 
   return (

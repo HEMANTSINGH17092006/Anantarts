@@ -5,9 +5,15 @@ import Link from 'next/link';
 export const revalidate = 3600;
 
 export const metadata = constructMetadata({
-  title: 'Mandir Vastu & Pooja Room Design Consultation | Anant Arts',
-  description: 'Book a bespoke pooja room design session with Jaipur temple sthapatis and Vastu experts. Custom dimensions, deity alignment, and 24K gold plating.',
+  title: 'Mandir Vastu & Custom Handicraft Consultation | Anant Arts',
+  description: 'Book a personalized handicraft consultation with Anant Arts for bespoke pooja room mandir design, custom deity sizing, and corporate gifting solutions.',
   canonical: '/consultation',
+  keywords: [
+    'handicraft consultation',
+    'custom gifting consultation',
+    'corporate gifting consultation',
+    'personalized gifting'
+  ]
 });
 
 export default function ConsultationPage() {
@@ -30,7 +36,7 @@ export default function ConsultationPage() {
             Sacred Vastu Design
           </span>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: 'white', marginTop: '10px', marginBottom: '15px' }}>
-            Bespoke Pooja Room Consultation
+            Mandir Vastu &amp; Custom Handicraft Consultation
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: '1.7', maxWidth: '600px', margin: '0 auto' }}>
             Consult with our traditional temple sthapatis and Jaipur lineage design experts to customize temple layouts, select proper deities, and align features with shastra guidelines.

@@ -4,9 +4,17 @@ import { constructMetadata } from '@/lib/seo';
 export const revalidate = 3600;
 
 export const metadata = constructMetadata({
-  title: 'Shop by Material — 24K Gold, Brass & Teak | Anant Arts',
-  description: 'Explore handcrafted sculptures by material: 24K Gold electroplating, 999 Sterling Silver, lost-wax cast bell metal brass, seasoned teak wood, and Rajasthan white marble.',
+  title: 'Shop by Material — Brass, 24K Gold & Teak Handicrafts | Anant Arts',
+  description: 'Discover Indian handicraft materials: authentic brass idols, 24K gold plated god statues, seasoned teak wooden handicrafts, and silver electroplated art.',
   canonical: '/materials',
+  keywords: [
+    'brass idols',
+    'brass handicrafts',
+    'gold plated idols',
+    'wooden handicrafts',
+    'handcrafted materials',
+    'Indian handicraft materials'
+  ]
 });
 
 export default function MaterialsPage() {
