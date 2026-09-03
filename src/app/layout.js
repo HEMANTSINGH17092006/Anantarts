@@ -23,9 +23,12 @@ const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').re
 export async function generateMetadata() {
   const settings = await getSettings();
   const siteName = settings.site_name || 'Anant Arts';
-  const tagline = settings.site_tagline || 'Bringing Divine Art to Every Home';
-  const seoTitle = settings.seo_title || `${siteName} — Premium Electroplated Hindu God Idols | 24K Gold & Silver`;
-  const seoDescription = settings.seo_description || `Luxury 24K Gold and Pure Silver electroplated idols of Hindu gods and goddesses. Handcrafted brass and wooden temple art with insured pan-India delivery.`;
+  const seoTitle = (settings.seo_title && !settings.seo_title.includes('Premium Electroplated Hindu God Idols'))
+    ? settings.seo_title
+    : `Indian Handicrafts Online — Handcrafted Luxury Home Décor | ${siteName}`;
+  const seoDescription = (settings.seo_description && !settings.seo_description.includes('Luxury 24K Gold and Pure Silver'))
+    ? settings.seo_description
+    : `Buy authentic Indian handicrafts online at Anant Arts. Explore handcrafted home decor, traditional wooden handicrafts, luxury 24K gold electroplated idols, and custom gifts with pan-India delivery.`;
   const gscVerification = process.env.NEXT_PUBLIC_GSC_VERIFICATION;
 
   return {
