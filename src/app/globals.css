@@ -466,6 +466,38 @@ button { cursor: pointer; font-family: var(--font-body); }
 .badge-new { background: var(--success); color: white; }
 .badge-sale { background: var(--danger); color: white; }
 
+/* Wishlist Overlay Button (Issue #7: Absolute overlay on top-right of image) */
+.wishlist-badge-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--primary-gold-border);
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 0;
+}
+.wishlist-badge-btn:hover,
+.wishlist-badge-btn.active {
+  background: #FFFFFF;
+  color: var(--danger, #B91C1C);
+  transform: scale(1.08);
+}
+.wishlist-badge-btn:focus-visible {
+  outline: 2px solid var(--primary-gold);
+  outline-offset: 2px;
+}
+
 /* Quick Actions Overlay & WCAG Touch Target Size (Issue #17) */
 .product-card-overlay-actions {
   position: absolute;
@@ -522,7 +554,7 @@ button { cursor: pointer; font-family: var(--font-body); }
   line-height: 1.4;
 }
 .product-card-info .category-label {
-  font-size: 0.8125rem;
+  font-size: var(--text-sm, 0.875rem);
   font-weight: 600;
   text-transform: capitalize;
   letter-spacing: 0.25px;

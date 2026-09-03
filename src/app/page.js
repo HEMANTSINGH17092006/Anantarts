@@ -60,19 +60,13 @@ export default async function Home() {
       {/* 3. SPIRITUAL HERITAGE & ARTISAN STORY */}
       <SpiritualStorySection />
 
-      {/* 4. INTERACTIVE TABBED COLLECTION SHOWCASE */}
+      {/* 4. INTERACTIVE TABBED COLLECTION SHOWCASE (Primary Consolidated Hub) */}
       <TabbedCollectionShowcase products={allFeatured} />
 
-      {/* 5. NEW ARRIVALS SLIDER */}
-      <NewArrivalsSlider products={finalNewArrivals} />
-
-      {/* 6. BEST SELLERS GRID */}
-      <BestSellersGrid products={bestsellerList} />
-
-      {/* 7. TRENDING PRODUCTS CAROUSEL */}
+      {/* 5. TRENDING PRODUCTS CAROUSEL (Horizontal Swipeable Social Proof) */}
       <TrendingCarousel products={finalTrending} />
 
-      {/* 8. CORPORATE GIFTING SHOWCASE */}
+      {/* 6. CORPORATE GIFTING SHOWCASE */}
       <CorporateShowcase />
 
       {/* 9. WHY CHOOSE ANANT ARTS */}

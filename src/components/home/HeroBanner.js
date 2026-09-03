@@ -150,29 +150,33 @@ export default function HeroBanner() {
         </div>
       </div>
 
-      {/* Slide Indicators */}
+      {/* Slide Indicators: Centered with High-Contrast Touch Affordance (Issue #9) */}
       <div style={{
         position: 'absolute',
-        bottom: '28px',
-        left: '3rem',
+        bottom: '24px',
+        left: '50%',
+        transform: 'translateX(-50%)',
         zIndex: 4,
         display: 'flex',
-        gap: '10px'
+        alignItems: 'center',
+        gap: '12px'
       }}>
         {HERO_SLIDES.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
-            aria-label={`Slide ${idx + 1}`}
+            aria-label={`Go to Slide ${idx + 1}`}
             style={{
-              width: idx === currentIndex ? '36px' : '10px',
-              height: '10px',
-              borderRadius: '5px',
-              background: idx === currentIndex ? '#D4AF37' : 'rgba(255,255,255,0.5)',
-              border: 'none',
+              width: idx === currentIndex ? '36px' : '12px',
+              height: '12px',
+              borderRadius: '6px',
+              background: idx === currentIndex ? '#D4AF37' : 'rgba(255,255,255,0.65)',
+              border: '1.5px solid rgba(0,0,0,0.3)',
               cursor: 'pointer',
+              padding: 0,
+              minWidth: '12px',
               transition: 'all 0.3s ease',
-              boxShadow: idx === currentIndex ? '0 0 10px rgba(212,175,55,0.8)' : 'none'
+              boxShadow: idx === currentIndex ? '0 0 12px rgba(212,175,55,0.9)' : 'none'
             }}
           />
         ))}

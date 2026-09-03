@@ -69,47 +69,18 @@ export default function ShopByCategory({ categories = [] }) {
 
                 {/* Card Content */}
                 <div style={{ position: 'relative', zIndex: 3, color: '#FFFFFF' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '1.4rem' }}>✨</span>
-                    <span style={{
-                      fontSize: '0.68rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      background: 'rgba(212, 175, 55, 0.25)',
-                      border: '1px solid #D4AF37',
-                      color: '#D4AF37',
-                      padding: '3px 10px',
-                      borderRadius: '12px',
-                      fontWeight: '600'
-                    }}>
-                      {catTag}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.35rem', color: '#FFFFFF', margin: 0, fontWeight: '600' }}>
+                      {catName}
+                    </h3>
+                    <span style={{ fontSize: '1.1rem', color: '#D4AF37' }}>
+                      &rarr;
                     </span>
                   </div>
 
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', color: '#FFFFFF', margin: '0 0 4px 0', fontWeight: '600' }}>
-                    {catName}
-                  </h3>
-
-                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)', margin: '0 0 14px 0', lineHeight: '1.4' }}>
+                  <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: '1.4' }}>
                     {catDesc}
                   </p>
-
-                  <span 
-                    className="btn-outline-gold" 
-                    style={{ 
-                      fontSize: '0.8rem', 
-                      padding: '8px 18px', 
-                      color: '#FFFFFF', 
-                      borderColor: '#D4AF37',
-                      background: 'rgba(20, 17, 15, 0.5)',
-                      backdropFilter: 'blur(4px)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    Explore Collection &rarr;
-                  </span>
                 </div>
               </Link>
             );

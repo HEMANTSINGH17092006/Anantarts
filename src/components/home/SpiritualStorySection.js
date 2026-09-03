@@ -15,7 +15,7 @@ export default function SpiritualStorySection() {
         margin: '0 auto',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))',
-        gap: '4rem',
+        gap: '2.5rem',
         alignItems: 'center'
       }}>
         
@@ -49,10 +49,10 @@ export default function SpiritualStorySection() {
               <div style={{ color: '#FFFFFF' }}>
                 <span style={{
                   color: '#D4AF37',
-                  textTransform: 'uppercase',
-                  letterSpacing: '2px',
-                  fontSize: '0.75rem',
-                  fontWeight: '700'
+                  textTransform: 'none',
+                  letterSpacing: '0.5px',
+                  fontSize: '0.82rem',
+                  fontWeight: '600'
                 }}>
                   Traditional Master Sculpting
                 </span>
@@ -91,13 +91,13 @@ export default function SpiritualStorySection() {
         </div>
 
         {/* Right Column: Story Text & Values */}
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
           <span style={{
             color: 'var(--saffron-dark)',
             fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            fontSize: '0.8rem',
+            textTransform: 'none',
+            letterSpacing: '0.5px',
+            fontSize: '0.85rem',
             display: 'inline-block',
             marginBottom: '8px'
           }}>
