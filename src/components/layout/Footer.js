@@ -39,29 +39,120 @@ export default function Footer({
 
   return (
     <footer id="main-footer" style={{ borderTop: '1px solid var(--primary-gold-border)' }}>
+      {/* Integrated Newsletter Form (Issue #14) */}
+      <div style={{
+        background: 'rgba(212, 175, 55, 0.05)',
+        borderBottom: '1px solid var(--primary-gold-border)',
+        padding: '2.5rem 2rem'
+      }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: 'var(--text-dark)', margin: '0 0 4px 0' }}>
+              Join The Anant Arts Privilege Circle
+            </h3>
+            <p style={{ fontSize: 'var(--text-sm, 0.875rem)', color: 'var(--color-text-muted, #6B655B)', margin: 0 }}>
+              Receive private invitations to new artisan launches, festive catalogs, and bespoke previews.
+            </p>
+          </div>
+
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target;
+              const emailInput = form.elements['footer_email'];
+              const email = emailInput?.value;
+              if (!email) return;
+              try {
+                const res = await fetch('/api/newsletter/subscribe', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email })
+                });
+                if (res.ok) {
+                  alert('Thank you for subscribing to Anant Arts!');
+                  form.reset();
+                } else {
+                  alert('Subscription updated.');
+                }
+              } catch (err) {
+                console.error(err);
+              }
+            }}
+            style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: '420px', width: '100%' }}
+          >
+            <input 
+              type="email"
+              name="footer_email"
+              placeholder="Enter your email address"
+              required
+              style={{
+                flex: 1,
+                minWidth: '220px',
+                padding: '10px 16px',
+                borderRadius: 'var(--radius-sm, 6px)',
+                border: '1.5px solid var(--primary-gold-border)',
+                background: '#FFFFFF',
+                color: 'var(--text-dark)',
+                fontSize: 'var(--text-sm, 0.875rem)',
+                outline: 'none'
+              }}
+            />
+            <button type="submit" className="btn-primary btn-md" style={{ padding: '10px 20px', fontSize: 'var(--text-sm, 0.875rem)' }}>
+              Subscribe
+            </button>
+          </form>
+        </div>
+      </div>
+
       <div className="footer-container">
+        {/* Column 1: Brand & Social Presence (Issue #15) */}
         <div className="footer-column">
           <h3>Anant Arts</h3>
           <p>
             Premium Indian brand blending traditional temple sculpting with modern electroplating technology (24K Gold, Silver, Copper) to craft everlasting spiritual sculptures.
           </p>
-          <div className="social-icons">
-            <a href={instUrl} target="_blank" rel="noopener noreferrer" className="social-icon">
-              <i className="fab fa-instagram"></i>
-            </a>
-            {fbUrl && (
-              <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="social-icon">
-                <i className="fab fa-facebook-f"></i>
+          
+          <div style={{ marginTop: '1.25rem' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--color-text-accent, #8C6D1F)', display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>
+              Follow Us
+            </span>
+            <div className="social-icons" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <a 
+                href={instUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="social-icon" 
+                aria-label="Follow Anant Arts on Instagram"
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: 'var(--radius-full)',
+                  border: '1.5px solid var(--primary-gold-border)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--color-text-accent, #8C6D1F)',
+                  background: 'var(--primary-gold-light)',
+                  transition: 'all var(--transition-fast)'
+                }}
+              >
+                <i className="fab fa-instagram" style={{ fontSize: '1.2rem' }}></i>
               </a>
-            )}
-            {ytUrl && (
-              <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="social-icon">
-                <i className="fab fa-youtube"></i>
-              </a>
-            )}
+              {fbUrl && (
+                <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on Facebook">
+                  <i className="fab fa-facebook-f"></i>
+                </a>
+              )}
+              {ytUrl && (
+                <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on YouTube">
+                  <i className="fab fa-youtube"></i>
+                </a>
+              )}
+            </div>
           </div>
         </div>
         
+        {/* Column 2: Quick Links */}
         <div className="footer-column">
           <h3>Quick Links</h3>
           <ul className="footer-links">
@@ -74,6 +165,7 @@ export default function Footer({
           </ul>
         </div>
 
+        {/* Column 3: Policies */}
         <div className="footer-column">
           <h3>Policies</h3>
           <ul className="footer-links">
@@ -87,34 +179,41 @@ export default function Footer({
           </ul>
         </div>
 
+        {/* Column 4: Consolidated Support (Issues #12, #13) */}
         <div className="footer-column">
           <h3>Customer Support</h3>
-          <p>
-            <i className="fas fa-phone-alt" style={{ color: 'var(--primary-gold)', marginRight: '8px' }}></i>
-            <a href={`tel:${contactPhone.replace(/\s+/g, '')}`} style={{ color: 'inherit' }}>{contactPhone}</a>
-          </p>
-          <p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <i className="fas fa-phone-alt" style={{ color: 'var(--primary-gold)' }}></i>
+            <a href={`tel:${contactPhone.replace(/\s+/g, '')}`} style={{ color: 'inherit', fontWeight: 500 }}>
+              {contactPhone}
+            </a>
+            <a 
+              href={`https://wa.me/${whatsappNumber}`} 
+              style={{ color: 'var(--primary-gold)', marginLeft: '4px', display: 'inline-flex', alignItems: 'center' }} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              title="Chat on WhatsApp"
+              aria-label="WhatsApp Support"
+            >
+              <i className="fab fa-whatsapp" style={{ fontSize: '1.1rem' }}></i>
+            </a>
+          </div>
+
+          <p style={{ marginBottom: '12px' }}>
             <i className="fas fa-envelope" style={{ color: 'var(--primary-gold)', marginRight: '8px' }}></i>
             <a href={`mailto:${contactEmail}`} style={{ color: 'inherit' }}>{contactEmail}</a>
           </p>
-          <p>
-            <i className="fab fa-whatsapp" style={{ color: '#25D366', marginRight: '8px' }}></i>
-            <a href={`https://wa.me/${whatsappNumber}`} style={{ color: 'inherit' }} target="_blank" rel="noopener noreferrer">+{whatsappNumber}</a>
-          </p>
-          <p>
+
+          <p style={{ margin: 0 }}>
             <i className="fas fa-map-marker-alt" style={{ color: 'var(--primary-gold)', marginRight: '8px' }}></i>
             {contactAddress}
           </p>
         </div>
       </div>
 
+      {/* Footer Bottom (Issue #11: Removed duplicate policy links) */}
       <div className="footer-bottom">
         <p>&copy; {new Date().getFullYear()} Anant Arts. All Rights Reserved. Crafted with Devotion in India.</p>
-        <p style={{ fontSize: '0.78rem', opacity: '0.7' }}>
-          <Link href="/privacy-policy" style={{ color: 'inherit' }}>Privacy Policy</Link> &nbsp;|&nbsp;
-          <Link href="/terms-and-conditions" style={{ color: 'inherit' }}>Terms</Link> &nbsp;|&nbsp;
-          <Link href="/refund-policy" style={{ color: 'inherit' }}>Refund Policy</Link>
-        </p>
       </div>
 
       <div className="footer-credit">

@@ -125,12 +125,12 @@ export default function ProductCard({ product, isListView = false, onCompareClic
           </div>
         </Link>
 
-        {/* Product Information Body (Issue #7: Streamlined, low-noise layout) */}
+        {/* Product Information Body (Issue #7: Clear focal point on product title) */}
         <div className="product-card-info" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, padding: '16px' }}>
           <div>
-            {/* Category & Rating */}
+            {/* Category & Rating (Issue #5, #7: Neutral, secondary metadata) */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span className="category-label">
+              <span className="category-label" style={{ color: 'var(--color-text-muted, #6B655B)', fontSize: '0.8rem', fontWeight: '500', textTransform: 'capitalize', letterSpacing: '0.2px' }}>
                 {product.category_name || 'Handcrafted'}
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.8rem', color: '#D4AF37', fontWeight: '700' }}>
@@ -139,13 +139,15 @@ export default function ProductCard({ product, isListView = false, onCompareClic
               </div>
             </div>
 
-            {/* Product Title */}
-            <Link href={`/product/${product.slug}`}>
-              <h3 className="product-card-title">{product.name}</h3>
+            {/* Product Title (Clear Primary Textual Focal Point) */}
+            <Link href={`/product/${product.slug}`} style={{ textDecoration: 'none' }}>
+              <h3 className="product-card-title" style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--color-text-primary, #1A1918)', margin: '4px 0 8px 0', lineHeight: 1.35 }}>
+                {product.name}
+              </h3>
             </Link>
 
             {/* Price Row */}
-            <div className="product-price" style={{ marginBottom: '14px', marginTop: '8px' }}>
+            <div className="product-price" style={{ marginBottom: '14px', marginTop: '6px' }}>
               <span className="current" style={{ fontWeight: '700', fontSize: '1.15rem' }}>{formatPrice(activePrice)}</span>
               {product.discount_price > 0 && (
                 <>
@@ -158,16 +160,16 @@ export default function ProductCard({ product, isListView = false, onCompareClic
             </div>
           </div>
 
-          {/* Action Button: Dominant Primary CTA */}
+          {/* Action Button: Dominant Primary CTA with Shopping Bag Icon (Issue #21) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <button 
               onClick={handleAddToCart}
               className="btn-gold" 
-              style={{ width: '100%', padding: '12px', fontSize: '0.85rem', justifyContent: 'center', borderRadius: '6px', fontWeight: '600' }}
+              style={{ width: '100%', padding: '12px', fontSize: '0.85rem', justifyContent: 'center', borderRadius: 'var(--radius-sm, 6px)', fontWeight: '600' }}
               disabled={product.stock_quantity <= 0}
               aria-label={`Add ${product.name} to Cart`}
             >
-              <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i>
+              <i className="fas fa-shopping-bag" style={{ marginRight: '8px' }}></i>
               {product.stock_quantity <= 0 ? 'Out of Stock' : adding ? 'Added to Cart!' : 'Add to Cart'}
             </button>
           </div>

@@ -37,20 +37,20 @@ export default function LuxuryNewsletter() {
       marginTop: 'var(--section-margin-top)'
     }}>
       <div style={{ maxWidth: '750px', margin: '0 auto', textAlign: 'center' }}>
-        <span style={{ color: '#D4AF37', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '0.78rem', fontWeight: '600' }}>
+        <span style={{ color: '#D4AF37', letterSpacing: '0.5px', textTransform: 'none', fontSize: 'var(--text-sm, 0.875rem)', fontWeight: '600' }}>
           Privé Art Circle
         </span>
         <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', color: '#FFFFFF', margin: '10px 0' }}>
           Join The Anant Arts Privilege Circle
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '2rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 'var(--text-base, 0.95rem)', lineHeight: '1.6', marginBottom: '2rem' }}>
           Subscribe to receive private invitations to new artisan launches, seasonal festival catalogs, and bespoke customization previews.
         </p>
 
         {status.message && (
           <div style={{
             padding: '10px 16px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-sm, 6px)',
             marginBottom: '1.5rem',
             fontSize: '0.84rem',
             background: status.success ? 'rgba(46, 125, 50, 0.2)' : 'rgba(198, 40, 40, 0.2)',
@@ -67,26 +67,25 @@ export default function LuxuryNewsletter() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email address..."
+            placeholder="Enter your VIP email address..."
             style={{
-              padding: '14px 20px',
-              borderRadius: '6px',
+              padding: '12px 20px',
+              borderRadius: 'var(--radius-sm, 6px)',
               border: '1px solid rgba(212, 175, 55, 0.4)',
               background: 'rgba(255, 255, 255, 0.08)',
               color: '#FFFFFF',
               fontSize: '0.9rem',
-              outline: 'none',
-              flex: '1 1 300px',
-              maxWidth: '420px'
+              minWidth: '280px',
+              outline: 'none'
             }}
           />
           <button
             type="submit"
-            className="btn-gold"
-            style={{ padding: '14px 28px', fontSize: '0.85rem' }}
+            className="btn-primary btn-md"
+            style={{ padding: '12px 28px', fontSize: '0.9rem' }}
             disabled={status.loading}
           >
-            {status.loading ? 'Subscribing...' : 'Subscribe'}
+            {status.loading ? 'Subscribing...' : 'Request Invitation'}
           </button>
         </form>
       </div>

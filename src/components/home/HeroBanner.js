@@ -73,11 +73,11 @@ export default function HeroBanner() {
         />
       ))}
 
-      {/* Subtle Left-Side Gradient Overlay (keeps right 55% clear for main product art) */}
+      {/* Deepened Left-Side Scrim Gradient Overlay (Issue #19: Text pop over busy background) */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'linear-gradient(90deg, rgba(14,11,9,0.88) 0%, rgba(14,11,9,0.58) 45%, rgba(14,11,9,0.1) 100%)',
+        background: 'linear-gradient(90deg, rgba(14,11,9,0.94) 0%, rgba(14,11,9,0.76) 45%, rgba(14,11,9,0.18) 100%)',
         zIndex: 2
       }} />
 
@@ -121,7 +121,7 @@ export default function HeroBanner() {
             color: '#FFFFFF',
             lineHeight: '1.18',
             marginBottom: '1.25rem',
-            textShadow: '0 4px 16px rgba(0,0,0,0.8)',
+            textShadow: '0 4px 20px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8)',
             fontWeight: '700'
           }}>
             {slide.title}
@@ -129,22 +129,33 @@ export default function HeroBanner() {
 
           <p style={{
             fontSize: 'var(--text-md, 1.125rem)',
-            color: 'rgba(255,255,255,0.92)',
+            color: 'rgba(255,255,255,0.95)',
             lineHeight: '1.65',
             marginBottom: '2.25rem',
             maxWidth: '600px',
-            textShadow: '0 2px 10px rgba(0,0,0,0.7)'
+            textShadow: '0 2px 12px rgba(0,0,0,0.8)'
           }}>
             {slide.subtitle}
           </p>
 
-          {/* Prominent CTAs (Issues #1, #7: Unified button variants) */}
+          {/* Prominent CTAs (Issues #16, #18: Clear primary vs secondary hierarchy) */}
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <Link href={slide.shopLink} className="btn-primary btn-lg">
-              <i className="fas fa-shopping-bag" style={{ marginRight: '6px' }}></i> Shop Collection
+            <Link href={slide.shopLink} className="btn-primary btn-lg" style={{ boxShadow: '0 4px 20px rgba(212, 175, 55, 0.4)' }}>
+              <i className="fas fa-shopping-bag" style={{ marginRight: '8px' }}></i> Shop Collection
             </Link>
-            <Link href={slide.exploreLink} className="btn-secondary btn-lg" style={{ color: '#FFFFFF', borderColor: '#D4AF37', background: 'rgba(18,14,12,0.6)', backdropFilter: 'blur(6px)' }}>
-              <i className="fas fa-th-large" style={{ marginRight: '6px' }}></i> Explore All
+            <Link 
+              href={slide.exploreLink} 
+              className="btn-secondary btn-lg" 
+              style={{ 
+                color: '#FFFFFF', 
+                borderColor: '#D4AF37', 
+                borderWidth: '1.5px',
+                background: 'rgba(18, 14, 12, 0.78)', 
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)'
+              }}
+            >
+              <i className="fas fa-th-large" style={{ marginRight: '8px' }}></i> Explore All
             </Link>
           </div>
         </div>

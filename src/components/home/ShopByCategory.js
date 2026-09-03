@@ -95,16 +95,27 @@ export default function ShopByCategory({ categories = [] }) {
                     zIndex: 2
                   }} />
 
-                  {/* Card Content (Issue #11: Clean, unscannable repetition removed) */}
+                  {/* Card Content (Issues #9, #10: Clear interactive affordance & consistent alignment) */}
                   <div style={{ position: 'relative', zIndex: 3, color: '#FFFFFF' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.35rem', color: '#FFFFFF', margin: 0, fontWeight: '600' }}>
                         {catName}
                       </h3>
-                      <span style={{ fontSize: '1.15rem', color: '#D4AF37', transition: 'transform 0.25s ease' }} className="cat-arrow">
+                      <span style={{ fontSize: '1.25rem', color: '#D4AF37', transition: 'transform 0.25s ease' }} className="cat-arrow">
                         &rarr;
                       </span>
                     </div>
+                    <span style={{ 
+                      fontSize: 'var(--text-xs, 0.75rem)', 
+                      color: 'rgba(255,255,255,0.85)', 
+                      letterSpacing: '0.4px', 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '5px',
+                      fontWeight: '500'
+                    }}>
+                      Explore Collection <i className="fas fa-chevron-right" style={{ fontSize: '0.65rem', color: '#D4AF37' }}></i>
+                    </span>
                   </div>
                 </Link>
               );
