@@ -1,8 +1,15 @@
 import { Suspense } from 'react';
 import ShopCatalogClient from '@/components/shop/ShopCatalogClient';
 import { getCategories, getProducts } from '@/lib/db-helpers';
+import { constructMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata = constructMetadata({
+  title: 'Shop Premium 24K Gold & Silver Electroplated Hindu God Idols | Anant Arts',
+  description: 'Browse our complete catalog of handcrafted Lord Ganesha, Radha Krishna, Shiva, Hanuman, and Lakshmi murtis with 24K gold and pure silver electroplating.',
+  canonical: '/shop',
+});
 
 export default async function ShopPage() {
   const categories = await getCategories();

@@ -1,15 +1,11 @@
 import { getSettings } from '@/lib/db-helpers';
+import { constructMetadata } from '@/lib/seo';
 
-export async function generateMetadata() {
-  return {
-    title: 'Terms & Conditions | Anant Arts',
-    description: 'Read the Terms and Conditions of Anant Arts. By placing an order on anantarts.in, you agree to these terms covering payment, delivery, cancellations, and more.',
-    alternates: {
-      canonical: 'https://anantarts.in/terms-and-conditions',
-    },
-    robots: { index: true, follow: true },
-  };
-}
+export const metadata = constructMetadata({
+  title: 'Terms & Conditions | Anant Arts',
+  description: 'Read the official Terms and Conditions of Anant Arts covering orders, encrypted payments, insured delivery, cancellations, and governing jurisdiction.',
+  canonical: '/terms-and-conditions',
+});
 
 export default async function TermsAndConditionsPage() {
   const settings = await getSettings();

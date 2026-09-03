@@ -1,113 +1,43 @@
-'use client';
-import { useState, useEffect, Suspense } from 'react';
-import { trackOrderAction } from '@/app/actions';
-import { useSearchParams, useRouter } from 'next/navigation';
-import TrackingTimeline from '@/components/TrackingTimeline';
+import { constructMetadata } from '@/lib/seo';
+import OrderTrackingClient from '@/components/tracking/OrderTrackingClient';
+import Link from 'next/link';
 
-function OrderTrackingContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [orderNumber, setOrderNumber] = useState('');
-  const [phone, setPhone] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [order, setOrder] = useState(null);
-  const [trackingEvents, setTrackingEvents] = useState([]);
-  const [error, setError] = useState('');
-
-  const urlOrder = searchParams.get('order') || searchParams.get('id');
-  const urlPhone = searchParams.get('phone');
-
-  const trackOrder = async (num, ph) => {
-    if (!num?.trim()) return;
-    setLoading(true);
-    setError('');
-    setOrder(null);
-    setTrackingEvents([]);
-
-    const result = await trackOrderAction(num.trim(), ph?.trim() || '');
-
-    if (!result.success) {
-      setError(result.message);
-    } else {
-      setOrder(result.order);
-      setTrackingEvents(result.trackingEvents || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (urlOrder) {
-      Promise.resolve().then(() => {
-        setOrderNumber(urlOrder);
-        if (urlPhone) setPhone(urlPhone);
-        trackOrder(urlOrder, urlPhone || '');
-      });
-    }
-  }, [urlOrder, urlPhone]);
-
-
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (!orderNumber.trim()) return;
-    trackOrder(orderNumber, phone);
-  };
-
-  return (
-    <>
-      {/* Search bar */}
-      <div style={{ background: 'white', padding: '24px', borderRadius: '12px', border: '1px solid var(--primary-gold-border)', boxShadow: 'var(--shadow-sm)', marginBottom: '32px' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              placeholder="Order ID (e.g. ANT-20260720-XXXX)"
-              value={orderNumber}
-              onChange={(e) => setOrderNumber(e.target.value)}
-              required
-              style={{ flex: '2 1 220px', padding: '12px 16px', borderRadius: '6px', border: '1px solid var(--primary-gold-border)', fontSize: '0.9rem', outline: 'none' }}
-            />
-            <input
-              type="tel"
-              placeholder="Registered phone number (optional if logged in)"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              style={{ flex: '1 1 180px', padding: '12px 16px', borderRadius: '6px', border: '1px solid var(--primary-gold-border)', fontSize: '0.9rem', outline: 'none' }}
-            />
-            <button type="submit" className="btn-gold" style={{ padding: '12px 28px', whiteSpace: 'nowrap', borderRadius: '6px', fontWeight: '700' }} disabled={loading}>
-              {loading ? 'Searching...' : 'Track Order'}
-            </button>
-          </div>
-        </form>
-        {error && <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: '12px 0 0 0', fontWeight: '500' }}>⚠️ {error}</p>}
-      </div>
-
-      {/* Tracking Details */}
-      {order && (
-        <TrackingTimeline order={order} trackingEvents={trackingEvents} />
-      )}
-    </>
-  );
-}
+export const metadata = constructMetadata({
+  title: 'Track Your Order | Insured Express Delivery | Anant Arts',
+  description: 'Track the live transit status of your handcrafted 24K gold and silver electroplated idol from our workshop to your doorstep.',
+  canonical: '/order-tracking',
+});
 
 export default function OrderTrackingPage() {
   return (
     <div style={{ background: 'var(--bg-cream)', padding: '4rem 0', minHeight: '80vh' }}>
       <div style={{ maxWidth: '850px', margin: '0 auto', padding: '0 1.5rem' }}>
         
-        <div className="section-heading" style={{ marginBottom: '2rem' }}>
-          <h2>Live Order Tracking</h2>
-          <div className="gold-line"></div>
-          <p>Track your divine electroplated sculpture from master workshop to your doorstep.</p>
+        {/* Semantic H1 Section Heading */}
+        <div className="section-heading" style={{ marginBottom: '2.5rem' }}>
+          <span style={{ color: 'var(--primary-gold)', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: '700' }}>
+            Live Dispatch Portal
+          </span>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: 'var(--text-dark)', marginTop: '8px', marginBottom: '12px' }}>
+            Live Order Tracking
+          </h1>
+          <div className="gold-line" style={{ margin: '0 auto 16px auto' }}></div>
+          <p style={{ color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', fontSize: '0.95rem' }}>
+            Monitor your divine sculpture through artisan quality inspection, insured wooden crate packaging, and doorstep logistics.
+          </p>
         </div>
 
-        <Suspense fallback={
-          <div style={{ textAlign: 'center', padding: '40px', background: 'white', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
-            <p style={{ color: 'var(--text-muted)' }}>Loading tracking portal...</p>
+        <OrderTrackingClient />
+
+        <div style={{ marginTop: '3.5rem', textAlign: 'center', padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid var(--primary-gold-border)' }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0 16px 0' }}>
+            Need assistance with your consignment? Our dispatch desk is available 7 days a week.
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/contact" className="btn-secondary btn-sm">Contact Dispatch Support</Link>
+            <Link href="/shipping-policy" className="btn-secondary btn-sm">View Shipping Policy</Link>
           </div>
-        }>
-          <OrderTrackingContent />
-        </Suspense>
+        </div>
 
       </div>
     </div>

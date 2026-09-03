@@ -1,15 +1,11 @@
 import { getSettings } from '@/lib/db-helpers';
+import { constructMetadata } from '@/lib/seo';
 
-export async function generateMetadata() {
-  return {
-    title: 'Refund Policy | Anant Arts',
-    description: 'Read the Refund Policy of Anant Arts. We process refunds within 7-10 business days for confirmed transit-damaged orders. Contact orders@anantarts.in to initiate a claim.',
-    alternates: {
-      canonical: 'https://anantarts.in/refund-policy',
-    },
-    robots: { index: true, follow: true },
-  };
-}
+export const metadata = constructMetadata({
+  title: 'Refund Policy | 100% Transit Safe Guarantee | Anant Arts',
+  description: 'Read the official Refund Policy of Anant Arts. We process refunds within 7-10 business days for confirmed transit-damaged orders under full insurance.',
+  canonical: '/refund-policy',
+});
 
 export default async function RefundPolicyPage() {
   const settings = await getSettings();
