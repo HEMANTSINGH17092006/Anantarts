@@ -66,7 +66,7 @@ export default function BulkEnquiryBanner() {
           <a 
             href="https://wa.me/917275819354?text=Hi%20Anant%20Arts%20team%2C%20I%20want%20to%20enquire%20about%20a%20bulk%20order."
             target="_blank"
-            rel="noopener noreferrer"
+            rel="nofollow noopener noreferrer"
             className="btn-outline-gold" 
             style={{ padding: '11px 24px', fontSize: '0.88rem', color: '#FFFFFF', borderColor: '#D4AF37' }}
           >

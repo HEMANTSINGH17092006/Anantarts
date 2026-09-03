@@ -1,11 +1,11 @@
-import { getProducts, getCategories, getBlogs } from '@/lib/db-helpers';
+import { getProducts, getBlogs } from '@/lib/db-helpers';
 
 export const revalidate = 3600; // Revalidate sitemap hourly
 
 export default async function sitemap() {
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').replace(/\/$/, '');
 
-  // 1. Core Static Canonical Pages
+  // 1. Core Static Canonical Landing & Informational Pages
   const staticPages = [
     { route: '', priority: 1.0, changeFrequency: 'daily' },
     { route: '/shop', priority: 0.9, changeFrequency: 'daily' },
@@ -31,7 +31,7 @@ export default async function sitemap() {
     priority,
   }));
 
-  // 2. Dynamic Published Products
+  // 2. Dynamic Published Product Pages
   let productEntries = [];
   try {
     const products = await getProducts({ all: false });
@@ -49,25 +49,7 @@ export default async function sitemap() {
     console.error('Error fetching products for sitemap:', err);
   }
 
-  // 3. Dynamic Categories
-  let categoryEntries = [];
-  try {
-    const categories = await getCategories();
-    if (Array.isArray(categories)) {
-      categoryEntries = categories
-        .filter((c) => c.slug)
-        .map((cat) => ({
-          url: `${baseUrl}/shop?category=${cat.slug}`,
-          lastModified: cat.updated_at ? new Date(cat.updated_at) : new Date(),
-          changeFrequency: 'weekly',
-          priority: 0.75,
-        }));
-    }
-  } catch (err) {
-    console.error('Error fetching categories for sitemap:', err);
-  }
-
-  // 4. Dynamic Published Blog Posts
+  // 3. Dynamic Published Blog Posts
   let blogEntries = [];
   try {
     const blogs = await getBlogs(true);
@@ -85,5 +67,5 @@ export default async function sitemap() {
     console.error('Error fetching blogs for sitemap:', err);
   }
 
-  return [...staticPages, ...productEntries, ...categoryEntries, ...blogEntries];
+  return [...staticPages, ...productEntries, ...blogEntries];
 }

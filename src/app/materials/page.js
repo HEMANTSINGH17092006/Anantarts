@@ -4,7 +4,7 @@ import { constructMetadata } from '@/lib/seo';
 export const revalidate = 3600;
 
 export const metadata = constructMetadata({
-  title: 'Shop by Material | 24K Gold Plated, Brass, Teak Wood & Silver Art | Anant Arts',
+  title: 'Shop by Material — 24K Gold, Brass & Teak | Anant Arts',
   description: 'Explore handcrafted sculptures by material: 24K Gold electroplating, 999 Sterling Silver, lost-wax cast bell metal brass, seasoned teak wood, and Rajasthan white marble.',
   canonical: '/materials',
 });

@@ -4,7 +4,7 @@ import { constructMetadata } from '@/lib/seo';
 export const revalidate = 3600;
 
 export const metadata = constructMetadata({
-  title: 'Shop by Occasion | Housewarming, Wedding, Diwali & Corporate Gifting | Anant Arts',
+  title: 'Shop by Occasion — Sacred Gifting & Festivals | Anant Arts',
   description: 'Curated 24K gold and silver electroplated gifting collections for Griha Pravesh housewarmings, weddings, Diwali festivities, anniversaries, and corporate honors.',
   canonical: '/occasions',
 });

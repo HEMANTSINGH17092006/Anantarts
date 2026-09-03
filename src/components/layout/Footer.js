@@ -31,7 +31,8 @@ export default function Footer({
     console.error(e);
   }
 
-  const instUrl = socialLinks.instagram || 'https://www.instagram.com/anantarts.in/';
+  const rawInst = socialLinks.instagram || 'https://www.instagram.com/anantarts.in/';
+  const instUrl = rawInst.includes('?') ? rawInst.split('?')[0].replace(/\/$/, '') + '/' : rawInst;
   const fbUrl = socialLinks.facebook || '';
   const ytUrl = socialLinks.youtube || '';
 
@@ -120,7 +121,7 @@ export default function Footer({
               <a 
                 href={instUrl} 
                 target="_blank" 
-                rel="noopener noreferrer" 
+                rel="nofollow noopener noreferrer" 
                 className="social-icon" 
                 aria-label="Follow Anant Arts on Instagram"
                 style={{
@@ -139,12 +140,12 @@ export default function Footer({
                 <i className="fab fa-instagram" style={{ fontSize: '1.2rem' }}></i>
               </a>
               {fbUrl && (
-                <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on Facebook">
+                <a href={fbUrl} target="_blank" rel="nofollow noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on Facebook">
                   <i className="fab fa-facebook-f"></i>
                 </a>
               )}
               {ytUrl && (
-                <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on YouTube">
+                <a href={ytUrl} target="_blank" rel="nofollow noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on YouTube">
                   <i className="fab fa-youtube"></i>
                 </a>
               )}
@@ -195,7 +196,7 @@ export default function Footer({
               href={`https://wa.me/${whatsappNumber}`} 
               style={{ color: 'var(--primary-gold)', marginLeft: '4px', display: 'inline-flex', alignItems: 'center' }} 
               target="_blank" 
-              rel="noopener noreferrer"
+              rel="nofollow noopener noreferrer" 
               title="Chat on WhatsApp"
               aria-label="WhatsApp Support"
             >
@@ -230,7 +231,7 @@ export default function Footer({
           href={`https://wa.me/${whatsappNumber}?text=Hi%20Anant%20Arts%20team%2C%20I%20want%20to%20know%20more%20about%20your%20idols.`}
           className="whatsapp-float"
           target="_blank"
-          rel="noopener noreferrer"
+          rel="nofollow noopener noreferrer"
           style={{
             position: 'fixed',
             bottom: '90px',

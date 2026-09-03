@@ -10,6 +10,30 @@ export const metadata = constructMetadata({
   canonical: '/blog',
 });
 
+const FOUNDATIONAL_GUIDES = [
+  {
+    title: 'The Sacred Science of 24K Gold Electroplating in Temple Statuary',
+    category: 'Artisanal Metallurgy',
+    readTime: '6 min read',
+    excerpt: 'Explore how traditional Jaipur lost-wax brass sculpting fuses with modern multi-stage electro-deposition. Discover why molecular 24K gold bonding outlasts conventional gold foil leafing without tarnishing or peeling.',
+    link: '/materials'
+  },
+  {
+    title: 'Vastu Shastra Deity Orientation: Harmonizing Your Home Mandir',
+    category: 'Vastu & Spirituality',
+    readTime: '8 min read',
+    excerpt: 'Detailed shastra guidelines on sanctifying Lord Ganesha in the northeast corner (Ishanya), positioning Goddess Lakshmi for prosperity, and setting up Radha Krishna idols for domestic harmony.',
+    link: '/consultation'
+  },
+  {
+    title: 'Sacred Gifting Etiquette: Selecting Auspicious Idols for Milestones',
+    category: 'Gifting Traditions',
+    readTime: '5 min read',
+    excerpt: 'A comprehensive curation guide for Griha Pravesh housewarmings, wedding keepsakes, and executive corporate honors. Learn the spiritual blessings behind each sacred posture and material medium.',
+    link: '/occasions'
+  }
+];
+
 export default async function BlogListingPage() {
   const blogs = await getBlogs();
 
@@ -23,25 +47,16 @@ export default async function BlogListingPage() {
             Wisdom &amp; Craftsmanship
           </span>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(2rem, 4vw, 2.6rem)', color: 'var(--text-dark)', marginTop: '8px', marginBottom: '12px' }}>
-            Artisan Blogs &amp; Temple Vastu
+            Artisan Blogs &amp; Temple Vastu Guides
           </h1>
           <div className="gold-line" style={{ margin: '0 auto 16px auto' }}></div>
           <p style={{ color: 'var(--text-muted)', maxWidth: '680px', margin: '0 auto', fontSize: '0.95rem' }}>
-            Read about Jaipur sculpting lineages, electroplating chemistry, and authentic placement guidelines for home mandirs and office sanctuaries.
+            Read authoritative guides on Jaipur sculpting lineages, electroplating metallurgy, and authentic placement guidelines for home mandirs and office sanctuaries.
           </p>
         </div>
 
-        {blogs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: '12px', border: '1px solid var(--primary-gold-border)' }}>
-            <span style={{ fontSize: '3rem' }}>✍️</span>
-            <h3 style={{ marginTop: '12px', fontFamily: 'var(--font-heading)' }}>Artisan Journal in Preparation</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '500px', margin: '8px auto 24px auto' }}>
-              Our Jaipur studio historians are compiling in-depth guides on deity symbolism, 24K electroplating techniques, and festive puja rituals.
-            </p>
-            <Link href="/shop" className="btn-primary btn-md">Explore Sacred Idols</Link>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '2rem' }}>
+        {blogs && blogs.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '2rem', marginBottom: '4rem' }}>
             {blogs.map((blog) => (
               <article 
                 key={blog.id} 
@@ -98,36 +113,70 @@ export default async function BlogListingPage() {
                 <div style={{ padding: '0 24px 24px 24px' }}>
                   <Link 
                     href={`/blog/${blog.slug}`} 
-                    style={{ 
-                      color: 'var(--primary-gold-hover)', 
-                      fontSize: '0.85rem', 
-                      fontWeight: '600', 
-                      textDecoration: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
+                    className="btn-outline-gold"
+                    style={{ fontSize: '0.8rem', padding: '8px 18px', display: 'inline-block' }}
                   >
-                    Read Journal Article &rarr;
+                    Read Article &rarr;
                   </Link>
                 </div>
               </article>
             ))}
           </div>
-        )}
+        ) : null}
 
-        {/* Commercial Internal Linking Section */}
-        <div style={{ marginTop: '4rem', padding: '32px', background: 'white', borderRadius: '12px', border: '1px solid var(--primary-gold-border)', textAlign: 'center' }}>
-          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', marginBottom: '8px' }}>
-            Bring Divine Grace to Your Home
-          </h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '600px', margin: '0 auto 20px auto' }}>
-            Explore our handcrafted collection of 24K gold and pure silver electroplated idols made with authentic lost-wax techniques.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/shop" className="btn-primary btn-md">Shop All Idols</Link>
-            <Link href="/collections" className="btn-secondary btn-md">Explore Collections</Link>
-            <Link href="/materials" className="btn-secondary btn-md">Materials Guide</Link>
+        {/* Foundational Knowledge Guides Section */}
+        <div style={{ background: 'white', border: '1px solid var(--primary-gold-border)', borderRadius: '12px', padding: '36px', boxShadow: 'var(--shadow-sm)', marginTop: blogs && blogs.length > 0 ? '3rem' : 0 }}>
+          <div style={{ textAlign: 'left', marginBottom: '2rem' }}>
+            <span style={{ color: 'var(--primary-gold)', letterSpacing: '1.5px', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: '700' }}>
+              Foundational Editorial Series
+            </span>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', marginTop: '4px', marginBottom: '8px', color: 'var(--text-dark)' }}>
+              Essential Mandir Wisdom &amp; Metallurgical Insights
+            </h2>
+            <div className="gold-line" style={{ margin: '0 0 16px 0' }}></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.75rem' }}>
+            {FOUNDATIONAL_GUIDES.map((guide, idx) => (
+              <div 
+                key={idx}
+                style={{
+                  background: 'var(--bg-cream)',
+                  borderRadius: '10px',
+                  padding: '24px',
+                  border: '1px solid var(--primary-gold-border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: '700', color: 'var(--primary-gold)', letterSpacing: '1px' }}>
+                      {guide.category}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{guide.readTime}</span>
+                  </div>
+                  <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', color: 'var(--text-dark)', marginBottom: '10px', lineHeight: '1.4' }}>
+                    {guide.title}
+                  </h3>
+                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: '1.6', margin: '0 0 16px 0' }}>
+                    {guide.excerpt}
+                  </p>
+                </div>
+                <div>
+                  <Link href={guide.link} className="btn-secondary btn-sm" style={{ display: 'inline-block' }}>
+                    Learn More &rarr;
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: '2.5rem', textAlign: 'center', borderTop: '1px solid var(--primary-gold-border)', paddingTop: '24px', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/shop" className="btn-primary btn-md">Browse Handcrafted Catalog</Link>
+            <Link href="/materials" className="btn-secondary btn-md">Explore All Materials</Link>
+            <Link href="/consultation" className="btn-secondary btn-md">Book Mandir Consultation</Link>
           </div>
         </div>
 

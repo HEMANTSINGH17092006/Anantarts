@@ -98,7 +98,7 @@ export default function FaqClient() {
         </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/contact" className="btn-primary btn-md">Contact Helpdesk</Link>
-          <a href="https://wa.me/917275819354" target="_blank" rel="noopener noreferrer" className="btn-secondary btn-md">Chat on WhatsApp</a>
+          <a href="https://wa.me/917275819354" target="_blank" rel="nofollow noopener noreferrer" className="btn-secondary btn-md">Chat on WhatsApp</a>
         </div>
       </div>
     </div>

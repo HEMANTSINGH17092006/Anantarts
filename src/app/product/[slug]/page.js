@@ -28,15 +28,27 @@ export async function generateMetadata({ params }) {
     ? product.discount_price
     : product.price;
 
-  const title = product.seo_title || `${product.name} | Anant Arts`;
+  let title = product.seo_title;
+  if (!title) {
+    const rawName = (product.name || '').trim();
+    if (rawName.length > 42) {
+      const truncated = rawName.slice(0, 42).replace(/\s+\S*$/, '');
+      title = `${truncated} | Anant Arts`;
+    } else {
+      title = `${rawName} | Anant Arts`;
+    }
+  }
+
   const description = product.seo_description ||
-    (product.description ? product.description.slice(0, 160) : `Buy ${product.name} — premium 24K gold electroplated divine idol.`);
+    (product.description ? product.description.slice(0, 155) : `Buy ${product.name} — handcrafted 24K gold electroplated deity idol with insured all-India delivery.`);
 
   const primaryImage = product.images?.[0]?.image_path || `${BASE_URL}/og-image.jpg`;
   const canonicalUrl = `${BASE_URL}/product/${product.slug}`;
 
   return {
-    title,
+    title: {
+      absolute: title,
+    },
     description,
     alternates: { canonical: canonicalUrl },
     openGraph: {
@@ -331,6 +343,58 @@ export default async function ProductDetailPage({ params }) {
         </div>
 
         <FrequentlyBoughtTogether currentProduct={product} bundleProduct={relatedProducts[0]} />
+
+        {/* Artisanal Craftsmanship & Care Guidelines */}
+        <div style={{ marginTop: '4rem', background: 'white', border: '1px solid var(--primary-gold-border)', borderRadius: '12px', padding: '32px 28px', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="section-heading" style={{ textAlign: 'left', marginBottom: '1.5rem' }}>
+            <span style={{ color: 'var(--primary-gold)', letterSpacing: '1.5px', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: '700' }}>
+              Artisanal Guarantee
+            </span>
+            <h2 style={{ fontSize: '1.45rem', marginTop: '4px', marginBottom: '8px' }}>
+              Craftsmanship, Care &amp; Mandir Placement
+            </h2>
+            <div className="gold-line" style={{ margin: '0 0 16px 0' }}></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+            <div style={{ background: 'var(--bg-cream)', padding: '20px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--primary-gold-hover)', marginBottom: '8px' }}>
+                ✨ 24K Gold Electroplating
+              </h3>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
+                Molecularly bonded with pure 24K fine gold and sealed with baked protective lacquer for eternal shine without tarnishing or peeling.
+              </p>
+            </div>
+
+            <div style={{ background: 'var(--bg-cream)', padding: '20px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--primary-gold-hover)', marginBottom: '8px' }}>
+                🪔 Daily Pooja &amp; Cleaning
+              </h3>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
+                Suitable for daily dhyana and home pooja. Gently wipe with a soft dry microfiber cloth. Avoid harsh chemical cleaners or abrasive metal polishes.
+              </p>
+            </div>
+
+            <div style={{ background: 'var(--bg-cream)', padding: '20px', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--primary-gold-hover)', marginBottom: '8px' }}>
+                📦 100% Transit Insurance
+              </h3>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
+                Dispatched in reinforced wooden crates with multi-layer high-density foam. Free replacement guarantee with unboxing video support.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '0.82rem' }}>
+            <Link href="/materials" style={{ color: 'var(--primary-gold-hover)', textDecoration: 'underline', fontWeight: '500' }}>Explore All Materials &amp; Metallurgy &rarr;</Link>
+            <span style={{ color: 'var(--text-muted)' }}>|</span>
+            <Link href="/occasions" style={{ color: 'var(--primary-gold-hover)', textDecoration: 'underline', fontWeight: '500' }}>Sacred Gifting Occasions &rarr;</Link>
+            <span style={{ color: 'var(--text-muted)' }}>|</span>
+            <Link href="/faq" style={{ color: 'var(--primary-gold-hover)', textDecoration: 'underline', fontWeight: '500' }}>Care &amp; Delivery FAQ &rarr;</Link>
+            <span style={{ color: 'var(--text-muted)' }}>|</span>
+            <Link href="/consultation" style={{ color: 'var(--primary-gold-hover)', textDecoration: 'underline', fontWeight: '500' }}>Pooja Room Design Consultation &rarr;</Link>
+          </div>
+        </div>
 
         {/* Related Products Grid */}
         {relatedProducts.length > 0 && (
