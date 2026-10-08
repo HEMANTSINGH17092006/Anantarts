@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCart, useWishlist } from '../context/AppContext';
@@ -19,6 +19,31 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
   const [scrolled, setScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [announcementIdx, setAnnouncementIdx] = useState(0);
+  const closeTimeoutRef = useRef(null);
+
+  const handleMouseEnter = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    setMegaMenuOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setMegaMenuOpen(false);
+    }, 120);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
+  }, []);
+
+  // Close mega menu on route change
+  useEffect(() => {
+    setMegaMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,6 +67,9 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
+      if (window.innerWidth <= 768) {
+        setMegaMenuOpen(false);
+      }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -53,7 +81,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
 
   return (
     <>
-      {/* Top Announcement Bar (Issue #9: Rotating low-noise message) */}
+      {/* Top Announcement Bar (Rotating low-noise message) */}
       <div className="announcement-bar">
         <div className="announcement-container">
           <div className="announcement-item" style={{ transition: 'opacity 0.4s ease' }}>
@@ -63,7 +91,10 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
       </div>
 
       {/* Main Sticky Header */}
-      <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
+      <header 
+        className={`site-header ${scrolled ? 'scrolled' : ''}`}
+        onMouseLeave={handleMouseLeave}
+      >
         <div className="header-container">
           
           {/* Logo Group */}
@@ -76,7 +107,7 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
           </Link>
 
           {/* CENTERED DESKTOP NAVIGATION */}
-          <nav className="main-nav">
+          <nav className="main-nav" aria-label="Main Navigation">
             <ul style={{ display: 'flex', gap: '32px', alignItems: 'center', listStyle: 'none', margin: 0, padding: 0 }}>
               
               {/* 1. Home */}
@@ -99,15 +130,15 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
                 </Link>
               </li>
 
-              {/* 3. Categories (Mega Menu Trigger - Issue #23: Aligned baseline) */}
+              {/* 3. Categories (Mega Menu Trigger) */}
               <li 
-                onMouseEnter={() => setMegaMenuOpen(true)}
-                onMouseLeave={() => setMegaMenuOpen(false)}
-                style={{ position: 'relative' }}
+                onMouseEnter={handleMouseEnter}
               >
                 <button 
                   onClick={() => setMegaMenuOpen(!megaMenuOpen)}
-                  className={`nav-link-item ${megaMenuOpen || pathname.startsWith('/collections') ? 'active' : ''}`}
+                  className={`nav-link-item ${megaMenuOpen || pathname.startsWith('/category') || pathname.startsWith('/collections') ? 'active' : ''}`}
+                  aria-expanded={megaMenuOpen}
+                  aria-haspopup="true"
                   style={{
                     background: 'none',
                     border: 'none',
@@ -116,15 +147,18 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
                     fontSize: 'inherit',
                     lineHeight: 'inherit',
                     margin: 0,
-                    verticalAlign: 'middle'
+                    verticalAlign: 'middle',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
                 >
                   <span>Collections</span>
-                  <i className={`fas fa-chevron-${megaMenuOpen ? 'up' : 'down'}`} style={{ fontSize: '0.7rem', color: '#D4AF37' }}></i>
+                  <i 
+                    className={`fas fa-chevron-${megaMenuOpen ? 'up' : 'down'}`} 
+                    style={{ fontSize: '0.7rem', color: '#D4AF37', transition: 'transform 0.2s ease' }}
+                  ></i>
                 </button>
-
-                {/* Categories Mega Menu Dropdown */}
-                <MegaMenu isOpen={megaMenuOpen} onClose={() => setMegaMenuOpen(false)} />
               </li>
 
               {/* 4. Corporate Gifts */}
@@ -186,8 +220,15 @@ export default function Header({ settings = {}, onCartClick, onSearchClick, onWi
             </button>
           </div>
         </div>
+
+        {/* Categories Mega Menu Dropdown */}
+        <MegaMenu 
+          isOpen={megaMenuOpen} 
+          onClose={() => setMegaMenuOpen(false)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        />
       </header>
     </>
   );
 }
-
