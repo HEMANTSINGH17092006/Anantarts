@@ -12,20 +12,18 @@ export async function sendEmail({ to, subject, html, text }) {
   const port = parseInt(process.env.SMTP_PORT || '587');
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || user || 'noreply@anantarts.in';
+  // If SMTP_FROM is not explicitly set, use the authenticated user address to avoid Gmail/provider spoofing rejections
+  const senderEmail = process.env.SMTP_FROM || user;
+  const replyToEmail = process.env.SMTP_REPLY_TO || senderEmail || 'support@anantarts.in';
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').replace(/\/$/, '');
 
   if (!host || !user || !pass) {
-    console.warn(
-      `[Email Warning] SMTP credentials are not configured in environment variables.\n` +
-      `To enable active email alerts, please define: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS\n` +
-      `Attempted to send to: ${to} | Subject: ${subject}`
-    );
-    // Return mock success in development, so flows don't crash
+    const errorMsg = 'Email provider not configured. Please define SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in environment variables.';
+    console.warn(`[Email Provider Error]: ${errorMsg}`);
     return { 
       success: false, 
-      error: 'SMTP not configured', 
-      isMock: true 
+      error: errorMsg,
+      isConfigured: false
     };
   }
 
@@ -83,15 +81,15 @@ export async function sendEmail({ to, subject, html, text }) {
     `;
 
     const mailOptions = {
-      from: `"Anant Arts" <${from}>`,
-      replyTo: from,
+      from: `"Anant Arts" <${senderEmail}>`,
+      replyTo: replyToEmail,
       to,
       subject,
       text,
       html: brandedHtml,
       headers: {
         'X-Mailer': 'Anant Arts Mailer',
-        'List-Unsubscribe': `<mailto:${from}?subject=unsubscribe>`,
+        'List-Unsubscribe': `<mailto:${replyToEmail}?subject=unsubscribe>`,
       },
     };
 

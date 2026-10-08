@@ -5,10 +5,10 @@ import { adminLogout, getAdminSessionAction, getAdminNotificationsAction, markNo
 import { useState, useEffect } from 'react';
 
 const rolePermissions = {
-  super_admin: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/customers', '/admin/payment-recovery', '/admin/coupons', '/admin/content', '/admin/blogs', '/admin/settings', '/admin/import'],
-  admin: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/customers', '/admin/payment-recovery', '/admin/coupons', '/admin/content', '/admin/blogs', '/admin/settings', '/admin/import'],
-  manager: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/payment-recovery'],
-  content_editor: ['/admin', '/admin/products', '/admin/categories', '/admin/blogs', '/admin/content']
+  super_admin: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/customers', '/admin/marketing', '/admin/payment-recovery', '/admin/coupons', '/admin/content', '/admin/blogs', '/admin/settings', '/admin/import'],
+  admin: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/customers', '/admin/marketing', '/admin/payment-recovery', '/admin/coupons', '/admin/content', '/admin/blogs', '/admin/settings', '/admin/import'],
+  manager: ['/admin', '/admin/delivery', '/admin/orders', '/admin/products', '/admin/categories', '/admin/customers', '/admin/marketing', '/admin/payment-recovery'],
+  content_editor: ['/admin', '/admin/products', '/admin/categories', '/admin/blogs', '/admin/content', '/admin/marketing']
 };
 
 export default function AdminLayout({ children }) {
@@ -70,6 +70,7 @@ export default function AdminLayout({ children }) {
     { href: '/admin/import', label: '📥 Bulk Import Products', icon: 'fa-file-import' },
     { href: '/admin/categories', label: 'Categories & Deities', icon: 'fa-folder-tree' },
     { href: '/admin/customers', label: 'Customer Management', icon: 'fa-users' },
+    { href: '/admin/marketing', label: '📢 Marketing & Campaigns', icon: 'fa-bullhorn' },
     { href: '/admin/payment-recovery', label: 'Payment Recovery', icon: 'fa-shield-halved' },
     { href: '/admin/coupons', label: 'Discounts & Coupons', icon: 'fa-ticket' },
     { href: '/admin/content', label: 'Banners & Layout', icon: 'fa-sliders' },

@@ -518,6 +518,114 @@ async function initDb() {
       FOREIGN KEY(import_session_id) REFERENCES import_sessions(id) ON DELETE CASCADE,
       FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
     );
+
+    -- Marketing & Customer Communication System Tables
+    CREATE TABLE IF NOT EXISTS marketing_campaigns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'email',
+      subject TEXT,
+      preview_text TEXT,
+      content_html TEXT,
+      content_text TEXT,
+      template_id INTEGER,
+      segment_config TEXT,
+      status TEXT DEFAULT 'draft',
+      total_recipients INTEGER DEFAULT 0,
+      sent_count INTEGER DEFAULT 0,
+      delivered_count INTEGER DEFAULT 0,
+      opened_count INTEGER DEFAULT 0,
+      clicked_count INTEGER DEFAULT 0,
+      failed_count INTEGER DEFAULT 0,
+      scheduled_at DATETIME,
+      started_at DATETIME,
+      completed_at DATETIME,
+      created_by TEXT,
+      settings TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS marketing_templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'email',
+      category TEXT DEFAULT 'general',
+      subject TEXT,
+      preview_text TEXT,
+      body_html TEXT,
+      body_text TEXT,
+      thumbnail_url TEXT,
+      is_system INTEGER DEFAULT 0,
+      created_by TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS campaign_recipients (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER NOT NULL,
+      customer_id INTEGER,
+      recipient_email TEXT,
+      recipient_phone TEXT,
+      recipient_name TEXT,
+      status TEXT DEFAULT 'pending',
+      error_message TEXT,
+      retry_count INTEGER DEFAULT 0,
+      sent_at DATETIME,
+      opened_at DATETIME,
+      clicked_at DATETIME,
+      tracking_token TEXT UNIQUE,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(campaign_id) REFERENCES marketing_campaigns(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS communication_preferences (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE,
+      phone TEXT,
+      email_marketing_opt_in INTEGER DEFAULT 1,
+      whatsapp_marketing_opt_in INTEGER DEFAULT 1,
+      unsubscribed_at DATETIME,
+      unsubscribe_reason TEXT,
+      source TEXT DEFAULT 'system',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS campaign_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER NOT NULL,
+      recipient_id INTEGER,
+      event_type TEXT NOT NULL,
+      metadata TEXT,
+      ip_address TEXT,
+      user_agent TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(campaign_id) REFERENCES marketing_campaigns(id) ON DELETE CASCADE,
+      FOREIGN KEY(recipient_id) REFERENCES campaign_recipients(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS campaign_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER,
+      level TEXT DEFAULT 'info',
+      message TEXT NOT NULL,
+      details TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(campaign_id) REFERENCES marketing_campaigns(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS customer_segments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      filter_criteria TEXT NOT NULL,
+      created_by TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Run schema expansions / column additions
@@ -596,6 +704,13 @@ async function initDb() {
   await addColumn('import_products', 'action_type', 'TEXT');
   await addColumn('import_products', 'snapshot_file_path', 'TEXT');
 
+  // Marketing Campaign Column Additions
+  await addColumn('marketing_campaigns', 'settings', 'TEXT');
+  await addColumn('marketing_campaigns', 'preview_text', 'TEXT');
+  await addColumn('marketing_templates', 'category', "TEXT DEFAULT 'general'");
+  await addColumn('marketing_templates', 'preview_text', 'TEXT');
+  await addColumn('communication_preferences', 'unsubscribe_reason', 'TEXT');
+
   if (isPostgres) {
     try {
       await pool.query("NOTIFY pgrst, 'reload schema'");
@@ -626,6 +741,14 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items (order_id);
     CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items (product_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_razorpay_payment_id ON orders (razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;
+    
+    -- Marketing Performance Indexes
+    CREATE INDEX IF NOT EXISTS idx_camp_recipients_campaign ON campaign_recipients (campaign_id);
+    CREATE INDEX IF NOT EXISTS idx_camp_recipients_status ON campaign_recipients (status);
+    CREATE INDEX IF NOT EXISTS idx_camp_recipients_token ON campaign_recipients (tracking_token);
+    CREATE INDEX IF NOT EXISTS idx_comm_pref_email ON communication_preferences (email);
+    CREATE INDEX IF NOT EXISTS idx_camp_events_campaign ON campaign_events (campaign_id);
+    CREATE INDEX IF NOT EXISTS idx_camp_logs_campaign ON campaign_logs (campaign_id);
   `);
 
   console.log('Database tables verified/created successfully.');
@@ -959,6 +1082,276 @@ async function seedDefaultData() {
     if (!exists) {
       await dbRun('INSERT INTO website_settings (key, value) VALUES (?, ?)', [s.key, s.value]);
     }
+  }
+
+  // 8. Seed Luxury Marketing Templates
+  await seedMarketingTemplates();
+}
+
+async function seedMarketingTemplates() {
+  try {
+    const tplCount = await dbGet('SELECT COUNT(*) as count FROM marketing_templates');
+    if (parseInt(tplCount?.count || 0) > 0) return;
+
+    const defaultTemplates = [
+      {
+        name: 'New Collection — 24K Gold & Silver Sculptures',
+        type: 'email',
+        category: 'new_arrival',
+        subject: '🪷 Discover New Sacred 24K Gold Sculptures | Anant Arts',
+        preview_text: 'Handcrafted divine masterpieces with certified 24K gold electroplating for your home temple.',
+        body_html: `<div style="text-align: center; margin-bottom: 24px;">
+  <span style="display: inline-block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #AA7C11; font-weight: 700; background: #FFF8F0; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(212,175,55,0.3);">✨ New Sacred Masterpieces</span>
+  <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; color: #1E1A17; margin: 12px 0 8px 0; font-weight: 700;">Elevate Your Sacred Sanctuary</h2>
+  <p style="font-size: 14px; color: #6E5A5A; max-width: 480px; margin: 0 auto; line-height: 1.6;">Namaste {{name}}, master artisans at Anant Arts have unveiled our most exquisite collection of 24K gold electroplated idols, sculpted with eternal grace.</p>
+</div>
+
+<div style="background: #FFF8F0; border: 1px solid rgba(212,175,55,0.25); border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0; font-size: 13px; color: #3B2F2F; font-weight: 600;">✨ Certified 24K Gold Electroplating &bull; 🚚 Insured Express Pan-India Delivery &bull; 🪷 Sanctified Artistry</p>
+</div>
+
+<!-- PRODUCT_CARDS_PLACEHOLDER -->
+
+<div style="text-align: center; margin-top: 32px;">
+  <a href="https://anantarts.in/shop" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%); color: #111111; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(212,175,55,0.35);">Explore Entire Collection</a>
+</div>`,
+        body_text: `Namaste {{name}},\n\nDiscover our latest handcrafted 24K gold electroplated spiritual collection at Anant Arts.\n\nCertified 24K Gold Electroplating | Insured Pan-India Shipping\n\nExplore the collection: https://anantarts.in/shop\n\nBringing Divine Art to Every Home.\nAnant Arts`,
+        is_system: 1
+      },
+      {
+        name: 'Festive Auspicious Blessings (Diwali & Navratri)',
+        type: 'email',
+        category: 'festival',
+        subject: '🪔 Auspicious Festive Blessings for Your Home Mandir | Anant Arts',
+        preview_text: 'Invite prosperity, light, and grace into your sacred sanctuary this auspicious season.',
+        body_html: `<div style="text-align: center; margin-bottom: 24px;">
+  <span style="display: inline-block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #D4AF37; font-weight: 700; background: #1E1A17; padding: 4px 14px; border-radius: 20px;">🪔 Auspicious Festive Celebration</span>
+  <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; color: #1E1A17; margin: 12px 0 8px 0; font-weight: 700;">Illuminate Your Mandir with Divine Radiance</h2>
+  <p style="font-size: 14px; color: #6E5A5A; max-width: 480px; margin: 0 auto; line-height: 1.6;">Namaste {{name}}, as celebrations begin, invite the blessings of Goddess Lakshmi and Lord Ganesha into your family home with masterfully electroplated idols.</p>
+</div>
+
+<div style="background: linear-gradient(135deg, #FFF8F0 0%, #F5ECD7 100%); border: 1px solid #D4AF37; border-radius: 8px; padding: 24px; margin: 24px 0; text-align: center;">
+  <span style="font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #8C2425; font-weight: 700;">Festive Special Blessing</span>
+  <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #1E1A17; margin: 6px 0 10px 0;">Enjoy 10% Off with Code <span style="color: #AA7C11; border-bottom: 2px dashed #AA7C11;">DIVINE10</span></h3>
+  <p style="font-size: 13px; color: #6E5A5A; margin: 0;">Valid on all orders above ₹5,000. Free insured shipping across India.</p>
+</div>
+
+<!-- PRODUCT_CARDS_PLACEHOLDER -->
+
+<div style="text-align: center; margin-top: 32px;">
+  <a href="https://anantarts.in/shop" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%); color: #111111; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(212,175,55,0.35);">Shop Festive Collection</a>
+</div>`,
+        body_text: `Namaste {{name}},\n\nCelebrate the festive season with auspicious blessings from Anant Arts. Enjoy 10% off your sacred idol with code DIVINE10 on orders above ₹5,000.\n\nShop now: https://anantarts.in/shop\n\nAnant Arts — Bringing Divine Art to Every Home`,
+        is_system: 1
+      },
+      {
+        name: 'Special Auspicious Offer — Exclusive Discount',
+        type: 'email',
+        category: 'offer',
+        subject: '🎁 Exclusive Auspicious Blessing for You | Anant Arts',
+        preview_text: 'A curated gift voucher for our cherished patrons and devotees.',
+        body_html: `<div style="text-align: center; margin-bottom: 24px;">
+  <span style="display: inline-block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #2E7D32; font-weight: 700; background: #E8F5E9; padding: 4px 12px; border-radius: 20px;">🎁 Patron Appreciation Blessing</span>
+  <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; color: #1E1A17; margin: 12px 0 8px 0; font-weight: 700;">An Exclusive Token of Reverence</h2>
+  <p style="font-size: 14px; color: #6E5A5A; max-width: 480px; margin: 0 auto; line-height: 1.6;">Namaste {{name}}, as a valued patron of handcrafted spiritual heritage, we are delighted to offer you a private concession towards your next sacred idol.</p>
+</div>
+
+<div style="border: 2px dashed #D4AF37; background: #FFFDF8; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0;">
+  <span style="font-size: 12px; color: #6E5A5A; text-transform: uppercase; letter-spacing: 1px;">Your Exclusive Coupon Code</span>
+  <div style="font-family: monospace; font-size: 28px; font-weight: 800; color: #AA7C11; letter-spacing: 4px; margin: 10px 0;">DIVINE10</div>
+  <p style="font-size: 13px; color: #3B2F2F; margin: 0;">Apply at checkout for <strong>10% instant concession</strong> + Free Insured Delivery.</p>
+</div>
+
+<!-- PRODUCT_CARDS_PLACEHOLDER -->
+
+<div style="text-align: center; margin-top: 32px;">
+  <a href="https://anantarts.in/shop" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%); color: #111111; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;">Claim Your Blessing Now</a>
+</div>`,
+        body_text: `Namaste {{name}},\n\nEnjoy 10% off your next sacred idol order at Anant Arts with code: DIVINE10.\n\nShop our handcrafted collection: https://anantarts.in/shop\n\nAnant Arts`,
+        is_system: 1
+      },
+      {
+        name: 'Order Follow-up & Reverence Check',
+        type: 'email',
+        category: 'follow_up',
+        subject: '🙏 How is Your Sacred Idol Resonating in Your Sanctuary?',
+        preview_text: 'We would be deeply honoured to hear your experience with Anant Arts.',
+        body_html: `<div style="text-align: center; margin-bottom: 24px;">
+  <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">🪷</span>
+  <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 24px; color: #1E1A17; margin: 8px 0; font-weight: 700;">A Sacred Relationship</h2>
+  <p style="font-size: 14px; color: #6E5A5A; max-width: 480px; margin: 0 auto; line-height: 1.6;">Namaste {{name}}, we hope your newly received Anant Arts sculpture has brought tranquility, harmony, and divine radiance into your home.</p>
+</div>
+
+<div style="background: #FAF9F6; border-left: 3px solid #D4AF37; padding: 18px 20px; border-radius: 0 8px 8px 0; margin: 24px 0; font-size: 13.5px; color: #3B2F2F; line-height: 1.6;">
+  <p style="margin: 0 0 10px 0;"><strong>Care Tip for Your Electroplated Idol:</strong></p>
+  <p style="margin: 0;">Gently wipe with a soft microfibre cloth. Avoid harsh chemical cleaners or abrasive liquids to preserve the lustrous 24K gold lacquer for decades.</p>
+</div>
+
+<div style="text-align: center; margin-top: 32px;">
+  <p style="font-size: 14px; color: #3B2F2F; margin-bottom: 16px;">Have feedback or wish to share pictures of your mandir setup?</p>
+  <a href="mailto:support@anantarts.in" style="display: inline-block; background: #1E1A17; color: #D4AF37; font-weight: 600; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 13px; border: 1px solid #D4AF37;">Share Your Thoughts with Us</a>
+</div>`,
+        body_text: `Namaste {{name}},\n\nWe hope your sacred idol has brought peace and divine radiance to your home sanctuary. For any care advice or feedback, reply directly to support@anantarts.in.\n\nAnant Arts`,
+        is_system: 1
+      },
+      {
+        name: 'Welcome to the Anant Arts Inner Circle',
+        type: 'email',
+        category: 'welcome',
+        subject: '✨ Welcome to Anant Arts — Where Heritage Meets Divine Art',
+        preview_text: 'Discover the artisanal electroplating legacy and master sculptures of India.',
+        body_html: `<div style="text-align: center; margin-bottom: 24px;">
+  <span style="display: inline-block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #AA7C11; font-weight: 700; background: #FFF8F0; padding: 4px 12px; border-radius: 20px;">🪷 Welcome to the Sanctuary</span>
+  <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; color: #1E1A17; margin: 12px 0 8px 0; font-weight: 700;">Bringing Divine Art to Every Home</h2>
+  <p style="font-size: 14px; color: #6E5A5A; max-width: 500px; margin: 0 auto; line-height: 1.6;">Namaste {{name}}, welcome to Anant Arts. We are dedicated to creating timeless electroplated sculptures of deities and luxury Indian home decor with unwavering devotion and uncompromising quality.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr; gap: 16px; margin: 24px 0;">
+  <div style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 8px; padding: 16px; display: flex; gap: 14px; align-items: center;">
+    <span style="font-size: 24px;">🏆</span>
+    <div>
+      <h4 style="margin: 0 0 4px 0; font-size: 14px; color: #1E1A17;">Certified 24K Gold Plating</h4>
+      <p style="margin: 0; font-size: 12px; color: #6E5A5A;">Thick electroplated gold layer protected with high-gloss lacquer.</p>
+    </div>
+  </div>
+  <div style="background: #FFFFFF; border: 1px solid #EAEAEA; border-radius: 8px; padding: 16px; display: flex; gap: 14px; align-items: center;">
+    <span style="font-size: 24px;">📦</span>
+    <div>
+      <h4 style="margin: 0 0 4px 0; font-size: 14px; color: #1E1A17;">Secure Transit Guarantee</h4>
+      <p style="margin: 0; font-size: 12px; color: #6E5A5A;">Multi-layered protective packaging ensuring zero damage in transit.</p>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; margin-top: 28px;">
+  <a href="https://anantarts.in/shop" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%); color: #111111; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;">Explore Our Collections</a>
+</div>`,
+        body_text: `Namaste {{name}},\n\nWelcome to Anant Arts. Explore our certified 24K gold and silver electroplated idols handcrafted for your home mandir.\n\nVisit: https://anantarts.in\n\nAnant Arts`,
+        is_system: 1
+      },
+      {
+        name: 'Bespoke Corporate Gifting & Executive Masterpieces',
+        type: 'email',
+        category: 'corporate',
+        subject: '💼 Elevated Auspicious Gifting for Esteemed Partners | Anant Arts',
+        preview_text: 'Custom engraved 24K gold & silver plated gifts in bespoke wooden presentation boxes.',
+        body_html: `<div style="text-align: center; margin-bottom: 24px;">
+  <span style="display: inline-block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #1E1A17; font-weight: 700; background: #EAEAEA; padding: 4px 12px; border-radius: 20px;">🏛️ Executive & Institutional Gifting</span>
+  <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; color: #1E1A17; margin: 12px 0 8px 0; font-weight: 700;">Gifts of Distinction & Eternal Reverence</h2>
+  <p style="font-size: 14px; color: #6E5A5A; max-width: 480px; margin: 0 auto; line-height: 1.6;">Namaste {{name}}, express gratitude to VIP clients, board members, and executives with bespoke electroplated masterworks carrying timeless auspicious symbolism.</p>
+</div>
+
+<div style="background: #FAF9F6; border: 1px solid rgba(212,175,55,0.3); border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #3B2F2F; line-height: 1.8;">
+    <li>Custom logo and donor brass plate engraving</li>
+    <li>Handcrafted teak wood presentation cases</li>
+    <li>Certificate of authenticity & craftsmanship</li>
+    <li>Tiered pricing for bulk orders (10+ units)</li>
+  </ul>
+</div>
+
+<div style="text-align: center; margin-top: 32px;">
+  <a href="https://anantarts.in/occasions" style="display: inline-block; background: #1E1A17; color: #D4AF37; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; border: 1px solid #D4AF37;">Inquire Corporate Catalogs</a>
+</div>`,
+        body_text: `Namaste {{name}},\n\nElevate corporate gifting with custom-engraved 24K gold and silver electroplated masterpieces from Anant Arts.\n\nInquire now: https://anantarts.in/occasions\n\nAnant Arts`,
+        is_system: 1
+      },
+      {
+        name: 'Back in Stock — Limited Edition Idols Restocked',
+        type: 'email',
+        category: 'general',
+        subject: '🔔 Restocked: Handcrafted Sacred Idols Now Available',
+        preview_text: 'Strictly limited artisan-crafted batches now available for immediate dispatch.',
+        body_html: `<div style="text-align: center; margin-bottom: 24px;">
+  <span style="display: inline-block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #1565C0; font-weight: 700; background: #E3F2FD; padding: 4px 12px; border-radius: 20px;">🔔 Restock Announcement</span>
+  <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; color: #1E1A17; margin: 12px 0 8px 0; font-weight: 700;">Your Revered Masterpieces are Back</h2>
+  <p style="font-size: 14px; color: #6E5A5A; max-width: 480px; margin: 0 auto; line-height: 1.6;">Namaste {{name}}, our master artisans have completed a fresh handcrafted batch of high-demand 24K gold electroplated deity idols.</p>
+</div>
+
+<!-- PRODUCT_CARDS_PLACEHOLDER -->
+
+<div style="text-align: center; margin-top: 32px;">
+  <a href="https://anantarts.in/shop" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%); color: #111111; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;">Reserve Your Idol</a>
+</div>`,
+        body_text: `Namaste {{name}},\n\nOur limited-edition 24K gold idols have been restocked in limited quantities. Order yours before stock runs out: https://anantarts.in/shop\n\nAnant Arts`,
+        is_system: 1
+      },
+      {
+        name: 'Incomplete Inquiry / Sanctuary Pending',
+        type: 'email',
+        category: 'cart_recovery',
+        subject: '🪷 Your Sacred Masterpiece Awaits You | Anant Arts',
+        preview_text: 'Your chosen 24K gold idol is reserved. Complete your order with free insured shipping.',
+        body_html: `<div style="text-align: center; margin-bottom: 24px;">
+  <span style="font-size: 2rem; display: block; margin-bottom: 8px;">🪷</span>
+  <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 24px; color: #1E1A17; margin: 8px 0; font-weight: 700;">Your Sacred Sanctuary Awaits</h2>
+  <p style="font-size: 14px; color: #6E5A5A; max-width: 480px; margin: 0 auto; line-height: 1.6;">Namaste {{name}}, we noticed you were admiring our handcrafted electroplated idols. We have placed a temporary hold on your selected piece to ensure you do not miss it.</p>
+</div>
+
+<div style="background: #FFF8F0; border: 1px solid #D4AF37; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
+  <p style="margin: 0 0 10px 0; font-size: 13.5px; color: #3B2F2F; font-weight: 600;">Complete your order today and enjoy complimentary insured wooden-crate delivery across India.</p>
+  <span style="font-size: 12px; color: #AA7C11;">Need guidance choosing the right deity or dimensions? Reply to this email anytime.</span>
+</div>
+
+<div style="text-align: center; margin-top: 28px;">
+  <a href="https://anantarts.in/cart" style="display: inline-block; background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%); color: #111111; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;">Complete Your Order</a>
+</div>`,
+        body_text: `Namaste {{name}},\n\nYour chosen sacred idol is waiting for you. Complete your order with free insured shipping at: https://anantarts.in/cart\n\nAnant Arts`,
+        is_system: 1
+      },
+      // WhatsApp Templates
+      {
+        name: 'WA — New Sacred Collection Launch',
+        type: 'whatsapp',
+        category: 'new_arrival',
+        subject: null,
+        preview_text: null,
+        body_html: null,
+        body_text: `Namaste {{name}},\n\nDiscover our latest handcrafted 24K Gold & Silver spiritual collection at Anant Arts.\n\n✨ Certified 24K Electroplating\n🚚 Insured Express Shipping Across India\n🪷 Handcrafted by Master Artisans\n\nExplore the collection:\n{{product_link}}\n\nBringing Divine Art to Every Home.\nAnant Arts`,
+        is_system: 1
+      },
+      {
+        name: 'WA — Festive Blessings & Special Concession',
+        type: 'whatsapp',
+        category: 'festival',
+        subject: null,
+        preview_text: null,
+        body_html: null,
+        body_text: `🪔 Auspicious Greetings {{name}},\n\nMay this sacred season bring abundance and prosperity to your home.\n\nEnjoy an exclusive festive blessing on handcrafted temple idols:\n🎁 Use Code: {{discount_code}}\n\nExplore Divine Idols:\n{{website_link}}/shop\n\nAnant Arts — Bringing Divine Art to Every Home`,
+        is_system: 1
+      },
+      {
+        name: 'WA — Order Reverence & Care Follow-up',
+        type: 'whatsapp',
+        category: 'follow_up',
+        subject: null,
+        preview_text: null,
+        body_html: null,
+        body_text: `Namaste {{name}},\n\nWe hope your sacred idol from Anant Arts has illuminated your home sanctuary with divine energy.\n\nFor idol care guides, mandir placement advice, or any personal assistance, feel free to reply directly to this message.\n\nWith warm regards,\nAnant Arts Team`,
+        is_system: 1
+      },
+      {
+        name: 'WA — Bespoke Corporate Gifting',
+        type: 'whatsapp',
+        category: 'corporate',
+        subject: null,
+        preview_text: null,
+        body_html: null,
+        body_text: `Namaste {{name}},\n\nElevate your executive and corporate gifting with handcrafted 24K Gold & Silver plated sculptures from Anant Arts. We provide custom brass engraving and bespoke wooden presentation packaging.\n\nDiscover Corporate Gifting:\n{{website_link}}/occasions\n\nAnant Arts`,
+        is_system: 1
+      }
+    ];
+
+    for (const t of defaultTemplates) {
+      await dbRun(
+        `INSERT INTO marketing_templates (name, type, category, subject, preview_text, body_html, body_text, is_system, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [t.name, t.type, t.category, t.subject, t.preview_text, t.body_html, t.body_text, t.is_system, 'system']
+      );
+    }
+    console.log('Default luxury marketing templates seeded successfully.');
+  } catch (err) {
+    console.error('Failed to seed marketing templates:', err.message);
   }
 }
 

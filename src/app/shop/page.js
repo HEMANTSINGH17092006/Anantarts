@@ -7,21 +7,21 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ searchParams }) {
   const resolvedParams = searchParams ? await searchParams : {};
-  const hasFilters = Boolean(
-    resolvedParams?.category ||
-    resolvedParams?.material ||
-    resolvedParams?.occasion ||
+  const hasSubFilters = Boolean(
     resolvedParams?.search ||
     resolvedParams?.minPrice ||
     resolvedParams?.maxPrice ||
     resolvedParams?.sort
   );
 
+  const categoryParam = resolvedParams?.category;
+  const canonicalUrl = categoryParam ? `/category/${categoryParam}` : '/shop';
+
   return constructMetadata({
     title: 'Handicrafts Online India — Handcrafted Idols & Décor | Anant Arts',
     description: 'Shop authentic handicrafts online in India. Explore master-crafted 24K gold god idols, handmade wooden home décor, and traditional Indian handicrafts with insured shipping.',
-    canonical: '/shop',
-    noIndex: hasFilters,
+    canonical: canonicalUrl,
+    noIndex: hasSubFilters,
     keywords: [
       'handicrafts online India',
       'Indian handicrafts online',

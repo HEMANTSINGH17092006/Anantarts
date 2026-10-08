@@ -57,6 +57,12 @@ export default function HomeDecorShowcase() {
           </Link>
         ))}
       </div>
+
+      <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+        <Link href="/category/home-decor" className="btn-gold" style={{ padding: '12px 28px', fontSize: '0.85rem' }}>
+          View Full Home Décor Collection
+        </Link>
+      </div>
     </section>
   );
 }

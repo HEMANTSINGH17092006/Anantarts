@@ -92,12 +92,12 @@ export default function MenuDrawer({ isOpen, onClose }) {
             isOpen={openGroup === 'spiritual'}
             onToggle={() => toggleGroup('spiritual')}
             items={[
-              { label: 'Ganesh', link: '/shop?category=spiritual-collection&search=ganesha' },
-              { label: 'Krishna', link: '/shop?category=spiritual-collection&search=krishna' },
-              { label: 'Shiva', link: '/shop?category=spiritual-collection&search=shiva' },
-              { label: 'Lakshmi', link: '/shop?category=spiritual-collection&search=lakshmi' },
-              { label: 'Sai Baba', link: '/shop?category=spiritual-collection&search=sai' },
-              { label: 'Hanuman', link: '/shop?category=spiritual-collection&search=hanuman' }
+              { label: 'View All Spiritual Idols', link: '/category/spiritual-collection' },
+              { label: 'Ganesh Idols', link: '/shop?category=spiritual-collection&search=ganesha' },
+              { label: 'Krishna Idols', link: '/shop?category=spiritual-collection&search=krishna' },
+              { label: 'Shiva Idols', link: '/shop?category=spiritual-collection&search=shiva' },
+              { label: 'Lakshmi & Saraswati', link: '/shop?category=spiritual-collection&search=lakshmi' },
+              { label: 'Sai Baba & Hanuman', link: '/shop?category=spiritual-collection&search=hanuman' }
             ]}
             onClose={onClose}
           />
@@ -108,12 +108,12 @@ export default function MenuDrawer({ isOpen, onClose }) {
             isOpen={openGroup === 'wooden'}
             onToggle={() => toggleGroup('wooden')}
             items={[
+              { label: 'View All Wooden Handicrafts', link: '/category/wooden-handicrafts' },
               { label: 'Wall Decor', link: '/shop?category=wooden-handicrafts&search=wall+decor' },
               { label: 'Wooden Temples', link: '/shop?category=wooden-handicrafts&search=temple' },
-              { label: 'Sculptures', link: '/shop?category=wooden-handicrafts&search=sculpture' },
-              { label: 'Carvings', link: '/shop?category=wooden-handicrafts&search=carved' },
-              { label: 'Storage', link: '/shop?category=wooden-handicrafts&search=box' },
-              { label: 'Furniture Accessories', link: '/shop?category=wooden-handicrafts&search=furniture' }
+              { label: 'Sculptures & Statues', link: '/shop?category=wooden-handicrafts&search=sculpture' },
+              { label: 'Carvings & Boxes', link: '/shop?category=wooden-handicrafts&search=box' },
+              { label: 'Furniture Accents', link: '/shop?category=wooden-handicrafts&search=furniture' }
             ]}
             onClose={onClose}
           />
@@ -124,11 +124,11 @@ export default function MenuDrawer({ isOpen, onClose }) {
             isOpen={openGroup === 'home'}
             onToggle={() => toggleGroup('home')}
             items={[
-              { label: 'Showpieces', link: '/shop?category=home-decor&search=showpiece' },
-              { label: 'Wall Art', link: '/shop?category=home-decor&search=wall+art' },
-              { label: 'Decorative Items', link: '/shop?category=home-decor&search=decorative' },
-              { label: 'Vases', link: '/shop?category=home-decor&search=vase' },
-              { label: 'Lighting', link: '/shop?category=home-decor&search=lighting' }
+              { label: 'View All Home Decor', link: '/category/home-decor' },
+              { label: 'Showpieces & Figurines', link: '/shop?category=home-decor&search=showpiece' },
+              { label: 'Wall Art & Hangings', link: '/shop?category=home-decor&search=wall+art' },
+              { label: 'Decorative Accents', link: '/shop?category=home-decor&search=decorative' },
+              { label: 'Vases & Lighting', link: '/shop?category=home-decor&search=vase' }
             ]}
             onClose={onClose}
           />
@@ -139,11 +139,10 @@ export default function MenuDrawer({ isOpen, onClose }) {
             isOpen={openGroup === 'corporate'}
             onToggle={() => toggleGroup('corporate')}
             items={[
-              { label: 'Desk Organizers', link: '/corporate-gifts' },
-              { label: 'Awards', link: '/corporate-gifts' },
-              { label: 'Mementos', link: '/corporate-gifts' },
-              { label: 'Executive Gifts', link: '/corporate-gifts' },
-              { label: 'Bulk Orders', link: '/corporate-gifts#bulk-enquiry-section' }
+              { label: 'View All Corporate Gifts', link: '/corporate-gifts' },
+              { label: 'Executive Desk Gifts', link: '/corporate-gifts' },
+              { label: 'Awards & Mementos', link: '/corporate-gifts' },
+              { label: 'Bulk Enquiry & Catalog', link: '/corporate-gifts#bulk-enquiry-section' }
             ]}
             onClose={onClose}
           />
@@ -154,9 +153,10 @@ export default function MenuDrawer({ isOpen, onClose }) {
             isOpen={openGroup === 'custom'}
             onToggle={() => toggleGroup('custom')}
             items={[
-              { label: 'Personalized Gifts', link: '/shop?category=customized-gifts' },
-              { label: 'Name Plates', link: '/shop?category=customized-gifts&search=nameplate' },
-              { label: 'Engraved Products', link: '/shop?category=customized-gifts&search=engraved' }
+              { label: 'View All Customized Gifts', link: '/category/customized-gifts' },
+              { label: 'Personalized Gifts', link: '/category/customized-gifts' },
+              { label: 'Custom Name Plates', link: '/shop?category=customized-gifts&search=nameplate' },
+              { label: 'Engraved Artisan Products', link: '/shop?category=customized-gifts&search=engraved' }
             ]}
             onClose={onClose}
           />
@@ -167,11 +167,11 @@ export default function MenuDrawer({ isOpen, onClose }) {
             isOpen={openGroup === 'festival'}
             onToggle={() => toggleGroup('festival')}
             items={[
-              { label: 'Diwali', link: '/shop?category=festival-collection&search=diwali' },
-              { label: 'Christmas', link: '/shop?category=festival-collection&search=christmas' },
-              { label: 'Raksha Bandhan', link: '/shop?category=festival-collection&search=rakhi' },
-              { label: 'New Year', link: '/shop?category=festival-collection&search=new+year' },
-              { label: 'Housewarming', link: '/shop?occasion=Housewarming' }
+              { label: 'View All Festival Collections', link: '/category/festival-collection' },
+              { label: 'Diwali Gifts & Idols', link: '/shop?category=festival-collection&search=diwali' },
+              { label: 'Christmas Decor', link: '/shop?category=festival-collection&search=christmas' },
+              { label: 'Raksha Bandhan Gifts', link: '/shop?category=festival-collection&search=rakhi' },
+              { label: 'New Year & Housewarming', link: '/shop?category=festival-collection&search=new+year' }
             ]}
             onClose={onClose}
           />

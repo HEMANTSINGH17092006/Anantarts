@@ -88,7 +88,7 @@ export default function SpiritualShowcase() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <Link href="/shop?category=spiritual-collection" className="btn-gold" style={{ padding: '12px 28px', fontSize: '0.85rem' }}>
+          <Link href="/category/spiritual-collection" className="btn-gold" style={{ padding: '12px 28px', fontSize: '0.85rem' }}>
             View Full Spiritual Collection
           </Link>
         </div>

@@ -30,6 +30,13 @@ ALTER TABLE public.consultations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.flash_sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whatsapp_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.marketing_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.marketing_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign_recipients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.communication_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_segments ENABLE ROW LEVEL SECURITY;
 
 -- =====================================
 -- 2. DROP EXISTING POLICIES (Clean Slate)
@@ -300,6 +307,76 @@ WITH CHECK (true);
 
 CREATE POLICY "Service role manages whatsapp logs"
 ON public.whatsapp_logs
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- =====================================
+-- 21. MARKETING CAMPAIGNS — service role only
+-- =====================================
+
+CREATE POLICY "Service role manages marketing campaigns"
+ON public.marketing_campaigns
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- =====================================
+-- 22. MARKETING TEMPLATES — service role only
+-- =====================================
+
+CREATE POLICY "Service role manages marketing templates"
+ON public.marketing_templates
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- =====================================
+-- 23. CAMPAIGN RECIPIENTS — service role only
+-- =====================================
+
+CREATE POLICY "Service role manages campaign recipients"
+ON public.campaign_recipients
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- =====================================
+-- 24. COMMUNICATION PREFERENCES — service role only
+-- All reads & writes handled securely through server-side actions/APIs
+-- =====================================
+
+CREATE POLICY "Service role manages communication preferences"
+ON public.communication_preferences
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- =====================================
+-- 25. CAMPAIGN EVENTS & LOGS — service role only
+-- =====================================
+
+CREATE POLICY "Service role manages campaign events"
+ON public.campaign_events
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Service role manages campaign logs"
+ON public.campaign_logs
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Service role manages customer segments"
+ON public.customer_segments
 FOR ALL
 TO service_role
 USING (true)

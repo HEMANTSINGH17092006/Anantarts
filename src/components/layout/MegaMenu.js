@@ -37,7 +37,9 @@ export default function MegaMenu({ isOpen, onClose }) {
         <div>
           <div style={colHeaderStyle}>
             <span style={{ fontSize: '1.1rem' }}>✨</span>
-            <h4 style={colTitleStyle}>Spiritual Collection</h4>
+            <Link href="/category/spiritual-collection" onClick={onClose} style={{ textDecoration: 'none' }}>
+              <h4 style={colTitleStyle}>Spiritual Collection &rarr;</h4>
+            </Link>
           </div>
           <ul style={listStyle}>
             <li><Link href="/shop?category=spiritual-collection&search=ganesha" onClick={onClose} className="mega-link">• Ganesh</Link></li>
@@ -53,7 +55,9 @@ export default function MegaMenu({ isOpen, onClose }) {
         <div>
           <div style={colHeaderStyle}>
             <span style={{ fontSize: '1.1rem' }}>🪵</span>
-            <h4 style={colTitleStyle}>Wooden Handicrafts</h4>
+            <Link href="/category/wooden-handicrafts" onClick={onClose} style={{ textDecoration: 'none' }}>
+              <h4 style={colTitleStyle}>Wooden Handicrafts &rarr;</h4>
+            </Link>
           </div>
           <ul style={listStyle}>
             <li><Link href="/shop?category=wooden-handicrafts&search=wall+decor" onClick={onClose} className="mega-link">• Wall Decor</Link></li>
@@ -69,7 +73,9 @@ export default function MegaMenu({ isOpen, onClose }) {
         <div>
           <div style={colHeaderStyle}>
             <span style={{ fontSize: '1.1rem' }}>🏡</span>
-            <h4 style={colTitleStyle}>Home Decor</h4>
+            <Link href="/category/home-decor" onClick={onClose} style={{ textDecoration: 'none' }}>
+              <h4 style={colTitleStyle}>Home Décor &rarr;</h4>
+            </Link>
           </div>
           <ul style={listStyle}>
             <li><Link href="/shop?category=home-decor&search=showpiece" onClick={onClose} className="mega-link">• Showpieces</Link></li>
@@ -84,7 +90,9 @@ export default function MegaMenu({ isOpen, onClose }) {
         <div>
           <div style={colHeaderStyle}>
             <span style={{ fontSize: '1.1rem' }}>🎁</span>
-            <h4 style={colTitleStyle}>Corporate Gifts</h4>
+            <Link href="/category/corporate-gifts" onClick={onClose} style={{ textDecoration: 'none' }}>
+              <h4 style={colTitleStyle}>Corporate Gifts &rarr;</h4>
+            </Link>
           </div>
           <ul style={listStyle}>
             <li><Link href="/corporate-gifts" onClick={onClose} className="mega-link">• Desk Organizers</Link></li>
@@ -99,10 +107,12 @@ export default function MegaMenu({ isOpen, onClose }) {
         <div>
           <div style={colHeaderStyle}>
             <span style={{ fontSize: '1.1rem' }}>🎨</span>
-            <h4 style={colTitleStyle}>Customized Gifts</h4>
+            <Link href="/category/customized-gifts" onClick={onClose} style={{ textDecoration: 'none' }}>
+              <h4 style={colTitleStyle}>Customized Gifts &rarr;</h4>
+            </Link>
           </div>
           <ul style={listStyle}>
-            <li><Link href="/shop?category=customized-gifts" onClick={onClose} className="mega-link">• Personalized Gifts</Link></li>
+            <li><Link href="/category/customized-gifts" onClick={onClose} className="mega-link">• Personalized Gifts</Link></li>
             <li><Link href="/shop?category=customized-gifts&search=nameplate" onClick={onClose} className="mega-link">• Name Plates</Link></li>
             <li><Link href="/shop?category=customized-gifts&search=engraved" onClick={onClose} className="mega-link">• Engraved Products</Link></li>
           </ul>
@@ -112,14 +122,16 @@ export default function MegaMenu({ isOpen, onClose }) {
         <div>
           <div style={colHeaderStyle}>
             <span style={{ fontSize: '1.1rem' }}>🎉</span>
-            <h4 style={colTitleStyle}>Festival Collection</h4>
+            <Link href="/category/festival-collection" onClick={onClose} style={{ textDecoration: 'none' }}>
+              <h4 style={colTitleStyle}>Festival Collection &rarr;</h4>
+            </Link>
           </div>
           <ul style={listStyle}>
             <li><Link href="/shop?category=festival-collection&search=diwali" onClick={onClose} className="mega-link">• Diwali</Link></li>
             <li><Link href="/shop?category=festival-collection&search=christmas" onClick={onClose} className="mega-link">• Christmas</Link></li>
             <li><Link href="/shop?category=festival-collection&search=rakhi" onClick={onClose} className="mega-link">• Raksha Bandhan</Link></li>
             <li><Link href="/shop?category=festival-collection&search=new+year" onClick={onClose} className="mega-link">• New Year</Link></li>
-            <li><Link href="/shop?occasion=Housewarming" onClick={onClose} className="mega-link">• Housewarming</Link></li>
+            <li><Link href="/occasions" onClick={onClose} className="mega-link">• All Occasions</Link></li>
           </ul>
         </div>
 

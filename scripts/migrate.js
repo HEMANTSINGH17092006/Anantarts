@@ -25,7 +25,7 @@ async function runMigrations() {
   });
 
   const timestamp = Date.now();
-  const tablesToBackup = ['products', 'orders', 'website_settings', 'categories', 'coupons', 'blogs'];
+  const tablesToBackup = ['products', 'orders', 'website_settings', 'categories', 'coupons', 'blogs', 'marketing_campaigns', 'marketing_templates', 'communication_preferences'];
 
   try {
     // 1. Run Snapshot Backups of Existing Production Data

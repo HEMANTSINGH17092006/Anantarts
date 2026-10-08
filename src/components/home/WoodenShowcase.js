@@ -96,7 +96,7 @@ export default function WoodenShowcase() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <Link href="/shop?category=wooden-handicrafts" className="btn-gold" style={{ padding: '12px 28px', fontSize: '0.85rem' }}>
+          <Link href="/category/wooden-handicrafts" className="btn-gold" style={{ padding: '12px 28px', fontSize: '0.85rem' }}>
             View Full Wooden Collection
           </Link>
         </div>

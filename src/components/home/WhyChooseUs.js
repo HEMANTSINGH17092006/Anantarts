@@ -11,7 +11,7 @@ export default function WhyChooseUs() {
     { title: 'Luxury Packaging', iconClass: 'fas fa-box-open', desc: 'Multi-layer wooden crate & velvet presentation boxes for damage-free transit.' },
     { title: 'Custom Orders', iconClass: 'fas fa-tools', desc: 'Bespoke dimensions, personalized text engravings & logo integrations.' },
     { title: 'Bulk Orders', iconClass: 'fas fa-chart-line', desc: 'Tiered wholesale volume pricing for corporate events & large functions.' },
-    { title: 'Trusted Brand', iconClass: 'fas fa-award', desc: 'Adored by over 50,000+ patrons, homes, temples, and corporate houses.' }
+    { title: 'Trusted Brand', iconClass: 'fas fa-award', desc: 'Dedicated to authentic Hindu iconography, certified materials, and verified customer satisfaction.' }
   ];
 
   return (

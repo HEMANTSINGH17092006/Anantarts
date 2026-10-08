@@ -7,7 +7,7 @@ const HERO_SLIDES = [
     title: 'Indian Handicrafts Online — Handcrafted Luxury Home Décor',
     subtitle: 'Preserving ancient Indian artisanship with handcrafted home decor, traditional wooden handicrafts, and luxury 24K gold electroplated creations.',
     image: '/uploads/artisan-cast.png',
-    shopLink: '/shop?category=wooden-handicrafts',
+    shopLink: '/category/wooden-handicrafts',
     exploreLink: '/collections'
   },
   {
@@ -21,7 +21,7 @@ const HERO_SLIDES = [
     title: 'Timeless Electroplated Home Décor',
     subtitle: 'High-lustre 24K gold and sterling silver electroplated showpieces, table accents, and statement centerpieces.',
     image: '/uploads/artisan-chisel.png',
-    shopLink: '/shop?category=home-decor',
+    shopLink: '/category/home-decor',
     exploreLink: '/collections'
   },
   {
@@ -29,7 +29,7 @@ const HERO_SLIDES = [
     subtitle: 'Executive desk organizers, logo embossed identity plaques, and bespoke presentation packaging engineered for bulk orders.',
     image: '/uploads/artisan-electroplate.png',
     shopLink: '/corporate-gifts',
-    exploreLink: '/occasions'
+    exploreLink: '/category/customized-gifts'
   }
 ];
 

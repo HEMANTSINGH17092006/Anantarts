@@ -30,7 +30,7 @@ export default function InstagramGallery() {
             key={idx}
             href="https://www.instagram.com/anantarts.in/"
             target="_blank"
-            rel="nofollow noopener noreferrer"
+            rel="noopener noreferrer"
             style={{
               position: 'relative',
               borderRadius: '8px',

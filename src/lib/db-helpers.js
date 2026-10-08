@@ -71,6 +71,26 @@ export const getCategories = unstable_cache(
   { tags: ['categories'], revalidate: 3600 }
 );
 
+// 3b. Get Category by Slug (Cached)
+export const getCategoryBySlug = unstable_cache(
+  async (slug) => {
+    const supabase = getSupabaseDirect();
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    if (error) {
+      console.error(`Error fetching category by slug ${slug}:`, error);
+      return null;
+    }
+    return data;
+  },
+  ['category-detail'],
+  { tags: ['categories'], revalidate: 3600 }
+);
+
+
 
 // 4. Get Testimonials (Cached)
 export const getTestimonials = unstable_cache(

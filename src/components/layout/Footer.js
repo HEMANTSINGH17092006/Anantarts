@@ -121,7 +121,7 @@ export default function Footer({
               <a 
                 href={instUrl} 
                 target="_blank" 
-                rel="nofollow noopener noreferrer" 
+                rel="noopener noreferrer" 
                 className="social-icon" 
                 aria-label="Follow Anant Arts on Instagram"
                 style={{
@@ -140,12 +140,12 @@ export default function Footer({
                 <i className="fab fa-instagram" style={{ fontSize: '1.2rem' }}></i>
               </a>
               {fbUrl && (
-                <a href={fbUrl} target="_blank" rel="nofollow noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on Facebook">
+                <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on Facebook">
                   <i className="fab fa-facebook-f"></i>
                 </a>
               )}
               {ytUrl && (
-                <a href={ytUrl} target="_blank" rel="nofollow noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on YouTube">
+                <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="social-icon" aria-label="Follow Anant Arts on YouTube">
                   <i className="fab fa-youtube"></i>
                 </a>
               )}

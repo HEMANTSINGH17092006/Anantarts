@@ -1,4 +1,4 @@
-import { getProducts, getBlogs } from '@/lib/db-helpers';
+import { getCategories, getProducts, getBlogs } from '@/lib/db-helpers';
 
 export const revalidate = 3600; // Revalidate sitemap hourly
 
@@ -31,7 +31,25 @@ export default async function sitemap() {
     priority,
   }));
 
-  // 2. Dynamic Published Product Pages
+  // 2. Dynamic Categories from Supabase
+  let categoryEntries = [];
+  try {
+    const categories = await getCategories();
+    if (Array.isArray(categories)) {
+      categoryEntries = categories
+        .filter((c) => c.slug && (c.is_hidden === 0 || c.is_hidden === null))
+        .map((category) => ({
+          url: `${baseUrl}/category/${category.slug}`,
+          lastModified: category.created_at ? new Date(category.created_at) : new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.85,
+        }));
+    }
+  } catch (err) {
+    console.error('Error fetching categories for sitemap:', err);
+  }
+
+  // 3. Dynamic Published Product Pages
   let productEntries = [];
   try {
     const products = await getProducts({ all: false });
@@ -49,7 +67,7 @@ export default async function sitemap() {
     console.error('Error fetching products for sitemap:', err);
   }
 
-  // 3. Dynamic Published Blog Posts
+  // 4. Dynamic Published Blog Posts
   let blogEntries = [];
   try {
     const blogs = await getBlogs(true);
@@ -67,5 +85,6 @@ export default async function sitemap() {
     console.error('Error fetching blogs for sitemap:', err);
   }
 
-  return [...staticPages, ...productEntries, ...blogEntries];
+  return [...staticPages, ...categoryEntries, ...productEntries, ...blogEntries];
 }
+

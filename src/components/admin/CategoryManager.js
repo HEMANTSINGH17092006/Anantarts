@@ -14,6 +14,8 @@ export default function CategoryManager({ initialCategories = [] }) {
   const [name, setName] = useState('');
   const [parentId, setParentId] = useState('');
   const [description, setDescription] = useState('');
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
   const [sortOrder, setSortOrder] = useState('0');
   const [isHidden, setIsHidden] = useState(false);
   const [isFeatured, setIsFeatured] = useState(true);
@@ -33,6 +35,8 @@ export default function CategoryManager({ initialCategories = [] }) {
     setName('');
     setParentId('');
     setDescription('');
+    setSeoTitle('');
+    setSeoDescription('');
     setSortOrder((initialCategories.length + 1).toString());
     setIsHidden(false);
     setIsFeatured(true);
@@ -46,6 +50,8 @@ export default function CategoryManager({ initialCategories = [] }) {
     setName(c.name || '');
     setParentId(c.parent_id?.toString() || '');
     setDescription(c.description || '');
+    setSeoTitle(c.seo_title || '');
+    setSeoDescription(c.seo_description || '');
     setSortOrder(c.sort_order?.toString() || '0');
     setIsHidden(c.is_hidden === 1);
     setIsFeatured(c.is_featured === 1);
@@ -77,6 +83,8 @@ export default function CategoryManager({ initialCategories = [] }) {
     formData.append('name', name);
     formData.append('parent_id', parentId);
     formData.append('description', description);
+    formData.append('seo_title', seoTitle);
+    formData.append('seo_description', seoDescription);
     formData.append('sort_order', sortOrder);
     formData.append('is_hidden', isHidden ? '1' : '0');
     formData.append('is_featured', isFeatured ? '1' : '0');
@@ -219,6 +227,16 @@ export default function CategoryManager({ initialCategories = [] }) {
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>Category Description</label>
                 <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief summary displayed on category header..." style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>SEO Title (Google / Social Share)</label>
+                <input type="text" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="e.g. Spiritual Collection | Premium Idols | Anant Arts" style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '4px' }}>SEO Meta Description</label>
+                <textarea rows="2" value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="Compelling 150-160 character description for search engine snippets..." style={{ width: '100%', padding: '8px', border: '1px solid var(--primary-gold-border)', borderRadius: '4px' }} />
               </div>
 
               <div>

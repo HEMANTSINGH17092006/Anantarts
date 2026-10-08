@@ -85,6 +85,26 @@ const nextConfig = {
         headers: securityHeaders,
       },
       {
+        // Prevent indexing of admin, checkout, customer, and API routes
+        source: '/(admin|account|checkout|my-orders|api|auth|login|register)/:path*',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
+          },
+        ],
+      },
+      {
+        // Prevent indexing of exact private routes
+        source: '/(checkout|my-orders|login|register)',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
+          },
+        ],
+      },
+      {
         // Long-term caching for immutable static assets
         source: '/(css|images|uploads|fonts)/(.+)',
         headers: [

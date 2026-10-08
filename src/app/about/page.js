@@ -58,26 +58,30 @@ export default async function AboutPage() {
           </p>
 
           <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', marginTop: '28px', marginBottom: '12px', color: 'var(--text-dark)' }}>
-            Our 6-Stage Electroplating Craftsmanship
+            Our Multi-Stage Electroplating & Woodworking Heritage
           </h3>
           <p style={{ fontSize: '0.92rem', lineHeight: '1.7', color: 'var(--text-muted)', marginBottom: '20px' }}>
-            Every Anant Arts idol begins with hand-carved wax and clay prototypes crafted according to classical Shilpa Shastra proportions. Following lost-wax brass and bell metal casting, each piece undergoes an 8-stage mirror finish polish before entering our electrical plating chambers. Here, molecular layers of certified 24K pure gold and 999 sterling silver are bonded to the base metal, followed by a high-temperature lacquer bake guard that ensures everlasting shine without tarnishing.
+            Headquartered in Dombivli East (Maharashtra) with master artisanal workshops rooted in Jaipur (Rajasthan) and Saharanpur (Uttar Pradesh), Anant Arts combines hereditary sculpting traditions with advanced electroplating technology. Every deity idol begins with wax and clay prototypes sculpted strictly according to classical Shilpa Shastra proportions. Following lost-wax brass, resin, or bell metal casting, each piece undergoes extensive surface refining before entering our plating chambers where molecular layers of certified 24K gold or pure silver are bonded for long-lasting brilliance.
           </p>
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--primary-gold-border)', margin: '28px 0' }} />
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', textAlign: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px', textAlign: 'center' }}>
             <div>
-              <strong style={{ display: 'block', fontSize: '2rem', color: 'var(--primary-gold)' }}>15+</strong>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Traditional Artisans Supported</span>
+              <strong style={{ display: 'block', fontSize: '1.4rem', color: 'var(--primary-gold)', fontWeight: '700' }}>24K Gold &amp; 999 Silver</strong>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Certified Molecular Plating</span>
             </div>
             <div>
-              <strong style={{ display: 'block', fontSize: '2rem', color: 'var(--primary-gold)' }}>24-Step</strong>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Quality Electroplating Check</span>
+              <strong style={{ display: 'block', fontSize: '1.4rem', color: 'var(--primary-gold)', fontWeight: '700' }}>Shilpa Shastra</strong>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Authentic Hindu Iconography</span>
             </div>
             <div>
-              <strong style={{ display: 'block', fontSize: '2rem', color: 'var(--primary-gold)' }}>10,000+</strong>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Sacred Sanctuaries Enhanced</span>
+              <strong style={{ display: 'block', fontSize: '1.4rem', color: 'var(--primary-gold)', fontWeight: '700' }}>Jaipur &amp; Saharanpur</strong>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hereditary Artisan Lineages</span>
+            </div>
+            <div>
+              <strong style={{ display: 'block', fontSize: '1.4rem', color: 'var(--primary-gold)', fontWeight: '700' }}>Insured Pan-India</strong>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>3-Layer Wooden Crating</span>
             </div>
           </div>
         </div>

@@ -136,14 +136,22 @@ export async function deleteProduct(id) {
     const admin = await checkAuthRole(['super_admin', 'admin', 'manager']);
     const supabase = createAdminClient();
     
-    const { data: prod } = await supabase.from('products').select('name, sku').eq('id', id).single();
+    const { data: prod } = await supabase.from('products').select('name, sku, slug').eq('id', id).single();
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) throw error;
 
     await logAudit(admin.email, 'DELETE_PRODUCT', { id, name: prod?.name, sku: prod?.sku });
     revalidateTag('products');
+    revalidateTag('categories');
+    if (prod?.slug) {
+      revalidatePath(`/product/${prod.slug}`);
+    }
+    revalidatePath('/product/[slug]', 'page');
+    revalidatePath('/category/[slug]', 'page');
     revalidatePath('/shop');
+    revalidatePath('/collections');
     revalidatePath('/');
+    revalidatePath('/sitemap.xml');
     return { success: true };
   } catch (err) {
     return { success: false, message: err.message };
@@ -369,8 +377,16 @@ export async function addOrUpdateProduct(formData) {
 
     await logAudit(admin.email, id ? 'UPDATE_PRODUCT' : 'CREATE_PRODUCT', { id: product.id, name, sku });
     revalidateTag('products');
+    revalidateTag('categories');
+    if (product?.slug) {
+      revalidatePath(`/product/${product.slug}`);
+    }
+    revalidatePath('/product/[slug]', 'page');
+    revalidatePath('/category/[slug]', 'page');
     revalidatePath('/shop');
+    revalidatePath('/collections');
     revalidatePath('/');
+    revalidatePath('/sitemap.xml');
     return { success: true, product };
   } catch (err) {
     console.error(err);
@@ -391,6 +407,8 @@ export async function addOrUpdateCategory(formData) {
     const parent_id_val = formData.get('parent_id');
     const parent_id = parent_id_val && parent_id_val !== '' ? parseInt(parent_id_val) : null;
     const description = formData.get('description') || '';
+    const seo_title = formData.get('seo_title') || null;
+    const seo_description = formData.get('seo_description') || null;
     const categorySlug = slugify(name);
 
     const imageFile = formData.get('image');
@@ -411,6 +429,8 @@ export async function addOrUpdateCategory(formData) {
       image_path: imageUrl,
       banner_path: bannerUrl,
       description,
+      seo_title,
+      seo_description,
       parent_id,
       sort_order,
       is_hidden,
@@ -435,6 +455,9 @@ export async function addOrUpdateCategory(formData) {
     revalidatePath('/', 'layout');
     revalidatePath('/shop');
     revalidatePath('/collections');
+    revalidatePath(`/category/${categorySlug}`);
+    revalidatePath('/category/[slug]', 'page');
+    revalidatePath('/sitemap.xml');
     return { success: true };
   } catch (err) {
     return { success: false, message: err.message };
@@ -445,6 +468,7 @@ export async function deleteCategory(id) {
   try {
     const admin = await checkAuthRole(['super_admin', 'admin', 'manager']);
     const supabase = createAdminClient();
+    const { data: cat } = await supabase.from('categories').select('slug').eq('id', id).single();
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) throw error;
 
@@ -453,6 +477,11 @@ export async function deleteCategory(id) {
     revalidatePath('/', 'layout');
     revalidatePath('/shop');
     revalidatePath('/collections');
+    if (cat?.slug) {
+      revalidatePath(`/category/${cat.slug}`);
+    }
+    revalidatePath('/category/[slug]', 'page');
+    revalidatePath('/sitemap.xml');
     return { success: true };
 
   } catch (err) {
@@ -1686,3 +1715,340 @@ export async function getTrendingAndSuggestionsAction(searchQuery = '') {
     return { success: false, trending: [], suggestions: [] };
   }
 }
+
+// =========================================================================
+// MARKETING & CUSTOMER COMMUNICATION ACTIONS
+// =========================================================================
+
+import { getAllMarketingCustomers, filterCustomersBySegment, getSegmentPreview } from '@/lib/marketing-customer-service';
+import { prepareAndEnqueueCampaign, sendTestEmailCampaign, sendTestWhatsAppCampaign, processCampaignBatch } from '@/lib/marketing-queue-service';
+
+export async function getMarketingCustomersAction(config = {}) {
+  try {
+    await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
+    const all = await getAllMarketingCustomers();
+    const filtered = filterCustomersBySegment(all, config);
+    return { success: true, customers: filtered, total: all.length };
+  } catch (err) {
+    console.error('getMarketingCustomersAction error:', err);
+    return { success: false, error: err.message, customers: [] };
+  }
+}
+
+export async function getSegmentPreviewAction(config = {}) {
+  try {
+    await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
+    const preview = await getSegmentPreview(config);
+    return { success: true, data: preview };
+  } catch (err) {
+    console.error('getSegmentPreviewAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function saveMarketingCampaignAction(campaignData) {
+  try {
+    const user = await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
+    const supabase = createAdminClient();
+
+    const payload = {
+      name: campaignData.name,
+      type: campaignData.type || 'email',
+      subject: campaignData.subject || '',
+      preview_text: campaignData.preview_text || '',
+      content_html: campaignData.content_html || '',
+      content_text: campaignData.content_text || '',
+      template_id: campaignData.template_id ? Number(campaignData.template_id) : null,
+      segment_config: typeof campaignData.segment_config === 'object' ? JSON.stringify(campaignData.segment_config) : campaignData.segment_config,
+      status: campaignData.status || 'draft',
+      scheduled_at: campaignData.scheduled_at || null,
+      created_by: user.email,
+      updated_at: new Date().toISOString()
+    };
+
+    let result;
+    if (campaignData.id) {
+      const { data, error } = await supabase
+        .from('marketing_campaigns')
+        .update(payload)
+        .eq('id', campaignData.id)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      result = data;
+    } else {
+      payload.created_at = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('marketing_campaigns')
+        .insert(payload)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      result = data;
+    }
+
+    await logAudit(user.email, 'SAVE_MARKETING_CAMPAIGN', { id: result.id, name: result.name, status: result.status });
+    revalidatePath('/admin/marketing');
+    return { success: true, campaign: result };
+  } catch (err) {
+    console.error('saveMarketingCampaignAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteMarketingCampaignAction(campaignId) {
+  try {
+    const user = await checkAuthRole(['super_admin', 'admin', 'manager']);
+    const supabase = createAdminClient();
+
+    const { error } = await supabase
+      .from('marketing_campaigns')
+      .delete()
+      .eq('id', campaignId);
+
+    if (error) throw error;
+
+    await logAudit(user.email, 'DELETE_MARKETING_CAMPAIGN', { id: campaignId });
+    revalidatePath('/admin/marketing');
+    return { success: true };
+  } catch (err) {
+    console.error('deleteMarketingCampaignAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function cancelMarketingCampaignAction(campaignId) {
+  try {
+    const user = await checkAuthRole(['super_admin', 'admin', 'manager']);
+    const supabase = createAdminClient();
+
+    const { data, error } = await supabase
+      .from('marketing_campaigns')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('id', campaignId)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    await supabase.from('campaign_logs').insert({
+      campaign_id: campaignId,
+      level: 'warn',
+      message: `Campaign cancelled by ${user.email}.`
+    });
+
+    await logAudit(user.email, 'CANCEL_MARKETING_CAMPAIGN', { id: campaignId });
+    revalidatePath('/admin/marketing');
+    return { success: true, campaign: data };
+  } catch (err) {
+    console.error('cancelMarketingCampaignAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function sendTestEmailCampaignAction(campaignData, testEmail) {
+  try {
+    await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
+    const res = await sendTestEmailCampaign(campaignData, testEmail);
+    return res;
+  } catch (err) {
+    console.error('sendTestEmailCampaignAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function sendTestWhatsAppCampaignAction(campaignData, testPhone) {
+  try {
+    await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
+    const res = await sendTestWhatsAppCampaign(campaignData, testPhone);
+    return res;
+  } catch (err) {
+    console.error('sendTestWhatsAppCampaignAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function launchCampaignAction(campaignId) {
+  try {
+    const user = await checkAuthRole(['super_admin', 'admin', 'manager']);
+    const res = await prepareAndEnqueueCampaign(campaignId, user.email);
+    revalidatePath('/admin/marketing');
+    return res;
+  } catch (err) {
+    console.error('launchCampaignAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getCampaignDetailsAction(campaignId) {
+  try {
+    await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
+    const supabase = createAdminClient();
+
+    const [campRes, recRes, logsRes, eventsRes] = await Promise.all([
+      supabase.from('marketing_campaigns').select('*').eq('id', campaignId).single(),
+      supabase.from('campaign_recipients').select('*').eq('campaign_id', campaignId).order('id', { ascending: true }).limit(500),
+      supabase.from('campaign_logs').select('*').eq('campaign_id', campaignId).order('created_at', { ascending: false }).limit(50),
+      supabase.from('campaign_events').select('*').eq('campaign_id', campaignId).order('created_at', { ascending: false }).limit(50)
+    ]);
+
+    return {
+      success: true,
+      campaign: campRes.data,
+      recipients: recRes.data || [],
+      logs: logsRes.data || [],
+      events: eventsRes.data || []
+    };
+  } catch (err) {
+    console.error('getCampaignDetailsAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function retryFailedRecipientsAction(campaignId) {
+  try {
+    const user = await checkAuthRole(['super_admin', 'admin', 'manager']);
+    const supabase = createAdminClient();
+
+    // Reset failed to pending
+    const { error: resetErr } = await supabase
+      .from('campaign_recipients')
+      .update({ status: 'pending', error_message: null })
+      .eq('campaign_id', campaignId)
+      .eq('status', 'failed');
+
+    if (resetErr) throw resetErr;
+
+    // Set campaign status back to processing
+    await supabase
+      .from('marketing_campaigns')
+      .update({ status: 'processing', completed_at: null, updated_at: new Date().toISOString() })
+      .eq('id', campaignId);
+
+    await supabase.from('campaign_logs').insert({
+      campaign_id: campaignId,
+      level: 'info',
+      message: `Failed recipients reset to pending by ${user.email}. Queue processing restarted.`
+    });
+
+    await logAudit(user.email, 'RETRY_FAILED_CAMPAIGN_RECIPIENTS', { campaignId });
+    revalidatePath('/admin/marketing');
+    return { success: true };
+  } catch (err) {
+    console.error('retryFailedRecipientsAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function saveMarketingTemplateAction(templateData) {
+  try {
+    const user = await checkAuthRole(['super_admin', 'admin', 'manager', 'content_editor']);
+    const supabase = createAdminClient();
+
+    const payload = {
+      name: templateData.name,
+      type: templateData.type || 'email',
+      category: templateData.category || 'general',
+      subject: templateData.subject || null,
+      preview_text: templateData.preview_text || null,
+      body_html: templateData.body_html || null,
+      body_text: templateData.body_text || null,
+      thumbnail_url: templateData.thumbnail_url || null,
+      is_system: 0,
+      created_by: user.email,
+      updated_at: new Date().toISOString()
+    };
+
+    let result;
+    if (templateData.id) {
+      const { data, error } = await supabase
+        .from('marketing_templates')
+        .update(payload)
+        .eq('id', templateData.id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      result = data;
+    } else {
+      payload.created_at = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('marketing_templates')
+        .insert(payload)
+        .select('*')
+        .single();
+      if (error) throw error;
+      result = data;
+    }
+
+    await logAudit(user.email, 'SAVE_MARKETING_TEMPLATE', { id: result.id, name: result.name });
+    revalidatePath('/admin/marketing');
+    return { success: true, template: result };
+  } catch (err) {
+    console.error('saveMarketingTemplateAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteMarketingTemplateAction(templateId) {
+  try {
+    const user = await checkAuthRole(['super_admin', 'admin', 'manager']);
+    const supabase = createAdminClient();
+
+    const { error } = await supabase
+      .from('marketing_templates')
+      .delete()
+      .eq('id', templateId);
+
+    if (error) throw error;
+
+    await logAudit(user.email, 'DELETE_MARKETING_TEMPLATE', { templateId });
+    revalidatePath('/admin/marketing');
+    return { success: true };
+  } catch (err) {
+    console.error('deleteMarketingTemplateAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateCustomerCommunicationPrefAction(email, phone, emailOptIn, whatsappOptIn) {
+  try {
+    const user = await checkAuthRole(['super_admin', 'admin', 'manager']);
+    const supabase = createAdminClient();
+
+    const cleanEmail = email ? email.toLowerCase().trim() : null;
+
+    let existing = null;
+    if (cleanEmail) {
+      const { data } = await supabase
+        .from('communication_preferences')
+        .select('*')
+        .eq('email', cleanEmail)
+        .single();
+      existing = data;
+    }
+
+    const payload = {
+      email: cleanEmail,
+      phone: phone || (existing?.phone || null),
+      email_marketing_opt_in: Number(emailOptIn),
+      whatsapp_marketing_opt_in: Number(whatsappOptIn),
+      updated_at: new Date().toISOString()
+    };
+
+    if (existing) {
+      await supabase.from('communication_preferences').update(payload).eq('id', existing.id);
+    } else {
+      await supabase.from('communication_preferences').insert({ ...payload, source: 'admin_manual_update' });
+    }
+
+    await logAudit(user.email, 'UPDATE_CUSTOMER_CONSENT_PREF', { email, emailOptIn, whatsappOptIn });
+    revalidatePath('/admin/marketing');
+    return { success: true };
+  } catch (err) {
+    console.error('updateCustomerCommunicationPrefAction error:', err);
+    return { success: false, error: err.message };
+  }
+}
+

@@ -83,7 +83,7 @@ export default function ShopByCategory({ categories = [] }) {
               return (
                 <Link
                   key={cat.id || idx}
-                  href={`/shop?category=${catSlug}`}
+                  href={`/category/${catSlug}`}
                   style={{
                     position: 'relative',
                     borderRadius: 'var(--radius-md, 10px)',

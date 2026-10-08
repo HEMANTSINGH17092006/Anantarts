@@ -28,36 +28,28 @@ export async function generateMetadata({ params }) {
     ? product.discount_price
     : product.price;
 
+  const rawName = (product.name || '').trim();
+  const categoryName = product.categories?.name || '';
+  const materialName = product.material || '24K Gold Electroplated';
+
   let title = product.seo_title;
   if (!title) {
-    const rawName = (product.name || '').trim();
-    const isIdol = /ganesha|krishna|shiva|durga|hanuman|ram|balaji|kamdhenu|shyam/i.test(rawName);
-    const isWood = /wood/i.test(product.material || '') || /wood/i.test(rawName);
-
-    let candidate = rawName;
-    if (rawName.length < 30) {
-      if (isIdol && !/idol|murti|statue/i.test(rawName)) {
-        candidate = `${rawName} Idol for Home Temple`;
-      } else if (isWood && !/handicraft|decor|organizer|set/i.test(rawName)) {
-        candidate = `Handcrafted ${rawName}`;
-      }
-    }
-
-    if (candidate.length > 42) {
-      const truncated = candidate.slice(0, 42).replace(/\s+\S*$/, '');
-      title = `${truncated} | Anant Arts`;
+    if (categoryName) {
+      title = `${rawName} | Premium ${categoryName} | Anant Arts`;
     } else {
-      title = `${candidate} | Anant Arts`;
+      title = `${rawName} | Handcrafted Luxury Décor | Anant Arts`;
     }
   }
 
-  const isWood = /wood/i.test(product.material || '') || /wood/i.test(product.name || '');
-  const productKeywordType = isWood ? 'handcrafted wooden home décor' : 'handcrafted 24K gold and silver spiritual idol';
-
-  const description = product.seo_description ||
-    (product.description && product.description.length > 25
-      ? product.description.slice(0, 150).replace(/\s+\S*$/, '') + '...'
-      : `Buy ${product.name} online at Anant Arts. Premium ${productKeywordType} with insured pan-India delivery.`);
+  let description = product.seo_description;
+  if (!description) {
+    if (product.description && product.description.length > 30) {
+      const cleanDesc = product.description.replace(/<[^>]+>/g, '').slice(0, 155).replace(/\s+\S*$/, '');
+      description = `Shop ${rawName} by Anant Arts. ${cleanDesc}... Handcrafted with insured pan-India delivery.`;
+    } else {
+      description = `Shop the ${rawName} by Anant Arts, crafted with ${materialName.toLowerCase()} and master detailing. Explore handcrafted Indian spiritual décor with Pan-India delivery.`;
+    }
+  }
 
   const primaryImage = product.images?.[0]?.image_path || `${BASE_URL}/og-image.jpg`;
   const canonicalUrl = `${BASE_URL}/product/${product.slug}`;
@@ -67,13 +59,23 @@ export async function generateMetadata({ params }) {
       absolute: title,
     },
     description,
+    keywords: [
+      rawName.toLowerCase(),
+      `${rawName.toLowerCase()} online`,
+      categoryName.toLowerCase(),
+      materialName.toLowerCase(),
+      'anant arts',
+      'electroplated idols',
+      'indian handicrafts',
+      'buy god idols online'
+    ].filter(Boolean),
     alternates: { canonical: canonicalUrl },
     openGraph: {
       title,
       description,
       url: canonicalUrl,
       type: 'website',
-      images: [{ url: primaryImage.startsWith('http') ? primaryImage : `${BASE_URL}${primaryImage}`, width: 800, height: 800, alt: product.name }],
+      images: [{ url: primaryImage.startsWith('http') ? primaryImage : `${BASE_URL}${primaryImage}`, width: 800, height: 800, alt: `${rawName} — Anant Arts` }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -178,7 +180,7 @@ export default async function ProductDetailPage({ params }) {
       '@type': 'ListItem',
       position: 3,
       name: product.categories.name,
-      item: `${BASE_URL}/shop?category=${product.categories.slug}`,
+      item: `${BASE_URL}/category/${product.categories.slug}`,
     });
     breadcrumbItems.push({ '@type': 'ListItem', position: 4, name: product.name, item: canonicalUrl });
   } else {
@@ -199,17 +201,17 @@ export default async function ProductDetailPage({ params }) {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         
-        {/* Breadcrumb */}
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
           <Link href="/">Home</Link> &nbsp;/&nbsp;&nbsp;
           <Link href="/shop">Shop</Link> &nbsp;/&nbsp;&nbsp;
           {product.categories && (
             <>
-              <Link href={`/shop?category=${product.categories.slug}`}>{product.categories.name}</Link> &nbsp;/&nbsp;&nbsp;
+              <Link href={`/category/${product.categories.slug}`}>{product.categories.name}</Link> &nbsp;/&nbsp;&nbsp;
             </>
           )}
-          <span style={{ color: 'var(--text-dark)' }}>{product.name}</span>
-        </div>
+          <span style={{ color: 'var(--text-dark)', fontWeight: '600' }}>{product.name}</span>
+        </nav>
 
         {/* Core Detail Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '3rem', alignItems: 'flex-start', marginBottom: '4rem' }}>

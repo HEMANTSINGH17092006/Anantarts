@@ -280,13 +280,13 @@ export default function ShopCatalogClient({ initialProducts = [], categories = [
                     Popular Handcrafted Collections
                   </h4>
                   <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <Link href="/shop?category=spiritual-collection" className="btn-outline-gold" style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
+                    <Link href="/category/spiritual-collection" className="btn-outline-gold" style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
                       Spiritual Collection
                     </Link>
-                    <Link href="/shop?category=wooden-handicrafts" className="btn-outline-gold" style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
+                    <Link href="/category/wooden-handicrafts" className="btn-outline-gold" style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
                       Wooden Handicrafts
                     </Link>
-                    <Link href="/shop?category=home-decor" className="btn-outline-gold" style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
+                    <Link href="/category/home-decor" className="btn-outline-gold" style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
                       Home Décor
                     </Link>
                     <Link href="/corporate-gifts" className="btn-outline-gold" style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
