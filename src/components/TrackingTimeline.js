@@ -93,7 +93,7 @@ export default function TrackingTimeline({ order, trackingEvents = [] }) {
         {/* Courier Meta Box */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
           gap: '12px',
           paddingTop: '16px',
           borderTop: '1px solid rgba(255,255,255,0.1)',
@@ -113,12 +113,35 @@ export default function TrackingTimeline({ order, trackingEvents = [] }) {
             <strong style={{ color: '#D4AF37' }}>{trackingNumber || 'Assigned upon dispatch'}</strong>
           </div>
           <div>
-            <span style={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.75rem' }}>Payment &amp; Refund Status</span>
-            <strong style={{ color: order.refund_status === 'Refund Pending' ? '#FFB74D' : (order.payment_status === 'Captured' || order.payment_status === 'Paid' ? '#81C784' : '#E57373') }}>
+            <span style={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.75rem' }}>Payment Method</span>
+            <strong style={{ color: '#FFF' }}>{order.payment_method === 'UPI_QR' ? 'Direct UPI QR' : (order.payment_method || 'Online')}</strong>
+          </div>
+          <div>
+            <span style={{ color: 'rgba(255,255,255,0.6)', display: 'block', fontSize: '0.75rem' }}>Payment Status</span>
+            <strong style={{ color: order.refund_status === 'Refund Pending' ? '#FFB74D' : (order.payment_status === 'Pending Verification' ? '#FFB74D' : (order.payment_status === 'Captured' || order.payment_status === 'Paid' ? '#81C784' : '#E57373')) }}>
               {order.refund_status && order.refund_status !== 'none' ? order.refund_status.toUpperCase() : (order.payment_status ? order.payment_status.toUpperCase() : 'PENDING')}
             </strong>
           </div>
         </div>
+
+        {order.payment_method === 'UPI_QR' && order.payment_status === 'Pending Verification' && (
+          <div style={{
+            background: 'rgba(255, 183, 77, 0.15)',
+            border: '1px solid rgba(255, 183, 77, 0.4)',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            fontSize: '0.82rem',
+            color: '#FFE082',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span>⏳</span>
+            <span>
+              <strong>Direct UPI Payment Under Verification:</strong> Our team is validating your submitted UTR reference with our bank. Your order will be confirmed shortly.
+            </span>
+          </div>
+        )}
 
         {isCancelled && (
           <div style={{

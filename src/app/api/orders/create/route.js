@@ -41,9 +41,18 @@ export async function POST(req) {
       payment_method,
       payment_status,
       payment_id,
+      utr,
+      notes,
       items,
       create_account
     } = body;
+
+    // Block new Cash on Delivery (COD) orders
+    if (payment_method && String(payment_method).toUpperCase() === 'COD') {
+      return NextResponse.json({
+        message: 'Cash on Delivery (COD) is no longer available. Please choose Razorpay Online or Direct UPI QR.'
+      }, { status: 400 });
+    }
 
     // 1. Mandatory base fields presence check
     if (!order_number || !customer_name || !customer_email || !customer_phone || !street_address || !city || !state || !zip || !items || items.length === 0) {
@@ -179,7 +188,29 @@ export async function POST(req) {
       }
     }
 
-    // 2. Insert order record
+    // 2. Determine payment & order status based on payment method
+    const isUpiQr = String(payment_method || '').toUpperCase() === 'UPI_QR';
+    const sanitizedUtr = sanitizeInput(utr || '');
+
+    if (isUpiQr && (!sanitizedUtr || sanitizedUtr.length < 4)) {
+      return NextResponse.json({
+        message: 'Please enter a valid Transaction ID / UTR number for your UPI payment.'
+      }, { status: 400 });
+    }
+
+    let finalPaymentStatus = payment_status || 'Pending';
+    let finalOrderStatus = 'Pending';
+    let finalNotes = notes ? sanitizeInput(notes) : '';
+
+    if (isUpiQr) {
+      finalPaymentStatus = 'Pending Verification';
+      finalOrderStatus = 'Payment Verification Pending';
+      finalNotes = `Direct UPI QR | UTR: ${sanitizedUtr}${finalNotes ? ' | ' + finalNotes : ''}`;
+    } else if (payment_id) {
+      finalNotes = `Payment Gateway Transaction ID: ${payment_id}${finalNotes ? ' | ' + finalNotes : ''}`;
+    }
+
+    // Insert order record
     const { data: order, error: orderErr } = await supabase
       .from('orders')
       .insert({
@@ -195,10 +226,10 @@ export async function POST(req) {
         shipping_charge,
         subtotal,
         total_amount,
-        payment_method,
-        payment_status: payment_status || 'Pending',
-        order_status: 'Pending',
-        notes: payment_id ? `Payment Gateway Transaction ID: ${payment_id}` : ''
+        payment_method: isUpiQr ? 'UPI_QR' : payment_method,
+        payment_status: finalPaymentStatus,
+        order_status: finalOrderStatus,
+        notes: finalNotes
       })
       .select('*')
       .single();

@@ -366,8 +366,17 @@ export default function MyOrdersPage() {
                         </div>
                         <div>
                           <strong style={{ display: 'block', marginBottom: '4px' }}>Payment Summary:</strong>
-                          <p style={{ margin: 0, color: 'var(--text-muted)' }}>Method: {order.payment_method.toUpperCase()}</p>
-                          <p style={{ margin: 0, color: 'var(--text-muted)' }}>Status: {order.payment_status}</p>
+                          <p style={{ margin: 0, color: 'var(--text-dark)', fontWeight: '600' }}>
+                            Method: {order.payment_method === 'UPI_QR' ? 'Direct UPI QR' : (order.payment_method?.toUpperCase() || 'ONLINE')}
+                          </p>
+                          <p style={{ margin: '2px 0 0 0', color: order.payment_status === 'Pending Verification' ? '#E65100' : 'var(--text-muted)' }}>
+                            Status: <strong>{order.payment_status === 'Pending Verification' ? '⏳ Pending Verification' : order.payment_status}</strong>
+                          </p>
+                          {order.notes && order.notes.includes('UTR:') && (
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                              Ref: <code style={{ background: '#f5f5f5', padding: '1px 4px', borderRadius: '3px' }}>{order.notes.split('UTR:')[1]?.trim()}</code>
+                            </p>
+                          )}
                         </div>
 
                         {/* Invoice Download Action */}

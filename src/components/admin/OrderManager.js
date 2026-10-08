@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateOrderStatus, addAdminOrderTrackingEventAction, getAdminOrderTrackingEventsAction } from '@/app/actions';
+import { updateOrderStatus, addAdminOrderTrackingEventAction, getAdminOrderTrackingEventsAction, verifyUpiPaymentAction } from '@/app/actions';
 import { formatPrice } from '@/lib/utils';
 
 export default function OrderManager({ initialOrders = [] }) {
@@ -74,7 +74,7 @@ export default function OrderManager({ initialOrders = [] }) {
   };
 
   const orderTabs = ['All', 'Pending', 'Payment Confirmed', 'Order Confirmed', 'Preparing Shipment', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered', 'Cancelled'];
-  const paymentStatusOptions = ['All', 'Captured', 'Authorized', 'Pending', 'Failed', 'Refunded'];
+  const paymentStatusOptions = ['All', 'Pending Verification', 'Captured', 'Authorized', 'Pending', 'Failed', 'Refunded'];
 
   // Metrics Calculations
   const totalCapturedRevenue = orders
@@ -84,6 +84,7 @@ export default function OrderManager({ initialOrders = [] }) {
   const authorizedCount = orders.filter(o => o.payment_status === 'Authorized').length;
   const capturedCount = orders.filter(o => o.payment_status === 'Captured' || o.payment_status === 'Paid').length;
   const pendingCount = orders.filter(o => !o.payment_status || o.payment_status === 'Pending').length;
+  const upiPendingCount = orders.filter(o => o.payment_method === 'UPI_QR' && String(o.payment_status || '').toLowerCase().includes('pending')).length;
   const failedCount = orders.filter(o => o.payment_status === 'Failed' || o.payment_status === 'Refunded').length;
 
   const filteredOrders = orders.filter(o => {
@@ -94,11 +95,13 @@ export default function OrderManager({ initialOrders = [] }) {
       (o.customer_phone && o.customer_phone.toLowerCase().includes(term)) ||
       (o.customer_email && o.customer_email.toLowerCase().includes(term)) ||
       (o.razorpay_payment_id && o.razorpay_payment_id.toLowerCase().includes(term)) ||
+      (o.notes && o.notes.toLowerCase().includes(term)) ||
       (o.items && o.items.some(item => item.product_name && item.product_name.toLowerCase().includes(term)));
 
     const matchesTab = activeTab === 'All' || o.order_status === activeTab;
     const matchesPayment = paymentFilter === 'All' || 
                            (paymentFilter === 'Captured' && (o.payment_status === 'Captured' || o.payment_status === 'Paid')) ||
+                           (paymentFilter === 'Pending Verification' && (String(o.payment_status || '').toLowerCase().includes('verification') || String(o.order_status || '').toLowerCase().includes('verification'))) ||
                            o.payment_status === paymentFilter;
     return matchesSearch && matchesTab && matchesPayment;
   }).sort((a, b) => {
@@ -279,6 +282,50 @@ export default function OrderManager({ initialOrders = [] }) {
     }
   };
 
+  const extractUtr = (o) => {
+    if (!o) return 'N/A';
+    if (o.notes) {
+      const match = o.notes.match(/UTR:\s*([A-Za-z0-9_-]+)/i);
+      if (match && match[1]) return match[1];
+    }
+    return o.razorpay_payment_id || o.payment_id || 'N/A';
+  };
+
+  const handleVerifyUpiPayment = async (o) => {
+    if (!o || !o.id) return;
+    setUpdating(true);
+    const res = await verifyUpiPaymentAction(o.id, true);
+    setUpdating(false);
+    if (res.success) {
+      showAlert('success', res.message || 'Payment verified and order confirmed!');
+      setOrders(prev => prev.map(item => item.id === o.id ? { ...item, payment_status: 'Paid', order_status: 'Order Confirmed' } : item));
+      if (selectedOrder?.id === o.id) {
+        setSelectedOrder(prev => ({ ...prev, payment_status: 'Paid', order_status: 'Order Confirmed' }));
+      }
+      startTransition(() => { router.refresh(); });
+    } else {
+      showAlert('danger', res.message || 'Failed to verify payment.');
+    }
+  };
+
+  const handleRejectUpiPayment = async (o) => {
+    if (!o || !o.id) return;
+    if (!confirm(`Are you sure you want to REJECT the UPI payment for Order ${o.order_number}? The order will be cancelled.`)) return;
+    setUpdating(true);
+    const res = await verifyUpiPaymentAction(o.id, false);
+    setUpdating(false);
+    if (res.success) {
+      showAlert('success', res.message || 'Payment rejected. Order has been cancelled.');
+      setOrders(prev => prev.map(item => item.id === o.id ? { ...item, payment_status: 'Rejected', order_status: 'Cancelled' } : item));
+      if (selectedOrder?.id === o.id) {
+        setSelectedOrder(prev => ({ ...prev, payment_status: 'Rejected', order_status: 'Cancelled' }));
+      }
+      startTransition(() => { router.refresh(); });
+    } else {
+      showAlert('danger', res.message || 'Failed to reject payment.');
+    }
+  };
+
   const handleSendWhatsApp = (o) => {
     const phoneClean = o.customer_phone.replace(/[^\d]/g, '');
     let text = `Hi ${o.customer_name}, greetings from Anant Arts! 🪷\n\n`;
@@ -346,6 +393,12 @@ export default function OrderManager({ initialOrders = [] }) {
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Captured Revenue</div>
           <div style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--success)', marginTop: '4px' }}>{formatPrice(totalCapturedRevenue)}</div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>{capturedCount} Paid Orders</div>
+        </div>
+
+        <div style={{ background: 'white', padding: '16px', borderRadius: '8px', border: '1px solid #FFE082', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', color: '#B78103', textTransform: 'uppercase', letterSpacing: '0.5px' }}>UPI Pending Review</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#B78103', marginTop: '4px' }}>{upiPendingCount}</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>Awaiting UTR verification</div>
         </div>
 
         <div style={{ background: 'white', padding: '16px', borderRadius: '8px', border: '1px solid #FFE082', boxShadow: 'var(--shadow-sm)' }}>
@@ -597,18 +650,27 @@ export default function OrderManager({ initialOrders = [] }) {
                     </td>
                     <td style={{ padding: '12px' }}>{new Date(o.created_at).toLocaleDateString('en-IN')}</td>
                     <td style={{ padding: '12px', fontWeight: '600' }}>{formatPrice(o.total_amount)}</td>
-                    <td style={{ padding: '12px', textTransform: 'uppercase' }}>{o.payment_method || 'COD'}</td>
                     <td style={{ padding: '12px' }}>
-                      <span style={{
-                        padding: '3px 10px',
-                        borderRadius: '12px',
-                        fontSize: '0.7rem',
-                        fontWeight: '700',
-                        backgroundColor: isCaptured ? 'rgba(46,125,50,0.12)' : (isAuthorized ? '#FFF3E0' : (isFailed ? '#FFEBEE' : (isRefunded ? '#F3E5F5' : 'rgba(239,108,0,0.1)'))),
-                        color: isCaptured ? '#2E7D32' : (isAuthorized ? '#E65100' : (isFailed ? '#C62828' : (isRefunded ? '#7B1FA2' : '#E65100')))
-                      }}>
-                        {isCaptured ? '✓ CAPTURED' : (isAuthorized ? '⚡ AUTHORIZED' : payStatus.toUpperCase())}
+                      <span style={{ fontWeight: '600', color: o.payment_method === 'UPI_QR' ? '#B78103' : 'inherit' }}>
+                        {o.payment_method === 'UPI_QR' ? 'Direct UPI QR' : (o.payment_method || 'Razorpay')}
                       </span>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      {(() => {
+                        const isPendingReview = String(o.payment_status || '').toLowerCase().includes('pending verification') || String(o.order_status || '').toLowerCase().includes('verification');
+                        return (
+                          <span style={{
+                            padding: '3px 10px',
+                            borderRadius: '12px',
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            backgroundColor: isPendingReview ? '#FFF8E1' : (isCaptured ? 'rgba(46,125,50,0.12)' : (isAuthorized ? '#FFF3E0' : (isFailed ? '#FFEBEE' : (isRefunded ? '#F3E5F5' : 'rgba(239,108,0,0.1)')))),
+                            color: isPendingReview ? '#B78103' : (isCaptured ? '#2E7D32' : (isAuthorized ? '#E65100' : (isFailed ? '#C62828' : (isRefunded ? '#7B1FA2' : '#E65100'))))
+                          }}>
+                            {isPendingReview ? '⏳ PENDING REVIEW' : (isCaptured ? '✓ CAPTURED' : (isAuthorized ? '⚡ AUTHORIZED' : payStatus.toUpperCase()))}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: '12px' }}>
                       <span style={{
@@ -683,14 +745,42 @@ export default function OrderManager({ initialOrders = [] }) {
             {/* Payment Details Box */}
             <div style={{ background: '#FAF7F2', padding: '12px 16px', borderRadius: '6px', border: '1px solid var(--primary-gold-border)', marginBottom: '16px', fontSize: '0.8rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <strong>Payment Method:</strong> {selectedOrder.payment_method || 'Razorpay'}<br />
-                <strong>Payment Status:</strong> <span style={{ fontWeight: '700', color: selectedOrder.payment_status === 'Captured' || selectedOrder.payment_status === 'Paid' ? '#2E7D32' : '#E65100' }}>{selectedOrder.payment_status || 'Pending'}</span>
+                <strong>Payment Method:</strong> {selectedOrder.payment_method === 'UPI_QR' ? 'Direct UPI QR' : (selectedOrder.payment_method || 'Razorpay')}<br />
+                <strong>Amount:</strong> <span style={{ fontWeight: '700', color: 'var(--text-dark)' }}>{formatPrice(selectedOrder.total_amount)}</span><br />
+                <strong>Payment Status:</strong> <span style={{ fontWeight: '700', color: selectedOrder.payment_status === 'Captured' || selectedOrder.payment_status === 'Paid' ? '#2E7D32' : (String(selectedOrder.payment_status || '').toLowerCase().includes('pending') ? '#B78103' : '#E65100') }}>{selectedOrder.payment_status || 'Pending'}</span>
               </div>
               <div>
-                <strong>Transaction ID:</strong> <code style={{ fontSize: '0.75rem' }}>{selectedOrder.razorpay_payment_id || selectedOrder.payment_id || 'N/A'}</code><br />
-                <strong>Razorpay Order ID:</strong> <code style={{ fontSize: '0.75rem' }}>{selectedOrder.razorpay_order_id || 'N/A'}</code>
+                <strong>UTR / Transaction ID:</strong> <code style={{ fontSize: '0.8rem', fontWeight: '700', background: '#F0EFE9', padding: '2px 6px', borderRadius: '4px' }}>{extractUtr(selectedOrder)}</code><br />
+                {selectedOrder.razorpay_order_id && (
+                  <><strong>Razorpay Order ID:</strong> <code style={{ fontSize: '0.75rem' }}>{selectedOrder.razorpay_order_id}</code><br /></>
+                )}
+                {selectedOrder.notes && (
+                  <div style={{ marginTop: '4px', fontSize: '0.72rem', color: '#666' }}>
+                    <strong>Notes:</strong> {selectedOrder.notes}
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Action Buttons for Direct UPI QR Verification */}
+            {selectedOrder.payment_method === 'UPI_QR' && (String(selectedOrder.payment_status || '').toLowerCase().includes('pending') || String(selectedOrder.order_status || '').toLowerCase().includes('verification')) && (
+              <div style={{ background: '#FFF8E1', border: '1px solid #FFE082', padding: '16px', borderRadius: '8px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#B78103' }}>⚠️ Direct UPI QR Payment Awaiting Verification</div>
+                  <div style={{ fontSize: '0.8rem', color: '#555', marginTop: '3px' }}>
+                    Customer paid <strong>{formatPrice(selectedOrder.total_amount)}</strong> | UTR: <strong style={{ fontFamily: 'monospace', color: '#111' }}>{extractUtr(selectedOrder)}</strong>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => handleVerifyUpiPayment(selectedOrder)} className="btn-gold" style={{ padding: '8px 18px', fontSize: '0.8rem', background: '#2E7D32', borderColor: '#2E7D32', color: 'white', fontWeight: '700', cursor: 'pointer' }} disabled={updating}>
+                    {updating ? 'Verifying...' : 'VERIFY PAYMENT'}
+                  </button>
+                  <button onClick={() => handleRejectUpiPayment(selectedOrder)} style={{ padding: '8px 18px', fontSize: '0.8rem', background: 'transparent', border: '1px solid #C62828', color: '#C62828', borderRadius: '4px', cursor: 'pointer', fontWeight: '700' }} disabled={updating}>
+                    {updating ? 'Rejecting...' : 'REJECT PAYMENT'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons for Authorized or Captured */}
             {selectedOrder.payment_status === 'Authorized' && (

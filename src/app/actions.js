@@ -2052,3 +2052,107 @@ export async function updateCustomerCommunicationPrefAction(email, phone, emailO
   }
 }
 
+/**
+ * uploadUpiQrAction — Uploads admin UPI QR image to Supabase Storage uploads bucket
+ */
+export async function uploadUpiQrAction(formData) {
+  try {
+    const admin = await checkAuthRole(['super_admin', 'admin']);
+    const file = formData.get('qr_image');
+    if (!file || typeof file === 'string' || file.size === 0) {
+      return { success: false, message: 'Please select a valid image file.' };
+    }
+
+    const supabase = createAdminClient();
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const fileName = `settings/upi_qr_${Date.now()}.${fileExt}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    await supabase.storage.createBucket('uploads', { public: true }).catch(() => {});
+
+    const { error: uploadErr } = await supabase.storage
+      .from('uploads')
+      .upload(fileName, buffer, {
+        contentType: file.type || 'image/jpeg',
+        upsert: true
+      });
+
+    if (uploadErr) {
+      console.error('[uploadUpiQrAction] Storage Upload Error:', uploadErr);
+      throw new Error('Failed to upload QR image to Supabase Storage.');
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('uploads')
+      .getPublicUrl(fileName);
+
+    const publicUrl = publicUrlData.publicUrl;
+
+    // Save to website_settings immediately
+    await supabase
+      .from('website_settings')
+      .upsert({ key: 'upi_qr_image_url', value: publicUrl }, { onConflict: 'key' });
+
+    await logAudit(admin.email, 'UPLOAD_UPI_QR_IMAGE', { fileName, publicUrl });
+    revalidateTag('settings');
+    revalidatePath('/admin/settings');
+    revalidatePath('/checkout');
+
+    return { success: true, url: publicUrl, message: 'UPI QR code uploaded and updated successfully!' };
+  } catch (err) {
+    console.error('[uploadUpiQrAction] Error:', err);
+    return { success: false, message: err.message || 'Failed to upload QR image.' };
+  }
+}
+
+/**
+ * verifyUpiPaymentAction — Verifies or Rejects a Direct UPI QR Order
+ */
+export async function verifyUpiPaymentAction(orderId, verified) {
+  try {
+    const admin = await checkAuthRole(['super_admin', 'admin', 'manager']);
+    const supabase = createAdminClient();
+
+    const updates = verified
+      ? {
+          payment_status: 'Paid',
+          order_status: 'Order Confirmed'
+        }
+      : {
+          payment_status: 'Rejected',
+          order_status: 'Cancelled',
+          cancellation_reason: 'Direct UPI payment verification rejected by admin',
+          cancelled_at: new Date().toISOString(),
+          cancelled_by: admin.email
+        };
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updates)
+      .eq('id', orderId)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    await logAudit(admin.email, verified ? 'VERIFY_UPI_PAYMENT' : 'REJECT_UPI_PAYMENT', {
+      orderId,
+      orderNumber: data.order_number,
+      verified
+    });
+
+    revalidatePath('/admin/orders');
+    revalidatePath('/order-tracking');
+    revalidatePath('/account/orders');
+
+    return {
+      success: true,
+      message: verified ? 'Payment verified successfully! Order is now confirmed.' : 'Payment rejected. Order has been cancelled.',
+      order: data
+    };
+  } catch (err) {
+    console.error('[verifyUpiPaymentAction] Error:', err);
+    return { success: false, message: err.message || 'Failed to verify UPI payment.' };
+  }
+}
+

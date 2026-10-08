@@ -20,6 +20,10 @@ export async function GET() {
       whatsapp_admin_number: settings.whatsapp_admin_number,
       whatsapp_message_template: settings.whatsapp_message_template,
       whatsapp_notifications_enabled: settings.whatsapp_notifications_enabled,
+      upi_qr_enabled: settings.upi_qr_enabled !== '0',
+      upi_qr_image_url: settings.upi_qr_image_url || '',
+      upi_id: settings.upi_id || '',
+      upi_display_name: settings.upi_display_name || 'Anant Arts',
     };
 
     return Response.json(publicSettings, {

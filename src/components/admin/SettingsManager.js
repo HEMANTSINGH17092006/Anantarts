@@ -1,7 +1,7 @@
 'use client';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateSettings, createAdminAction, toggleAdminStatusAction, deleteAdminAction, exportFullBackupAction } from '@/app/actions';
+import { updateSettings, createAdminAction, toggleAdminStatusAction, deleteAdminAction, exportFullBackupAction, uploadUpiQrAction } from '@/app/actions';
 
 export default function SettingsManager({ settings = {}, logs = [], currentUser, admins = [] }) {
   const router = useRouter();
@@ -13,6 +13,13 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
   const [razorpayKeySecret, setRazorpayKeySecret] = useState(settings.razorpay_key_secret || '');
   const [razorpayWebhookSecret, setRazorpayWebhookSecret] = useState(settings.razorpay_webhook_secret || '');
   const [autoCaptureEnabled, setAutoCaptureEnabled] = useState(settings.razorpay_auto_capture !== '0');
+
+  // 1b. Direct UPI QR Settings State
+  const [upiQrEnabled, setUpiQrEnabled] = useState(settings.upi_qr_enabled !== '0');
+  const [upiId, setUpiId] = useState(settings.upi_id || '');
+  const [upiDisplayName, setUpiDisplayName] = useState(settings.upi_display_name || 'Anant Arts');
+  const [upiQrImageUrl, setUpiQrImageUrl] = useState(settings.upi_qr_image_url || '');
+  const [uploadingQr, setUploadingQr] = useState(false);
 
   // 2. Shipping Settings State
   const [freeShippingMin, setFreeShippingMin] = useState(settings.free_shipping_threshold || '5000');
@@ -67,6 +74,23 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
       startTransition(() => { router.refresh(); });
     } else {
       showAlert('danger', res.message || 'Failed to update settings.');
+    }
+  };
+
+  const handleUploadQr = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingQr(true);
+    const fd = new FormData();
+    fd.append('qr_image', file);
+    const res = await uploadUpiQrAction(fd);
+    setUploadingQr(false);
+    if (res.success && res.url) {
+      setUpiQrImageUrl(res.url);
+      showAlert('success', 'UPI QR image uploaded and saved successfully.');
+      startTransition(() => { router.refresh(); });
+    } else {
+      showAlert('danger', res.message || 'Failed to upload QR image.');
     }
   };
 
@@ -211,9 +235,196 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
             </div>
 
             <button type="submit" className="btn-gold" style={{ padding: '12px 24px', width: 'fit-content', borderRadius: '6px', fontWeight: '700' }} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Payment Settings'}
+              {saving ? 'Saving...' : 'Save Razorpay Settings'}
             </button>
           </form>
+
+          {/* Divider */}
+          <div style={{ borderTop: '2px dashed #EAE3D2', margin: '36px 0 28px 0' }}></div>
+
+          {/* DIRECT UPI QR CONFIGURATION */}
+          <div id="upi-qr">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.25rem', margin: 0, color: '#111' }}>
+                  📱 Direct UPI QR Payment Configuration
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: '#666', margin: '4px 0 0 0' }}>
+                  Allow customers to pay directly to your bank account via UPI QR and enter their Transaction UTR for manual review.
+                </p>
+              </div>
+              <span style={{
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                padding: '4px 10px',
+                borderRadius: '12px',
+                background: upiQrEnabled ? '#E8F5E9' : '#FFEBEE',
+                color: upiQrEnabled ? '#2E7D32' : '#C62828'
+              }}>
+                {upiQrEnabled ? '● UPI QR ACTIVE' : '○ UPI QR DISABLED'}
+              </span>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveSettings([
+                { key: 'upi_qr_enabled', value: upiQrEnabled ? '1' : '0' },
+                { key: 'upi_id', value: upiId },
+                { key: 'upi_display_name', value: upiDisplayName }
+              ]);
+            }} style={{ display: 'flex', flexDirection: 'column', gap: '22px', maxWidth: '650px' }}>
+
+              {/* Enable / Disable Checkbox */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#FAF8F5', padding: '14px', borderRadius: '8px', border: '1px solid #EAE3D2' }}>
+                <input
+                  type="checkbox"
+                  id="enableUpiQr"
+                  checked={upiQrEnabled}
+                  onChange={(e) => setUpiQrEnabled(e.target.checked)}
+                  style={{ width: '18px', height: '18px', accentColor: '#D4AF37' }}
+                />
+                <label htmlFor="enableUpiQr" style={{ fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer', color: '#111' }}>
+                  Enable Direct UPI QR Payment option at customer checkout
+                </label>
+              </div>
+
+              {/* QR Image Upload & Preview Card */}
+              <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '8px', border: '1px solid #EAE3D2' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#111', marginBottom: '8px' }}>
+                  Official Merchant UPI QR Code Image
+                </label>
+                <p style={{ fontSize: '0.78rem', color: '#666', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+                  Upload your clear, official UPI QR code (Google Pay, PhonePe, Paytm, or BHIM). This image is stored securely on Supabase Storage and served to customers during checkout.
+                </p>
+
+                {upiQrImageUrl ? (
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{
+                      background: '#FFFFFF',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '2px solid #D4AF37',
+                      boxShadow: '0 4px 12px rgba(212,175,55,0.15)',
+                      display: 'inline-block'
+                    }}>
+                      <img
+                        src={upiQrImageUrl}
+                        alt="Active Store UPI QR Code"
+                        style={{ width: '160px', height: '160px', objectFit: 'contain', display: 'block' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <span style={{ fontSize: '0.78rem', color: '#2E7D32', fontWeight: '700' }}>
+                        ✓ Active QR Code Loaded
+                      </span>
+                      <label style={{
+                        display: 'inline-block',
+                        padding: '8px 16px',
+                        background: '#FAF8F5',
+                        border: '1px solid #D4AF37',
+                        borderRadius: '6px',
+                        color: '#B78103',
+                        fontSize: '0.8rem',
+                        fontWeight: '600',
+                        cursor: uploadingQr ? 'not-allowed' : 'pointer'
+                      }}>
+                        {uploadingQr ? 'Uploading New QR...' : 'Replace QR Image'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleUploadQr}
+                          disabled={uploadingQr}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                      <span style={{ fontSize: '0.7rem', color: '#888' }}>
+                        Supports PNG, JPG, WEBP (Max 5MB)
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    border: '2px dashed #D4AF37',
+                    padding: '24px',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    background: '#FAF8F5'
+                  }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📷</div>
+                    <strong style={{ display: 'block', fontSize: '0.88rem', color: '#111', marginBottom: '4px' }}>
+                      No UPI QR Code Uploaded Yet
+                    </strong>
+                    <span style={{ fontSize: '0.78rem', color: '#666', display: 'block', marginBottom: '14px' }}>
+                      Upload your official UPI QR code photo or screenshot to activate direct customer payments.
+                    </span>
+                    <label style={{
+                      display: 'inline-block',
+                      padding: '10px 20px',
+                      background: '#D4AF37',
+                      color: '#111',
+                      borderRadius: '6px',
+                      fontSize: '0.82rem',
+                      fontWeight: '700',
+                      cursor: uploadingQr ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                    }}>
+                      {uploadingQr ? 'Uploading QR Image...' : 'Upload UPI QR Image'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadQr}
+                        disabled={uploadingQr}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* UPI ID Field */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: '#111' }}>
+                  UPI ID (VPA)
+                </label>
+                <input
+                  type="text"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  placeholder="e.g. anantarts@okaxis or 9876543210@paytm"
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #DDD', fontSize: '0.88rem' }}
+                />
+                <span style={{ fontSize: '0.72rem', color: '#777', marginTop: '4px', display: 'block' }}>
+                  Displayed below the QR code for customers paying via UPI ID on the same phone.
+                </span>
+              </div>
+
+              {/* Payee Display Name */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: '#111' }}>
+                  Payee / Business Display Name
+                </label>
+                <input
+                  type="text"
+                  value={upiDisplayName}
+                  onChange={(e) => setUpiDisplayName(e.target.value)}
+                  placeholder="e.g. Anant Arts"
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #DDD', fontSize: '0.88rem' }}
+                />
+                <span style={{ fontSize: '0.72rem', color: '#777', marginTop: '4px', display: 'block' }}>
+                  Customer will see this payee name on their UPI payment screen to confirm legitimate recipient.
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                className="btn-gold"
+                style={{ padding: '12px 24px', width: 'fit-content', borderRadius: '6px', fontWeight: '700' }}
+                disabled={saving}
+              >
+                {saving ? 'Saving Settings...' : 'Save UPI QR Settings'}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
