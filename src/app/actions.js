@@ -1301,6 +1301,12 @@ export async function updateSettings(settingsArray) {
     }
 
     await logAudit(admin.email, 'UPDATE_WEBSITE_SETTINGS', { count: settingsArray.length });
+    revalidateTag('settings');
+    revalidateTag('website-settings');
+    revalidatePath('/admin/settings');
+    revalidatePath('/checkout');
+    revalidatePath('/');
+
     return { success: true, message: 'Website settings saved successfully!' };
   } catch (err) {
     console.error('[updateSettings] Error:', err);
@@ -2063,8 +2069,19 @@ export async function uploadUpiQrAction(formData) {
       return { success: false, message: 'Please select a valid image file.' };
     }
 
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const fileType = (file.type || '').toLowerCase();
+    if (!allowedTypes.includes(fileType)) {
+      return { success: false, message: 'Invalid file format. Only JPG, PNG, and WEBP image files are supported.' };
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return { success: false, message: 'Image size exceeds 5MB limit. Please upload a smaller image.' };
+    }
+
     const supabase = createAdminClient();
-    const fileExt = file.name.split('.').pop() || 'jpg';
+    const rawExt = file.name ? file.name.split('.').pop().toLowerCase() : 'jpg';
+    const fileExt = ['jpg', 'jpeg', 'png', 'webp'].includes(rawExt) ? rawExt : 'jpg';
     const fileName = `settings/upi_qr_${Date.now()}.${fileExt}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -2079,7 +2096,7 @@ export async function uploadUpiQrAction(formData) {
 
     if (uploadErr) {
       console.error('[uploadUpiQrAction] Storage Upload Error:', uploadErr);
-      throw new Error('Failed to upload QR image to Supabase Storage.');
+      throw new Error('Failed to upload QR image to Supabase Storage: ' + uploadErr.message);
     }
 
     const { data: publicUrlData } = supabase.storage
@@ -2095,10 +2112,12 @@ export async function uploadUpiQrAction(formData) {
 
     await logAudit(admin.email, 'UPLOAD_UPI_QR_IMAGE', { fileName, publicUrl });
     revalidateTag('settings');
+    revalidateTag('website-settings');
     revalidatePath('/admin/settings');
     revalidatePath('/checkout');
+    revalidatePath('/');
 
-    return { success: true, url: publicUrl, message: 'UPI QR code uploaded and updated successfully!' };
+    return { success: true, url: publicUrl, message: 'UPI QR uploaded successfully.' };
   } catch (err) {
     console.error('[uploadUpiQrAction] Error:', err);
     return { success: false, message: err.message || 'Failed to upload QR image.' };

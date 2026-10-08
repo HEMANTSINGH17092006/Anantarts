@@ -3,6 +3,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
 import CancelOrderModal from '@/components/CancelOrderModal';
+import { trackPurchase } from '@/lib/meta-pixel';
 
 export default function MyOrdersPage() {
   const [patronInfo, setPatronInfo] = useState('');
@@ -38,7 +39,13 @@ export default function MyOrdersPage() {
       if (!res.ok) {
         throw new Error(data.message || 'Failed to fetch orders');
       }
-      setOrders(data.orders || []);
+      const fetchedOrders = data.orders || [];
+      setOrders(fetchedOrders);
+      fetchedOrders.forEach(o => {
+        if (o.payment_status === 'Paid' || o.payment_status === 'Captured') {
+          trackPurchase(o);
+        }
+      });
     } catch (err) {
       setError(err.message);
     } finally {

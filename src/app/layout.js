@@ -4,6 +4,7 @@ import { getSettings } from '@/lib/db-helpers';
 import { Playfair_Display, Poppins } from 'next/font/google';
 import Script from 'next/script';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import MetaPixel from '@/components/analytics/MetaPixel';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -227,6 +228,7 @@ export default async function RootLayout({ children }) {
         {/* Analytics Scripts (loaded after interactive) */}
         {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
         <MicrosoftClarity />
+        <MetaPixel />
       </body>
     </html>
   );

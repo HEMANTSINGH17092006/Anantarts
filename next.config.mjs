@@ -38,18 +38,18 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      // Scripts: self, inline (Next.js), Razorpay, GA, Clarity, Font Awesome CDN
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://www.googletagmanager.com https://www.clarity.ms https://cdnjs.cloudflare.com https://assets.mixkit.co",
+      // Scripts: self, inline (Next.js), Razorpay, GA, Clarity, Font Awesome CDN, Meta Pixel
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://www.googletagmanager.com https://www.clarity.ms https://cdnjs.cloudflare.com https://assets.mixkit.co https://connect.facebook.net",
       // Styles: self, inline, Google Fonts, Font Awesome
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
       // Fonts: self, Google Fonts
       "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
-      // Images: self, data URIs, Supabase storage, CDN
-      `img-src 'self' data: blob: ${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://*.supabase.co'} https://assets.mixkit.co https://www.google-analytics.com`,
+      // Images: self, data URIs, Supabase storage, CDN, Meta Pixel
+      `img-src 'self' data: blob: ${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://*.supabase.co'} https://assets.mixkit.co https://www.google-analytics.com https://www.facebook.com`,
       // Media: self, Supabase storage, mixkit for demo videos
       `media-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://*.supabase.co'} https://assets.mixkit.co`,
-      // Connections: self, Supabase API, GA, Clarity, Razorpay
-      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://*.supabase.co'} https://www.google-analytics.com https://www.clarity.ms https://api.razorpay.com wss://*.supabase.co`,
+      // Connections: self, Supabase API, GA, Clarity, Razorpay, Meta Pixel
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://*.supabase.co'} https://www.google-analytics.com https://www.clarity.ms https://api.razorpay.com wss://*.supabase.co https://www.facebook.com https://connect.facebook.net`,
       // Frames: Razorpay payment popup
       "frame-src 'self' https://api.razorpay.com",
       // Workers: self

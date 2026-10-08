@@ -1,7 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/components/context/AppContext';
 import { formatPrice, generateOrderNumber } from '@/lib/utils';
+import { trackInitiateCheckout, trackPurchase } from '@/lib/meta-pixel';
+import MetaOrderPurchaseTracker from '@/components/analytics/MetaOrderPurchaseTracker';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
@@ -203,15 +205,34 @@ export default function CheckoutPage() {
   const [applying, setApplying] = useState(false);
 
   const [settings, setSettings] = useState({});
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  // Meta Pixel InitiateCheckout tracking (fired once per cart session)
+  const hasTrackedCheckoutRef = useRef(false);
+  useEffect(() => {
+    if (cart && cart.length > 0 && total > 0 && !hasTrackedCheckoutRef.current) {
+      hasTrackedCheckoutRef.current = true;
+      trackInitiateCheckout(cart, total);
+    }
+  }, [cart, total]);
 
   // Health check state
   const [paymentHealth, setPaymentHealth] = useState({ checked: true, healthy: true, message: '' });
 
   useEffect(() => {
-    fetch('/api/settings')
+    fetch(`/api/settings?t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
-      .then(data => setSettings(data))
-      .catch(err => console.error('Failed to fetch settings', err));
+      .then(data => {
+        setSettings(data);
+        if (data.upi_qr_enabled === false) {
+          setPaymentMethod('razorpay');
+        }
+        setSettingsLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch settings', err);
+        setSettingsLoading(false);
+      });
       
     // Fetch customer profile & addresses
     fetch('/api/auth/me')
@@ -288,6 +309,7 @@ export default function CheckoutPage() {
     return (
       <div style={{ background: 'var(--bg-cream)', padding: '5rem 0', textAlign: 'center' }}>
         <WhatsAppAutoOpen url={waLink} />
+        <MetaOrderPurchaseTracker order={orderSuccess} />
         <div style={{ maxWidth: '600px', margin: '0 auto', padding: '32px', background: 'white', borderRadius: '8px', border: '1px solid var(--primary-gold-border)' }}>
           <div style={{ fontSize: '4.5rem', color: 'var(--success)', marginBottom: '16px' }}>✔️</div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', marginBottom: '8px' }}>Order Placed Successfully!</h2>
@@ -627,15 +649,20 @@ export default function CheckoutPage() {
                 }
 
                 // Payment Verified & Order Created successfully!
-                setOrderSuccess({
+                const successOrder = {
                   ...orderDetailsPayload,
                   id: verifyData.order_id,
+                  order_number: orderDetailsPayload.order_number,
                   payment_method: 'Razorpay',
                   payment_status: verifyData.payment_status || 'Captured',
                   payment_id: response.razorpay_payment_id,
+                  total_amount: orderDetailsPayload.total_amount,
+                  items: cart,
                   created_at: new Date().toISOString(),
                   warning: verifyData.warning
-                });
+                };
+                setOrderSuccess(successOrder);
+                trackPurchase(successOrder);
                 clearCart();
               } catch (verifyErr) {
                 console.log("Payment Error:", verifyErr);
@@ -1113,35 +1140,37 @@ export default function CheckoutPage() {
                   </label>
 
                   {/* Option 2: Direct UPI QR */}
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    padding: '14px 16px',
-                    border: paymentMethod === 'upi_qr' ? '2px solid var(--primary-gold)' : '1px solid var(--primary-gold-border)',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    background: paymentMethod === 'upi_qr' ? 'var(--primary-gold-light)' : 'white',
-                    transition: 'all 0.2s'
-                  }}>
-                    <input
-                      type="radio"
-                      name="payment_method"
-                      value="upi_qr"
-                      checked={paymentMethod === 'upi_qr'}
-                      onChange={() => setPaymentMethod('upi_qr')}
-                      style={{ accentColor: 'var(--primary-gold)', marginTop: '3px' }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
-                        <strong style={{ fontSize: '0.92rem', color: 'var(--text-dark)' }}>Pay Directly via UPI QR</strong>
-                        <span style={{ fontSize: '0.7rem', background: '#FFF3E0', color: '#E65100', padding: '2px 8px', borderRadius: '10px', fontWeight: '600' }}>Direct Transfer</span>
+                  {settings.upi_qr_enabled !== false && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '14px 16px',
+                      border: paymentMethod === 'upi_qr' ? '2px solid var(--primary-gold)' : '1px solid var(--primary-gold-border)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      background: paymentMethod === 'upi_qr' ? 'var(--primary-gold-light)' : 'white',
+                      transition: 'all 0.2s'
+                    }}>
+                      <input
+                        type="radio"
+                        name="payment_method"
+                        value="upi_qr"
+                        checked={paymentMethod === 'upi_qr'}
+                        onChange={() => setPaymentMethod('upi_qr')}
+                        style={{ accentColor: 'var(--primary-gold)', marginTop: '3px' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                          <strong style={{ fontSize: '0.92rem', color: 'var(--text-dark)' }}>Pay Directly via UPI QR</strong>
+                          <span style={{ fontSize: '0.7rem', background: '#FFF3E0', color: '#E65100', padding: '2px 8px', borderRadius: '10px', fontWeight: '600' }}>Direct Transfer</span>
+                        </div>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                          {settings.upi_qr_image_url ? 'Scan QR and pay directly to Anant Arts' : 'Pay via UPI to Anant Arts'}
+                        </span>
                       </div>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
-                        Scan QR and pay directly to Anant Arts
-                      </span>
-                    </div>
-                  </label>
+                    </label>
+                  )}
                 </div>
 
                 {/* Direct UPI QR Payment Card (Active when UPI_QR is selected) */}
@@ -1181,22 +1210,34 @@ export default function CheckoutPage() {
                       margin: '0 auto',
                       boxSizing: 'border-box'
                     }}>
-                      {settings.upi_qr_image_url ? (
+                      {settingsLoading ? (
+                        <div style={{
+                          padding: '40px 10px',
+                          color: 'var(--text-muted)',
+                          fontSize: '0.85rem'
+                        }}>
+                          Loading payment QR...
+                        </div>
+                      ) : settings.upi_qr_image_url ? (
                         <div style={{
                           background: '#FFFFFF',
-                          padding: '14px',
+                          padding: '12px',
                           borderRadius: '8px',
                           display: 'inline-block',
                           boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                          border: '1px solid #ECECEC'
+                          border: '1px solid #ECECEC',
+                          maxWidth: '100%'
                         }}>
                           <img
                             src={settings.upi_qr_image_url}
-                            alt="Direct UPI QR Code"
+                            alt="Anant Arts UPI QR Code"
+                            width={260}
+                            height={260}
                             style={{
-                              width: '210px',
-                              height: '210px',
+                              width: '260px',
+                              height: '260px',
                               maxWidth: '100%',
+                              aspectRatio: '1 / 1',
                               objectFit: 'contain',
                               display: 'block',
                               imageRendering: 'crisp-edges'
@@ -1205,23 +1246,18 @@ export default function CheckoutPage() {
                         </div>
                       ) : (
                         <div style={{
-                          width: '210px',
-                          height: '210px',
-                          maxWidth: '100%',
-                          margin: '0 auto',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: '#FFF',
-                          border: '2px dashed var(--primary-gold-border)',
+                          padding: '24px 16px',
+                          background: '#FFF8E1',
+                          border: '1px solid #FFE082',
                           borderRadius: '8px',
-                          padding: '16px',
-                          boxSizing: 'border-box'
+                          color: '#B78103',
+                          fontSize: '0.85rem',
+                          lineHeight: '1.4'
                         }}>
-                          <span style={{ fontSize: '2.5rem', marginBottom: '8px' }}>📱</span>
-                          <span style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-dark)' }}>UPI QR Active</span>
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>Scan or pay using UPI ID below</span>
+                          <strong style={{ display: 'block', marginBottom: '6px' }}>QR temporarily unavailable</strong>
+                          <p style={{ margin: 0, fontSize: '0.78rem', color: '#6D4C41' }}>
+                            Please pay using the UPI ID below or select Pay Online with Razorpay.
+                          </p>
                         </div>
                       )}
 

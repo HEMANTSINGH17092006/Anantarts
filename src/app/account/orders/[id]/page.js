@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import TrackingTimeline from '@/components/TrackingTimeline';
 import CancelOrderModal from '@/components/CancelOrderModal';
+import MetaOrderPurchaseTracker from '@/components/analytics/MetaOrderPurchaseTracker';
 
 export const metadata = {
   title: 'Order Tracking Detail - Anant Arts',
@@ -75,6 +76,7 @@ export default async function CustomerOrderDetailPage({ params }) {
 
   return (
     <div>
+      <MetaOrderPurchaseTracker order={order} />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <Link href="/account/orders" style={{ fontSize: '0.85rem', color: 'var(--primary-gold)', fontWeight: '600', textDecoration: 'none' }}>

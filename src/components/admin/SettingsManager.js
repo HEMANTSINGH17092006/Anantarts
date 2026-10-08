@@ -80,6 +80,21 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
   const handleUploadQr = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate image MIME type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes((file.type || '').toLowerCase())) {
+      showAlert('danger', 'Invalid file type. Only PNG, JPG, and WEBP image files are supported.');
+      e.target.value = '';
+      return;
+    }
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showAlert('danger', 'Image size exceeds 5MB limit. Please upload a smaller image.');
+      e.target.value = '';
+      return;
+    }
+
     setUploadingQr(true);
     const fd = new FormData();
     fd.append('qr_image', file);
@@ -87,11 +102,12 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
     setUploadingQr(false);
     if (res.success && res.url) {
       setUpiQrImageUrl(res.url);
-      showAlert('success', 'UPI QR image uploaded and saved successfully.');
+      showAlert('success', 'UPI QR uploaded successfully.');
       startTransition(() => { router.refresh(); });
     } else {
       showAlert('danger', res.message || 'Failed to upload QR image.');
     }
+    e.target.value = '';
   };
 
   const handleExportBackup = async () => {
@@ -258,10 +274,10 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
                 fontWeight: '700',
                 padding: '4px 10px',
                 borderRadius: '12px',
-                background: upiQrEnabled ? '#E8F5E9' : '#FFEBEE',
-                color: upiQrEnabled ? '#2E7D32' : '#C62828'
+                background: !upiQrEnabled ? '#FFEBEE' : (!upiQrImageUrl ? '#FFF3E0' : '#E8F5E9'),
+                color: !upiQrEnabled ? '#C62828' : (!upiQrImageUrl ? '#E65100' : '#2E7D32')
               }}>
-                {upiQrEnabled ? '● UPI QR ACTIVE' : '○ UPI QR DISABLED'}
+                {!upiQrEnabled ? '○ UPI QR DISABLED' : (!upiQrImageUrl ? '⚠️ UPI QR IS NOT UPLOADED' : '● UPI QR ACTIVE')}
               </span>
             </div>
 
@@ -291,10 +307,10 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
               {/* QR Image Upload & Preview Card */}
               <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '8px', border: '1px solid #EAE3D2' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#111', marginBottom: '8px' }}>
-                  Official Merchant UPI QR Code Image
+                  Current QR Preview
                 </label>
                 <p style={{ fontSize: '0.78rem', color: '#666', margin: '0 0 16px 0', lineHeight: '1.4' }}>
-                  Upload your clear, official UPI QR code (Google Pay, PhonePe, Paytm, or BHIM). This image is stored securely on Supabase Storage and served to customers during checkout.
+                  Upload your official merchant UPI QR code. Stored securely on Supabase Storage and displayed to customers during checkout.
                 </p>
 
                 {upiQrImageUrl ? (
@@ -309,13 +325,13 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
                     }}>
                       <img
                         src={upiQrImageUrl}
-                        alt="Active Store UPI QR Code"
-                        style={{ width: '160px', height: '160px', objectFit: 'contain', display: 'block' }}
+                        alt="Current QR Preview"
+                        style={{ width: '160px', height: '160px', objectFit: 'contain', display: 'block', imageRendering: 'crisp-edges' }}
                       />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <span style={{ fontSize: '0.78rem', color: '#2E7D32', fontWeight: '700' }}>
-                        ✓ Active QR Code Loaded
+                        ✓ Merchant QR Code Active
                       </span>
                       <label style={{
                         display: 'inline-block',
@@ -328,10 +344,10 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
                         fontWeight: '600',
                         cursor: uploadingQr ? 'not-allowed' : 'pointer'
                       }}>
-                        {uploadingQr ? 'Uploading New QR...' : 'Replace QR Image'}
+                        {uploadingQr ? 'Uploading New QR...' : 'Replace QR'}
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
                           onChange={handleUploadQr}
                           disabled={uploadingQr}
                           style={{ display: 'none' }}
@@ -344,18 +360,17 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
                   </div>
                 ) : (
                   <div style={{
-                    border: '2px dashed #D4AF37',
+                    border: '2px dashed #E53935',
                     padding: '24px',
                     borderRadius: '8px',
                     textAlign: 'center',
-                    background: '#FAF8F5'
+                    background: '#FFF8F8'
                   }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📷</div>
-                    <strong style={{ display: 'block', fontSize: '0.88rem', color: '#111', marginBottom: '4px' }}>
-                      No UPI QR Code Uploaded Yet
+                    <strong style={{ display: 'block', fontSize: '0.92rem', color: '#C62828', marginBottom: '4px' }}>
+                      No QR uploaded
                     </strong>
                     <span style={{ fontSize: '0.78rem', color: '#666', display: 'block', marginBottom: '14px' }}>
-                      Upload your official UPI QR code photo or screenshot to activate direct customer payments.
+                      UPI QR is not uploaded. Upload your merchant QR image below to enable QR scanning at checkout.
                     </span>
                     <label style={{
                       display: 'inline-block',
@@ -368,10 +383,10 @@ export default function SettingsManager({ settings = {}, logs = [], currentUser,
                       cursor: uploadingQr ? 'not-allowed' : 'pointer',
                       boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
                     }}>
-                      {uploadingQr ? 'Uploading QR Image...' : 'Upload UPI QR Image'}
+                      {uploadingQr ? 'Uploading QR Image...' : 'Upload QR'}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/png, image/jpeg, image/jpg, image/webp"
                         onChange={handleUploadQr}
                         disabled={uploadingQr}
                         style={{ display: 'none' }}

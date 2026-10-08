@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { trackOrderAction } from '@/app/actions';
 import { useSearchParams } from 'next/navigation';
 import TrackingTimeline from '@/components/TrackingTimeline';
+import { trackPurchase } from '@/lib/meta-pixel';
 
 function OrderTrackingInner() {
   const searchParams = useSearchParams();
@@ -30,6 +31,7 @@ function OrderTrackingInner() {
     } else {
       setOrder(result.order);
       setTrackingEvents(result.trackingEvents || []);
+      trackPurchase(result.order);
     }
     setLoading(false);
   };

@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/utils';
 import ProductPurchaseWrapper from '@/components/product/ProductPurchaseWrapper';
 import RecentlyViewed, { RecentlyViewedLogger } from '@/components/common/RecentlyViewed';
 import FrequentlyBoughtTogether from '@/components/product/FrequentlyBoughtTogether';
+import MetaViewContent from '@/components/analytics/MetaViewContent';
 
 export const revalidate = 60; // Dynamic pages revalidated hourly or by tag
 
@@ -198,6 +199,13 @@ export default async function ProductDetailPage({ params }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <RecentlyViewedLogger product={product} />
+      <MetaViewContent product={{
+        id: product.id,
+        sku: product.sku,
+        name: product.name,
+        price: product.price,
+        discount_price: product.discount_price
+      }} />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         

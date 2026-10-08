@@ -1,5 +1,6 @@
 'use client';
 import { createContext, useContext, useState, useEffect } from 'react';
+import { trackAddToCart } from '@/lib/meta-pixel';
 
 const CartContext = createContext();
 const WishlistContext = createContext();
@@ -62,6 +63,7 @@ export function AppProviders({ children }) {
 
   // --- Cart Helpers ---
   const addToCart = (product, quantity = 1) => {
+    trackAddToCart(product, quantity);
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.id === product.id);
       const stock = product.stock_quantity ?? 99;
