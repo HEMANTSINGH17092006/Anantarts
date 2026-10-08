@@ -1,13 +1,14 @@
 import { slugify } from './utils';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 /**
- * Generate SHA-256 Hash of CSV string content for Idempotency tracking
+ * Generate SHA-256 Hash of content string for Idempotency tracking
  */
-export async function generateCsvHash(csvContent) {
-  if (!csvContent) return '';
+export async function generateCsvHash(content) {
+  if (!content) return '';
   const encoder = new TextEncoder();
-  const data = encoder.encode(csvContent);
+  const data = encoder.encode(content);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -15,13 +16,15 @@ export async function generateCsvHash(csvContent) {
 
 /**
  * Smart Category Normalizer
- * Example: 'ganesha-idols', 'Ganesha Idols', 'GANESHA_IDOLS' -> 'ganesha-idols'
+ * Example: 'ganesha-idols', 'Ganesha Idols', 'Home Décor' -> 'home-decor'
  */
 export function normalizeCategorySlug(str) {
   if (!str || typeof str !== 'string') return '';
   return str
     .trim()
     .toLowerCase()
+    .normalize('NFD') // normalize accented characters like é -> e
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[\s_]+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
     .replace(/-+/g, '-');
@@ -72,80 +75,235 @@ export function generateSeoDefaults(productName, description = '') {
 }
 
 /**
- * Validate a single CSV row
+ * Parse boolean values from Excel (e.g. true, "TRUE", "yes", 1)
  */
-export function validateCsvRow(row, rowIndex, seenSkusInBatch = new Set(), existingDbSkusSet = new Set()) {
-  const errors = [];
-  let isDuplicate = false;
+export function parseBooleanFlag(val, defaultVal = false) {
+  if (val === undefined || val === null || val === '') return defaultVal;
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'number') return val === 1;
+  const str = String(val).trim().toLowerCase();
+  if (str === 'true' || str === '1' || str === 'yes' || str === 'y') return true;
+  if (str === 'false' || str === '0' || str === 'no' || str === 'n') return false;
+  return defaultVal;
+}
 
-  const rawName = row.name || row.Product_Name || row['Product Name'] || '';
-  const name = typeof rawName === 'string' ? rawName.trim() : '';
+/**
+ * Extract image URLs separated by pipe (|) or comma (,)
+ */
+export function extractImageUrls(str) {
+  if (!str || typeof str !== 'string') return [];
+  let parts = [];
+  if (str.includes('|')) {
+    parts = str.split('|');
+  } else if (str.includes(',')) {
+    parts = str.split(',');
+  } else {
+    parts = [str];
+  }
+  return parts
+    .map(p => p.trim())
+    .filter(p => p.startsWith('http://') || p.startsWith('https://'));
+}
 
-  const rawSku = row.sku || row.SKU || '';
-  const sku = typeof rawSku === 'string' ? rawSku.trim() : '';
+/**
+ * Parse an Excel Workbook or CSV arrayBuffer into raw JSON rows
+ */
+export function parseWorkbookBuffer(buffer) {
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const sheetName = workbook.SheetNames.includes('Bulk Upload') 
+    ? 'Bulk Upload' 
+    : workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  return XLSX.utils.sheet_to_json(sheet, { defval: '' });
+}
 
-  const rawPrice = row.price || row.Price || '';
-  const price = parseFloat(rawPrice);
-
-  const rawDiscount = row.discount_price || row.Discount_Price || row['Discount Price'] || '';
-  const discountPrice = rawDiscount !== '' && rawDiscount !== null && !isNaN(parseFloat(rawDiscount)) 
-    ? parseFloat(rawDiscount) 
+/**
+ * Extract unified product data object from any raw row (Excel or CSV)
+ */
+export function extractProductFromRow(row) {
+  // 1. Product Title
+  const name = (row['Product Title'] || row.Product_Title || row.name || row.Product_Name || row['Product Name'] || '').toString().trim();
+  
+  // 2. SKU Code
+  const sku = (row['SKU Code'] || row.SKU_Code || row.sku || row.SKU || '').toString().trim();
+  
+  // 3. Base Price
+  const rawPrice = row['Base Price (₹)'] ?? row.base_price ?? row.price ?? row.Price ?? '';
+  const price = typeof rawPrice === 'number' ? rawPrice : parseFloat(String(rawPrice).replace(/[^0-9.]/g, ''));
+  
+  // 4. Discount Price
+  const rawDiscount = row['Discount Price (₹)'] ?? row.discount_price ?? row.Discount_Price ?? '';
+  const discount_price = rawDiscount !== '' && rawDiscount !== null && !isNaN(parseFloat(String(rawDiscount).replace(/[^0-9.]/g, '')))
+    ? parseFloat(String(rawDiscount).replace(/[^0-9.]/g, ''))
     : null;
+  
+  // 5. Stock Quantity
+  const rawStock = row['Stock Quantity'] ?? row.stock_quantity ?? row.Stock_Quantity ?? row.stock ?? 0;
+  const stock_quantity = isNaN(parseInt(rawStock, 10)) ? 0 : parseInt(rawStock, 10);
+  
+  // 6. Category
+  const categoryRaw = (row['Category'] || row.category || row.category_slug || '').toString().trim();
+  const category_slug = normalizeCategorySlug(categoryRaw);
+  
+  // 7. Featured Tags
+  const tagsRaw = (row['Featured Tags (comma separated)'] || row.tags || row.Tags || '').toString().trim();
+  
+  // 8. Material specifications
+  const material = (row['Material specifications'] || row.material || row.Material || '').toString().trim();
+  
+  // 9. Dimensions
+  const dimensions = (row['Dimensions (L x W x H)'] || row.dimensions || row.Dimensions || '').toString().trim();
+  
+  // 10. Weight (kg)
+  const rawWeight = row['Weight (kg)'] ?? row.weight ?? row.Weight ?? null;
+  const weight = rawWeight !== null && rawWeight !== '' && !isNaN(parseFloat(rawWeight)) ? parseFloat(rawWeight) : null;
+  
+  // 11. Short Description
+  const short_description = (row['Short Description'] || row.short_description || '').toString().trim();
+  
+  // 12. Detailed Description
+  const description = (row['Detailed Description'] || row.description || row.Description || '').toString().trim();
+  
+  // 13. Finish Type
+  const finish_type = (row['Finish Type'] || row.finish_type || '').toString().trim();
+  
+  // 14. Customization Option
+  const customization_option = (row['Customization Option'] || row.customization_option || '').toString().trim();
+  
+  // 15. Bulk Pricing Tiers
+  const bulk_pricing = (row['Bulk Pricing Tiers'] || row.bulk_pricing || '').toString().trim();
+  
+  // 16. Product Variants
+  const variants = (row['Product Variants (JSON String)'] || row.variants || '').toString().trim();
+  
+  // 17. Related Product IDs
+  const related_products = (row['Related Product IDs (JSON list or comma separated)'] || row.related_products || '').toString().trim();
+  
+  // 18-20. Flags
+  const is_bestseller = parseBooleanFlag(row['Mark Best Seller'] ?? row.is_bestseller);
+  const is_new_arrival = parseBooleanFlag(row['Mark New Arrival'] ?? row.is_new_arrival);
+  const is_featured = parseBooleanFlag(row['Mark Featured'] ?? row.is_featured);
+  
+  // 21. Video URL
+  const video_url = (row['Product Demonstration Video URL'] || row.video_url || '').toString().trim();
+  
+  // 22-23. SEO
+  const seo_title = (row['Meta Title Tag (SEO)'] || row.seo_title || '').toString().trim();
+  const seo_description = (row['Meta Description Tag (SEO)'] || row.seo_description || '').toString().trim();
+  
+  // 24. Publish immediately
+  const is_published = parseBooleanFlag(row['Publish immediately'] ?? row.is_published, true) ? 1 : 0;
 
-  const rawStock = row.stock_quantity || row.Stock_Quantity || row['Stock Quantity'] || row.stock || '0';
-  const stockQuantity = parseInt(rawStock, 10);
-
-  const categorySlug = normalizeCategorySlug(row.category_slug || row.Category_Slug || row.category || '');
-  const tags = row.tags || row.Tags || '';
-  const description = row.description || row.Description || '';
-
-  // Validation Rules
-  if (!name) {
-    errors.push('Empty Product Name');
-  }
-
-  if (isNaN(price) || price <= 0) {
-    errors.push(`Invalid Price (${rawPrice || 'Empty'})`);
-  }
-
-  if (isNaN(stockQuantity) || stockQuantity < 0) {
-    errors.push(`Invalid Stock Quantity (${rawStock})`);
-  }
-
-  if (sku) {
-    if (seenSkusInBatch.has(sku.toLowerCase())) {
-      errors.push(`Duplicate SKU in CSV file (${sku})`);
-      isDuplicate = true;
-    } else if (existingDbSkusSet.has(sku.toLowerCase())) {
-      isDuplicate = true;
-      // Note: Existing SKU collision handling depends on inventory mode (Skip/Update/Replace)
-    }
-    seenSkusInBatch.add(sku.toLowerCase());
-  }
+  // 25-26. Image URLs
+  const primaryCoverUrl = (row['Primary Cover Photo'] || row.primary_cover_photo || row.primary_image || '').toString().trim();
+  const additionalThumbnailsRaw = (row['Additional Thumbnails'] || row.additional_thumbnails || '').toString().trim();
+  const additionalThumbnailUrls = extractImageUrls(additionalThumbnailsRaw);
 
   return {
-    rowIndex: rowIndex + 1,
-    isValid: errors.length === 0,
-    isDuplicate,
-    errors,
-    data: {
-      name,
-      sku,
-      price: isNaN(price) ? 0 : price,
-      discount_price: discountPrice,
-      stock_quantity: isNaN(stockQuantity) ? 0 : stockQuantity,
-      category_slug: categorySlug,
-      tags,
-      description
-    }
+    name,
+    sku,
+    price: isNaN(price) ? 0 : price,
+    discount_price,
+    stock_quantity,
+    category_raw: categoryRaw,
+    category_slug,
+    tags: tagsRaw,
+    material,
+    dimensions,
+    weight,
+    short_description,
+    description,
+    finish_type,
+    customization_option,
+    bulk_pricing,
+    variants,
+    related_products,
+    is_bestseller: is_bestseller ? 1 : 0,
+    is_new_arrival: is_new_arrival ? 1 : 0,
+    is_featured: is_featured ? 1 : 0,
+    video_url,
+    seo_title,
+    seo_description,
+    is_published,
+    primaryCoverUrl,
+    additionalThumbnailUrls
   };
 }
 
 /**
- * Priority Image Matching Engine against zipEntriesMap
- * Priority 1: SKU.jpg / SKU.png / SKU.webp
- * Priority 2: Product Name.jpg / png / webp
- * Priority 3: Unlimited gallery images: SKU-1.jpg, SKU-2.jpg, SKU-side.jpg, Name-1.jpg, etc.
+ * Validate a catalog row (supports Excel and legacy CSV formats)
+ */
+export function validateCatalogRow(row, rowIndex, seenSkusInBatch = new Set(), existingDbSkusSet = new Set(), categoriesMap = new Map()) {
+  const errors = [];
+  let isDuplicateInFile = false;
+  let isExistingInDb = false;
+
+  const data = extractProductFromRow(row);
+
+  if (!data.name) {
+    errors.push('Empty Product Title');
+  }
+
+  if (isNaN(data.price) || data.price <= 0) {
+    errors.push(`Invalid Price (${data.price || 'Empty'})`);
+  }
+
+  if (isNaN(data.stock_quantity) || data.stock_quantity < 0) {
+    errors.push(`Invalid Stock Quantity (${data.stock_quantity})`);
+  }
+
+  if (data.sku) {
+    const skuLower = data.sku.toLowerCase();
+    if (seenSkusInBatch.has(skuLower)) {
+      errors.push(`Duplicate SKU in file (${data.sku})`);
+      isDuplicateInFile = true;
+    } else {
+      seenSkusInBatch.add(skuLower);
+    }
+
+    if (existingDbSkusSet.has(skuLower)) {
+      isExistingInDb = true;
+    }
+  } else {
+    errors.push('Missing SKU Code');
+  }
+
+  let isInvalidCategory = false;
+  if (data.category_slug) {
+    if (categoriesMap.size > 0 && !categoriesMap.has(data.category_slug) && !categoriesMap.has(normalizeCategorySlug(data.category_raw))) {
+      isInvalidCategory = true;
+      errors.push(`Category not found: "${data.category_raw}"`);
+    }
+  } else {
+    isInvalidCategory = true;
+    errors.push('Missing Category');
+  }
+
+  const hasPrimaryImage = Boolean(data.primaryCoverUrl);
+  const totalImageCount = (hasPrimaryImage ? 1 : 0) + data.additionalThumbnailUrls.length;
+
+  return {
+    rowIndex: rowIndex + 1,
+    isValid: errors.length === 0,
+    isDuplicateInFile,
+    isExistingInDb,
+    isInvalidCategory,
+    hasPrimaryImage,
+    totalImageCount,
+    errors,
+    data
+  };
+}
+
+/**
+ * Backward compatibility wrapper for validateCsvRow
+ */
+export function validateCsvRow(row, rowIndex, seenSkusInBatch = new Set(), existingDbSkusSet = new Set()) {
+  return validateCatalogRow(row, rowIndex, seenSkusInBatch, existingDbSkusSet);
+}
+
+/**
+ * Priority Image Matching Engine against zipEntriesMap (legacy ZIP support)
  */
 export function findMatchedImagesForProduct(sku, name, zipEntriesMap = new Map()) {
   const cleanSku = sku ? sku.trim().toLowerCase() : '';
@@ -154,10 +312,7 @@ export function findMatchedImagesForProduct(sku, name, zipEntriesMap = new Map()
   const matchedPrimary = [];
   const matchedGallery = [];
 
-  // Helper to extract file stem & suffix
-  // e.g. "sku123-1.jpg" -> stem: "sku123", suffix: "-1"
   for (const [relativePath, entry] of zipEntriesMap.entries()) {
-    // Ignore hidden files and directories
     if (relativePath.includes('__MACOSX') || relativePath.startsWith('.') || entry.dir) continue;
 
     const parts = relativePath.split('/');
@@ -170,7 +325,6 @@ export function findMatchedImagesForProduct(sku, name, zipEntriesMap = new Map()
 
     if (!['jpg', 'jpeg', 'png', 'webp', 'avif'].includes(ext)) continue;
 
-    // Check SKU matches
     if (cleanSku) {
       if (baseStem === cleanSku) {
         matchedPrimary.push({ priority: 1, type: 'sku_exact', entry, relativePath });
@@ -182,7 +336,6 @@ export function findMatchedImagesForProduct(sku, name, zipEntriesMap = new Map()
       }
     }
 
-    // Check Name matches if SKU didn't match primary
     if (cleanName) {
       const sanitizedNameStem = cleanName.replace(/[^a-z0-9]/g, '');
       const sanitizedFileStem = baseStem.replace(/[^a-z0-9]/g, '');
@@ -198,13 +351,8 @@ export function findMatchedImagesForProduct(sku, name, zipEntriesMap = new Map()
     }
   }
 
-  // Sort matched primary by priority (SKU priority 1 wins over Name priority 2)
   matchedPrimary.sort((a, b) => a.priority - b.priority);
-
-  // Combine primary and gallery images
   const primaryEntry = matchedPrimary[0]?.entry || null;
-  
-  // Exclude primary from gallery list if it ended up in gallery matching
   const galleryEntries = matchedGallery
     .filter(g => g.entry !== primaryEntry)
     .map(g => g.entry);
@@ -222,34 +370,32 @@ export function findMatchedImagesForProduct(sku, name, zipEntriesMap = new Map()
 export function generateSampleCsvContent() {
   const sampleRows = [
     {
-      name: '24K Gold Electroplated Ganesha Idol',
-      category_slug: 'spiritual-collection',
-      price: 12499,
-      discount_price: 9999,
-      sku: 'DIV-GAN-001',
-      stock_quantity: 25,
-      tags: 'ganesha, gold, luxury, divine',
-      description: 'Handcrafted 24K gold electroplated Ganesha idol crafted by master Rajasthani artisans.'
-    },
-    {
-      name: 'Carved Teakwood Temple Mandir',
-      category_slug: 'wooden-handicrafts',
-      price: 45000,
-      discount_price: 39999,
-      sku: 'WOD-MAN-002',
-      stock_quantity: 10,
-      tags: 'mandir, teakwood, carved, home-temple',
-      description: 'Intricately carved premium teakwood home temple with brass bells and velvet drawer.'
-    },
-    {
-      name: 'Pure Silver Plated Kalash Accent',
-      category_slug: 'home-decor',
-      price: 6500,
-      discount_price: 5499,
-      sku: 'DECO-KAL-003',
-      stock_quantity: 50,
-      tags: 'silver, kalash, showpiece, luxury',
-      description: 'Mirror-finish pure silver plated decorative Kalash for festive table decor.'
+      'Product Title': '24K Gold Electroplated Ganesha Idol',
+      'SKU Code': 'DIV-GAN-001',
+      'Base Price (₹)': 12499,
+      'Discount Price (₹)': 9999,
+      'Stock Quantity': 25,
+      'Category': 'Spiritual Collection',
+      'Featured Tags (comma separated)': 'ganesha, gold, luxury, divine',
+      'Material specifications': '24K Gold Plated Resin',
+      'Dimensions (L x W x H)': '15L X 10W X 20H Cm',
+      'Weight (kg)': 1.2,
+      'Primary Cover Photo': 'https://s3.ap-south-1.amazonaws.com/example/ganesha-1.jpg',
+      'Additional Thumbnails': 'https://s3.ap-south-1.amazonaws.com/example/ganesha-2.jpg | https://s3.ap-south-1.amazonaws.com/example/ganesha-3.jpg',
+      'Short Description': 'Handcrafted 24K gold electroplated Ganesha idol.',
+      'Detailed Description': 'Handcrafted 24K gold electroplated Ganesha idol crafted by master artisans with insured pan-India delivery.',
+      'Finish Type': 'Mirror Gold',
+      'Customization Option': 'Engraving available',
+      'Bulk Pricing Tiers': 'Bulk orders available — contact us for special pricing',
+      'Product Variants (JSON String)': '',
+      'Related Product IDs (JSON list or comma separated)': '',
+      'Mark Best Seller': true,
+      'Mark New Arrival': true,
+      'Mark Featured': true,
+      'Product Demonstration Video URL': '',
+      'Meta Title Tag (SEO)': '24K Gold Electroplated Ganesha Idol | Anant Arts',
+      'Meta Description Tag (SEO)': 'Shop 24K Gold Electroplated Ganesha Idol at Anant Arts. Premium spiritual home decor.',
+      'Publish immediately': true
     }
   ];
 
@@ -261,69 +407,36 @@ export function generateSampleCsvContent() {
  */
 export function generateImageNamingGuideContent() {
   return `====================================================================
-ANANT ARTS - PRODUCT IMAGE ZIP NAMING & MATCHING GUIDE
+ANANT ARTS - PRODUCT CATALOG IMPORT GUIDE
 ====================================================================
 
-Follow these guidelines to ensure your product images in the ZIP file
-automatically attach to your products during Bulk Product Import.
+You can import products using an Excel file (.xlsx, .xls) or CSV.
 
---------------------------------------------------------------------
-1. MATCHING PRIORITY & CONVENTIONS
---------------------------------------------------------------------
-The system automatically matches images inside your uploaded .ZIP archive
-using the following priority rules:
+IMAGE IMPORT OPTIONS:
+1. URL-Based (Recommended for Excel):
+   Fill in "Primary Cover Photo" with an image URL.
+   Fill in "Additional Thumbnails" with image URLs separated by " | " or ",".
+   The importer will automatically download these images and upload them
+   to Supabase Storage under products/{SKU}/1.jpg, 2.jpg, etc.
 
-[PRIORITY 1: SKU Match (Primary Cover Image)]
-- Format: <SKU>.<ext>
-- Examples: 
-    DIV-GAN-001.jpg
-    WOD-MAN-002.png
-    DECO-KAL-003.webp
-
-[PRIORITY 2: Product Name Match (Fallback Cover Image)]
-- Format: <Product Name>.<ext>
-- Examples:
-    24K Gold Electroplated Ganesha Idol.jpg
-    Carved Teakwood Temple Mandir.png
-
-[PRIORITY 3: Unlimited Gallery Images]
-- Attach secondary gallery photos by adding suffixes like -1, -2, -side, -back
-- Examples:
-    DIV-GAN-001-1.jpg  (Gallery Image 1)
-    DIV-GAN-001-2.jpg  (Gallery Image 2)
-    DIV-GAN-001-side.jpg (Gallery Image 3)
-    DIV-GAN-001-back.jpg (Gallery Image 4)
-
---------------------------------------------------------------------
-2. SUPPORTED FORMATS & CASE INSENSITIVITY
---------------------------------------------------------------------
-- Supported Extensions: .jpg, .jpeg, .png, .webp, .avif
-- File extensions and names are CASE-INSENSITIVE (e.g., div-gan-001.JPG works).
-- Subfolders inside the ZIP are supported automatically.
-
---------------------------------------------------------------------
-3. MISSING IMAGE HANDLING
---------------------------------------------------------------------
-If a product SKU or Name has no corresponding image inside the ZIP:
-- The product will still be imported successfully.
-- It will be flagged as "Image Missing" in your downloadable Import Report.
+2. ZIP Archive (Alternative for Local Files):
+   Upload an accompanying .zip archive with images named <SKU>.jpg,
+   <SKU>-1.jpg, <SKU>-2.jpg.
 
 ====================================================================
-  `;
+`;
 }
 
 /**
- * Export Error & Import Report CSV
+ * Export Error & Import Report CSV matching exact user spec:
+ * SKU, Product Title, Error Type, Error Message
  */
 export function exportErrorReportCsv(reportRows = []) {
   const formattedRows = reportRows.map(r => ({
-    'Row Number': r.rowIndex,
-    'SKU': r.sku || 'N/A',
-    'Product Name': r.name || 'N/A',
-    'Category': r.category_slug || 'N/A',
-    'Import Status': r.status || (r.isValid ? 'Success' : 'Failed'),
-    'Image Status': r.hasImage ? 'Matched' : 'Missing Image',
-    'Details / Error Reasons': Array.isArray(r.errors) && r.errors.length > 0 
+    'SKU': r.sku || r.data?.sku || 'N/A',
+    'Product Title': r.name || r.data?.name || 'N/A',
+    'Error Type': r.errorType || (r.status === 'Failed' ? 'Error' : (r.isValid === false ? 'Validation Error' : 'Info')),
+    'Error Message': Array.isArray(r.errors) && r.errors.length > 0 
       ? r.errors.join(' | ') 
       : (r.message || 'Imported Successfully')
   }));
