@@ -11,20 +11,24 @@ export async function POST(req) {
     const body = await req.json();
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
 
-    if (!razorpay_payment_id || !razorpay_order_id) {
-      return NextResponse.json({ success: false, message: 'Missing payment references.' }, { status: 400 });
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+      return NextResponse.json({ success: false, message: 'Missing payment references or cryptographic signature.' }, { status: 400 });
     }
 
     const isHmacValid = verifySignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
     if (!isHmacValid) {
-      return NextResponse.json({ success: false, message: 'Signature verification failed.' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Cryptographic signature verification failed.' }, { status: 400 });
     }
 
     const supabase = createAdminClient();
-    const { data: order } = await supabase.from('orders').select('*').eq('razorpay_order_id', razorpay_order_id).single();
+    const { data: order, error: orderErr } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('razorpay_order_id', razorpay_order_id)
+      .maybeSingle();
 
-    if (!order) {
-      return NextResponse.json({ success: false, message: 'Order not found.' }, { status: 404 });
+    if (orderErr || !order) {
+      return NextResponse.json({ success: false, message: 'Order not found for the provided payment reference.' }, { status: 404 });
     }
 
     if (order.payment_status === 'Captured') {

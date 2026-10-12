@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
+import { checkAuthRole } from '@/app/actions';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  try {
+    const admin = await checkAuthRole(['admin', 'super_admin']);
+    if (!admin) {
+      return NextResponse.json({ message: 'Unauthorized. Admin access required.' }, { status: 401 });
+    }
+  } catch {
+    return NextResponse.json({ message: 'Unauthorized. Admin access required.' }, { status: 401 });
+  }
+
   const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
   const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
   const nextPublicRazorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -12,11 +22,8 @@ export async function GET() {
     domain: process.env.NEXT_PUBLIC_SITE_URL || 'Not Set',
     keys: {
       backendKeyLoaded: !!razorpayKeyId,
-      backendKeyPrefix: razorpayKeyId ? razorpayKeyId.substring(0, 8) + '...' : 'Missing',
       secretLoaded: !!razorpayKeySecret,
-      secretPrefix: razorpayKeySecret ? razorpayKeySecret.substring(0, 4) + '...' : 'Missing',
       frontendKeyLoaded: !!nextPublicRazorpayKeyId,
-      frontendKeyPrefix: nextPublicRazorpayKeyId ? nextPublicRazorpayKeyId.substring(0, 8) + '...' : 'Missing'
     },
     keyMismatchCheck: {
       isBackendAndFrontendKeySame: razorpayKeyId === nextPublicRazorpayKeyId,

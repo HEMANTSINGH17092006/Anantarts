@@ -42,3 +42,7 @@ next-env.d.ts
 
 # scratch scripts
 scratch/
+
+# supabase cli temp
+supabase/.temp/
+

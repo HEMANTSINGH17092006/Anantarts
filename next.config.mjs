@@ -131,6 +131,42 @@ const nextConfig = {
         destination: '/refund-policy',
         permanent: true,
       },
+      // 301 Permanent Redirects for 7 verified legacy SKU slugs to active descriptive URLs
+      {
+        source: '/product/aa-krs-001',
+        destination: '/product/bal-krishna-crawling-with-butter-pot',
+        permanent: true,
+      },
+      {
+        source: '/product/aa-rkc-004',
+        destination: '/product/radha-krishna-dancing',
+        permanent: true,
+      },
+      {
+        source: '/product/aa-gan-004',
+        destination: '/product/ganesha-reclining',
+        permanent: true,
+      },
+      {
+        source: '/product/aa-han-002',
+        destination: '/product/hanuman-orange-gold-on-gada',
+        permanent: true,
+      },
+      {
+        source: '/product/aa-gan-002',
+        destination: '/product/ganesha-sitting-shree-ganeshaya-namah-base',
+        permanent: true,
+      },
+      {
+        source: '/product/aa-tbj-001',
+        destination: '/product/tirupati-balaji-standing',
+        permanent: true,
+      },
+      {
+        source: '/product/aa-gan-001',
+        destination: '/product/ganesha-sitting-white-gold',
+        permanent: true,
+      },
     ];
   },
 

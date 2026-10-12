@@ -17,8 +17,8 @@ export async function GET() {
     dbStatus = 'warning';
   }
 
-  // Payment Gateway is healthy if Key ID is loaded and active
-  const isHealthy = creds.has_key_id;
+  // Payment Gateway is healthy if both Key ID and Secret are loaded and active
+  const isHealthy = creds.valid;
 
   return NextResponse.json({
     status: isHealthy ? 'healthy' : 'degraded',
@@ -27,7 +27,6 @@ export async function GET() {
     credentials: {
       has_key_id: creds.has_key_id,
       has_key_secret: creds.has_key_secret,
-      key_id_preview: creds.key_id ? `${creds.key_id.substring(0, 8)}...` : 'NONE'
     },
     timestamp: new Date().toISOString()
   });

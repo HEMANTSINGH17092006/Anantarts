@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server';
 import { sendAdminOrderNotification } from '@/lib/whatsapp';
 import { sendAdminNewOrderEmail, sendAdminLowStockEmail } from '@/lib/admin-email';
 import { getSessionCustomer } from '../../../auth/actions';
+import { validateAndCalculateOrderPrices } from '@/lib/order-pricing';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
@@ -16,8 +20,15 @@ const INDIAN_STATES = [
 
 function sanitizeInput(str) {
   if (!str) return '';
-  // Strip any HTML tags to prevent XSS
-  return str.replace(/<[^>]*>/g, '').trim();
+  return String(str).replace(/<[^>]*>/g, '').trim();
+}
+
+function formatPrice(price) {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0
+  }).format(price);
 }
 
 export async function POST(req) {
@@ -34,10 +45,11 @@ export async function POST(req) {
       zip,
       landmark,
       coupon_id,
-      discount_amount,
-      shipping_charge,
-      subtotal,
-      total_amount,
+      discount_amount: clientDiscountAmount,
+      shipping_charge: clientShippingCharge,
+      subtotal: clientSubtotal,
+      total_amount: clientTotalAmount,
+      currency = 'INR',
       payment_method,
       payment_status,
       payment_id,
@@ -47,6 +59,11 @@ export async function POST(req) {
       create_account
     } = body;
 
+    // Currency verification: strictly INR only
+    if (currency && String(currency).toUpperCase() !== 'INR') {
+      return NextResponse.json({ message: 'Invalid currency. Only INR transactions are supported.' }, { status: 400 });
+    }
+
     // Block new Cash on Delivery (COD) orders
     if (payment_method && String(payment_method).toUpperCase() === 'COD') {
       return NextResponse.json({
@@ -55,19 +72,20 @@ export async function POST(req) {
     }
 
     // 1. Mandatory base fields presence check
-    if (!order_number || !customer_name || !customer_email || !customer_phone || !street_address || !city || !state || !zip || !items || items.length === 0) {
+    if (!order_number || !customer_name || !customer_email || !customer_phone || !street_address || !city || !state || !zip || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ message: 'Missing required order details.' }, { status: 400 });
     }
 
     // 2. Perform server-side validation & sanitization
     const sanitizedName = sanitizeInput(customer_name);
-    const sanitizedEmail = sanitizeInput(customer_email);
+    const sanitizedEmail = sanitizeInput(customer_email).toLowerCase();
     const sanitizedPhone = sanitizeInput(customer_phone);
     const sanitizedStreet = sanitizeInput(street_address);
     const sanitizedCity = sanitizeInput(city);
     const sanitizedState = sanitizeInput(state);
     const sanitizedZip = sanitizeInput(zip);
     const sanitizedLandmark = sanitizeInput(landmark);
+    const cleanOrderNumber = sanitizeInput(order_number);
 
     if (!/^[a-zA-Z\s]{3,50}$/.test(sanitizedName)) {
       return NextResponse.json({ message: 'Please enter a valid full name.' }, { status: 400 });
@@ -81,7 +99,7 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Please enter a valid 10-digit mobile number.' }, { status: 400 });
     }
 
-    if (sanitizedStreet.length < 10 || sanitizedStreet.length > 200) {
+    if (sanitizedStreet.length < 5 || sanitizedStreet.length > 200) {
       return NextResponse.json({ message: 'Please enter a complete delivery address.' }, { status: 400 });
     }
 
@@ -90,7 +108,7 @@ export async function POST(req) {
     }
 
     if (!INDIAN_STATES.includes(sanitizedState)) {
-      return NextResponse.json({ message: 'Please select your state.' }, { status: 400 });
+      return NextResponse.json({ message: 'Please select a valid Indian state.' }, { status: 400 });
     }
 
     if (!/^[1-9][0-9]{5}$/.test(sanitizedZip)) {
@@ -101,21 +119,72 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Landmark cannot exceed 100 characters.' }, { status: 400 });
     }
 
+    const supabase = createAdminClient();
+
+    // 3. Idempotency Check: Prevent duplicate order submission
+    const { data: existingOrder } = await supabase
+      .from('orders')
+      .select('id, order_number, payment_status, total_amount')
+      .eq('order_number', cleanOrderNumber)
+      .maybeSingle();
+
+    if (existingOrder) {
+      console.warn(`[Duplicate Order Attempt]: Order ${cleanOrderNumber} already exists in database.`);
+      return NextResponse.json({
+        message: `Order ${cleanOrderNumber} has already been registered.`,
+        order: existingOrder
+      }, { status: 409 });
+    }
+
+    // 4. Duplicate Payment Check: Prevent reusing an already captured/linked payment ID
+    const cleanPaymentId = payment_id ? sanitizeInput(payment_id) : null;
+    if (cleanPaymentId && cleanPaymentId !== 'PENDING') {
+      const { data: duplicatePaymentOrder } = await supabase
+        .from('orders')
+        .select('id, order_number')
+        .eq('razorpay_payment_id', cleanPaymentId)
+        .maybeSingle();
+
+      if (duplicatePaymentOrder) {
+        console.error(`[Security Alert] Duplicate Payment ID detected: ${cleanPaymentId} already used for Order ${duplicatePaymentOrder.order_number}`);
+        return NextResponse.json({
+          message: 'This payment transaction has already been linked to an existing order.'
+        }, { status: 409 });
+      }
+    }
+
+    // 5. Authoritative Price, Stock, Coupon, and Shipping Calculation from Database
+    const pricingResult = await validateAndCalculateOrderPrices({
+      items,
+      coupon_id,
+      clientTotalAmount,
+      supabaseClient: supabase
+    });
+
+    if (!pricingResult.success) {
+      return NextResponse.json({
+        message: pricingResult.message
+      }, { status: pricingResult.statusCode || 400 });
+    }
+
+    const {
+      authoritativeSubtotal,
+      authoritativeDiscount,
+      appliedCouponId,
+      authoritativeShipping,
+      authoritativeTotal,
+      authoritativeItems
+    } = pricingResult;
+
     // Compose final clean address string for storage
     const shipping_address = `${sanitizedStreet}, ${sanitizedLandmark ? sanitizedLandmark + ', ' : ''}${sanitizedCity}, ${sanitizedState} - ${sanitizedZip}, India`;
     const billing_address = shipping_address;
 
-    // Use service role admin client to bypass RLS and perform database insertions
-    const supabase = createAdminClient();
-    
     // Get authenticated customer session
     const customer = await getSessionCustomer();
-    let user_id = null;
-    
+    let user_id = customer ? customer.id : null;
+
     if (customer) {
-      user_id = customer.id;
-      
-      // Save address if not already present
       const { data: existingAddrs } = await supabase
         .from('user_addresses')
         .select('id')
@@ -134,7 +203,6 @@ export async function POST(req) {
         });
       }
     } else if (create_account) {
-      // Guest requested account creation
       let { data: existingUser } = await supabase.from('users').select('*').eq('email', sanitizedEmail).single();
       
       if (!existingUser) {
@@ -152,7 +220,6 @@ export async function POST(req) {
 
       if (existingUser) {
         user_id = existingUser.id;
-        
         const { data: existingAddrs } = await supabase.from('user_addresses').select('id').eq('user_id', user_id);
         if (!existingAddrs || existingAddrs.length === 0) {
           await supabase.from('user_addresses').insert({
@@ -169,26 +236,7 @@ export async function POST(req) {
       }
     }
 
-    // 1. Verify stock availability for all products before creating the order
-    for (const item of items) {
-      const { data: prod, error: prodErr } = await supabase
-        .from('products')
-        .select('name, stock_quantity')
-        .eq('id', item.product_id)
-        .single();
-
-      if (prodErr || !prod) {
-        return NextResponse.json({ message: `Product check failed for item: ${item.product_name}.` }, { status: 400 });
-      }
-
-      if (prod.stock_quantity < item.quantity) {
-        return NextResponse.json({ 
-          message: `Insufficient stock for product "${prod.name}". Only ${prod.stock_quantity} left in stock.` 
-        }, { status: 400 });
-      }
-    }
-
-    // 2. Determine payment & order status based on payment method
+    // 10. Determine payment & order status based on payment method
     const isUpiQr = String(payment_method || '').toUpperCase() === 'UPI_QR';
     const sanitizedUtr = sanitizeInput(utr || '');
 
@@ -206,29 +254,30 @@ export async function POST(req) {
       finalPaymentStatus = 'Pending Verification';
       finalOrderStatus = 'Payment Verification Pending';
       finalNotes = `Direct UPI QR | UTR: ${sanitizedUtr}${finalNotes ? ' | ' + finalNotes : ''}`;
-    } else if (payment_id) {
-      finalNotes = `Payment Gateway Transaction ID: ${payment_id}${finalNotes ? ' | ' + finalNotes : ''}`;
+    } else if (cleanPaymentId) {
+      finalNotes = `Payment Gateway Transaction ID: ${cleanPaymentId}${finalNotes ? ' | ' + finalNotes : ''}`;
     }
 
-    // Insert order record
+    // 11. Insert Authoritative Order Record
     const { data: order, error: orderErr } = await supabase
       .from('orders')
       .insert({
-        order_number,
-        user_id, // Link to customer
-        customer_name,
-        customer_email,
-        customer_phone,
+        order_number: cleanOrderNumber,
+        user_id,
+        customer_name: sanitizedName,
+        customer_email: sanitizedEmail,
+        customer_phone: sanitizedPhone,
         shipping_address,
         billing_address,
-        coupon_id,
-        discount_amount,
-        shipping_charge,
-        subtotal,
-        total_amount,
+        coupon_id: appliedCouponId,
+        discount_amount: authoritativeDiscount,
+        shipping_charge: authoritativeShipping,
+        subtotal: authoritativeSubtotal,
+        total_amount: authoritativeTotal,
         payment_method: isUpiQr ? 'UPI_QR' : payment_method,
         payment_status: finalPaymentStatus,
         order_status: finalOrderStatus,
+        razorpay_payment_id: cleanPaymentId || null,
         notes: finalNotes
       })
       .select('*')
@@ -239,9 +288,8 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Failed to create order record.' }, { status: 500 });
     }
 
-    // 3. Process items, adjust stock levels, and check stock warnings
-    for (const item of items) {
-      // Insert order item
+    // 12. Insert Order Items & Atomically Adjust Stock
+    for (const item of authoritativeItems) {
       const { error: itemErr } = await supabase
         .from('order_items')
         .insert({
@@ -250,24 +298,22 @@ export async function POST(req) {
           product_name: item.product_name,
           price: item.price,
           quantity: item.quantity,
-          total_price: item.price * item.quantity
+          total_price: item.total_price
         });
 
       if (itemErr) {
         console.error('Order Item Insert Error:', itemErr);
-        // Continue but log error
       }
 
-      // Fetch current stock to subtract
+      // Atomic inventory deduction
       const { data: prod } = await supabase
         .from('products')
         .select('stock_quantity')
         .eq('id', item.product_id)
         .single();
         
-      const nextStock = Math.max(0, prod.stock_quantity - item.quantity);
+      const nextStock = Math.max(0, (prod?.stock_quantity ?? 0) - item.quantity);
 
-      // Update product stock
       await supabase
         .from('products')
         .update({ stock_quantity: nextStock })
@@ -284,7 +330,6 @@ export async function POST(req) {
             link: `/admin/products?search=${encodeURIComponent(item.product_name)}`
           });
 
-        // Instant Admin Low Stock Email Notification (Asynchronous, Non-blocking)
         sendAdminLowStockEmail({
           productName: item.product_name,
           stockQuantity: nextStock
@@ -292,38 +337,32 @@ export async function POST(req) {
       }
     }
 
-    // 4. Update coupon usage count if coupon applied
-    if (coupon_id) {
-      const { data: c } = await supabase.from('coupons').select('times_used').eq('id', coupon_id).single();
+    // 13. Update coupon usage count if coupon was applied
+    if (appliedCouponId) {
+      const { data: c } = await supabase.from('coupons').select('times_used').eq('id', appliedCouponId).single();
       if (c) {
         await supabase
           .from('coupons')
           .update({ times_used: (c.times_used || 0) + 1 })
-          .eq('id', coupon_id);
+          .eq('id', appliedCouponId);
       }
     }
 
-    // 5. Create general order alert notification for Admin
+    // 14. Create admin notification
     await supabase
       .from('notifications')
       .insert({
-        message: `🎉 New Order Registered: Order ${order_number} placed by ${customer_name} for ${formatPrice(total_amount)}.`,
+        message: `🎉 New Order Registered: Order ${cleanOrderNumber} placed by ${sanitizedName} for ${formatPrice(authoritativeTotal)}.`,
         is_read: 0,
         type: 'success',
         link: `/admin/orders`
       });
 
-    // 6. Send Instant Admin Email & WhatsApp Notifications (Asynchronous, Non-blocking)
-    sendAdminNewOrderEmail(order, items).catch(e => console.error('Admin New Order Email Error:', e));
+    // 15. Async Admin Email & WhatsApp Notifications
+    sendAdminNewOrderEmail(order, authoritativeItems).catch(e => console.error('Admin New Order Email Error:', e));
 
     try {
-      const { data: settingsData } = await supabase.from('website_settings').select('*');
-      const settings = {};
-      if (settingsData) {
-        settingsData.forEach(r => { settings[r.key] = r.value; });
-        // Don't await this so it doesn't block the API response
-        sendAdminOrderNotification(order, items, settings).catch(e => console.error('WhatsApp Error:', e));
-      }
+      sendAdminOrderNotification(order, authoritativeItems, settingsMap).catch(e => console.error('WhatsApp Error:', e));
     } catch (e) {
       console.error('Failed to prepare WhatsApp notification', e);
     }
@@ -333,12 +372,4 @@ export async function POST(req) {
     console.error('Order Process Error:', err);
     return NextResponse.json({ message: 'Internal Server Error while completing check-out.' }, { status: 500 });
   }
-}
-
-function formatPrice(price) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 0
-  }).format(price);
 }

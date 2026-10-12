@@ -1,9 +1,10 @@
-import { getCategories, getProducts, getBlogs } from '@/lib/db-helpers';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const revalidate = 3600; // Revalidate sitemap hourly
 
 export default async function sitemap() {
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://anantarts.in').replace(/\/$/, '');
+  const supabase = createAdminClient();
 
   // 1. Core Static Canonical Landing & Informational Pages
   const staticPages = [
@@ -31,13 +32,20 @@ export default async function sitemap() {
     priority,
   }));
 
-  // 2. Dynamic Categories from Supabase
+  // 2. Active Categories from Database (including car-dashboard)
   let categoryEntries = [];
   try {
-    const categories = await getCategories();
-    if (Array.isArray(categories)) {
+    const { data: categories, error: catErr } = await supabase
+      .from('categories')
+      .select('slug, created_at, is_hidden')
+      .or('is_hidden.eq.0,is_hidden.is.null')
+      .order('sort_order', { ascending: true, nullsFirst: false });
+
+    if (catErr) {
+      console.error('Database categories error in sitemap:', catErr.message);
+    } else if (Array.isArray(categories)) {
       categoryEntries = categories
-        .filter((c) => c.slug && (c.is_hidden === 0 || c.is_hidden === null))
+        .filter((c) => c.slug)
         .map((category) => ({
           url: `${baseUrl}/category/${category.slug}`,
           lastModified: category.created_at ? new Date(category.created_at) : new Date(),
@@ -49,16 +57,23 @@ export default async function sitemap() {
     console.error('Error fetching categories for sitemap:', err);
   }
 
-  // 3. Dynamic Published Product Pages
+  // 3. Dynamic Published Products from Database (eliminates stale cache and obsolete slugs)
   let productEntries = [];
   try {
-    const products = await getProducts({ all: false });
-    if (Array.isArray(products)) {
+    const { data: products, error: prodErr } = await supabase
+      .from('products')
+      .select('slug, created_at, is_published')
+      .eq('is_published', 1)
+      .order('id', { ascending: true });
+
+    if (prodErr) {
+      console.error('Database products error in sitemap:', prodErr.message);
+    } else if (Array.isArray(products)) {
       productEntries = products
-        .filter((p) => p.slug && p.is_published !== 0)
+        .filter((p) => p.slug)
         .map((product) => ({
           url: `${baseUrl}/product/${product.slug}`,
-          lastModified: product.updated_at ? new Date(product.updated_at) : (product.created_at ? new Date(product.created_at) : new Date()),
+          lastModified: product.created_at ? new Date(product.created_at) : new Date(),
           changeFrequency: 'weekly',
           priority: 0.8,
         }));
@@ -70,13 +85,18 @@ export default async function sitemap() {
   // 4. Dynamic Published Blog Posts
   let blogEntries = [];
   try {
-    const blogs = await getBlogs(true);
-    if (Array.isArray(blogs)) {
+    const { data: blogs, error: blogErr } = await supabase
+      .from('blogs')
+      .select('slug, created_at, is_published')
+      .eq('is_published', 1)
+      .order('created_at', { ascending: false });
+
+    if (!blogErr && Array.isArray(blogs)) {
       blogEntries = blogs
-        .filter((b) => b.slug && b.is_published === 1)
+        .filter((b) => b.slug)
         .map((blog) => ({
           url: `${baseUrl}/blog/${blog.slug}`,
-          lastModified: blog.updated_at ? new Date(blog.updated_at) : (blog.created_at ? new Date(blog.created_at) : new Date()),
+          lastModified: blog.created_at ? new Date(blog.created_at) : new Date(),
           changeFrequency: 'monthly',
           priority: 0.7,
         }));
@@ -87,4 +107,3 @@ export default async function sitemap() {
 
   return [...staticPages, ...categoryEntries, ...productEntries, ...blogEntries];
 }
-

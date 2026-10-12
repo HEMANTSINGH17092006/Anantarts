@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { getProductBySlug, getRelatedProducts } from '@/lib/db-helpers';
 import { createClient } from '@/lib/supabase/server';
 import ProductGallery from '@/components/product/ProductGallery';
@@ -22,6 +23,7 @@ export async function generateMetadata({ params }) {
     return {
       title: 'Product Not Found | Anant Arts',
       description: 'The requested idol could not be found.',
+      robots: { index: false, follow: false },
     };
   }
 
@@ -99,16 +101,7 @@ export default async function ProductDetailPage({ params }) {
     : product.price) : 0;
 
   if (!product) {
-    return (
-      <div style={{ background: 'var(--bg-cream)', padding: '5rem 0', textAlign: 'center' }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 2rem' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🪷</div>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', marginBottom: '8px' }}>Idol Not Found</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>We could not find the divine representation you are looking for.</p>
-          <Link href="/shop" className="btn-gold">Browse Catalog</Link>
-        </div>
-      </div>
-    );
+    notFound();
   }
 
   // Fetch reviews from Supabase directly
@@ -141,12 +134,18 @@ export default async function ProductDetailPage({ params }) {
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
     : null;
 
+  // Sanitize product description for structured data (strip HTML tags and normalize whitespace)
+  const sanitizedDescription = (product.description || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
   // Product JSON-LD Schema
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    description: product.description || '',
+    description: sanitizedDescription,
     sku: product.sku,
     brand: { '@type': 'Brand', name: 'Anant Arts' },
     image: primaryImage.startsWith('http') ? primaryImage : `${BASE_URL}${primaryImage}`,
@@ -156,8 +155,34 @@ export default async function ProductDetailPage({ params }) {
       priceCurrency: 'INR',
       price: activePrice,
       priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      availability: product.stock_quantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability: (product.stock_quantity ?? 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
       seller: { '@type': 'Organization', name: 'Anant Arts', url: BASE_URL },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'IN',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 7,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn'
+      },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: activePrice >= 5000 ? 0 : 150,
+          currency: 'INR'
+        },
+        shippingDestination: [{
+          '@type': 'DefinedRegion',
+          addressCountry: 'IN'
+        }],
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 2, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 3, maxValue: 7, unitCode: 'DAY' }
+        }
+      }
     },
     ...(avgRating && reviews?.length > 0 && {
       aggregateRating: {

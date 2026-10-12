@@ -2,34 +2,59 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { logPaymentEvent } from '@/lib/payment-logger';
 
-const PROD_LIVE_KEY_ID = 'rzp_live_TF5Q4XYGrKlT1b';
-
 /**
- * Dynamically resolves environment keys, enforcing Live keys in production environments
+ * Dynamically resolves environment keys with Vercel deployment environment precedence.
+ * - In Vercel environments: production mode is true only when VERCEL_ENV === 'production'.
+ * - When VERCEL_ENV is absent: falls back to NODE_ENV === 'production'.
+ * - Preview deployments accept explicitly configured test credentials.
+ * - Production never silently substitutes a hardcoded live key.
  */
 export function getRazorpayKeys() {
-  const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
-  
-  let keyId = process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  let keySecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET || '';
+  const isProd = process.env.VERCEL_ENV
+    ? process.env.VERCEL_ENV === 'production'
+    : process.env.NODE_ENV === 'production';
 
-  // PRODUCTION SECURITY ENFORCEMENT: Force Live key on production environment
+  let keyId = '';
+  let keySecret = '';
+
   if (isProd) {
-    if (!keyId || keyId.startsWith('rzp_test_')) {
-      console.warn('[Razorpay Production Security] Test mode key detected or key ID missing in Production environment. Forcing Official Live Key ID.');
-      keyId = PROD_LIVE_KEY_ID;
+    // PRODUCTION MODE:
+    // Only live keys are permitted. Test keys and missing keys must fail closed.
+    keyId = process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+    keySecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET || '';
+
+    if (keyId.startsWith('rzp_test_')) {
+      console.error('[Razorpay Production Security] Test mode key detected in Production environment. Test keys are not permitted in production.');
+      keyId = '';
     }
   } else {
-    if (!keyId) {
-      keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || PROD_LIVE_KEY_ID;
+    // PREVIEW / NON-PRODUCTION MODE:
+    // Only test keys (rzp_test_...) are permitted.
+    // Live keys from fallback variables (e.g. RAZORPAY_LIVE_KEY_ID or NEXT_PUBLIC_RAZORPAY_KEY_ID) are strictly prohibited.
+    const candidateKeys = [
+      process.env.RAZORPAY_TEST_KEY_ID,
+      process.env.RAZORPAY_KEY_ID,
+      process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+    ].filter(Boolean);
+
+    // Pick the first test key if available
+    const testKey = candidateKeys.find(k => k.startsWith('rzp_test_'));
+    if (testKey) {
+      keyId = testKey;
+    } else if (candidateKeys.length > 0) {
+      // If candidate keys were provided but NONE are test keys (e.g. only live keys available in Preview)
+      console.error('[Razorpay Preview Security] Live key detected in Preview/Development environment. Live keys are strictly prohibited in non-production environments.');
+      keyId = '';
     }
+
+    keySecret = process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET || '';
   }
 
   return {
     keyId,
     keySecret,
     isProd,
-    isTestMode: keyId.startsWith('rzp_test_')
+    isTestMode: Boolean(keyId && keyId.startsWith('rzp_test_'))
   };
 }
 
@@ -86,9 +111,12 @@ export function validateAndConvertAmount(amount) {
  */
 export function getRazorpayClient() {
   const { keyId, keySecret } = getRazorpayKeys();
+  if (!keyId || !keySecret) {
+    throw new Error('[Razorpay Security Error] Cannot initialize Razorpay client: keyId or keySecret is missing.');
+  }
   return new Razorpay({
     key_id: keyId,
-    key_secret: keySecret || 'dummy_secret_fallback',
+    key_secret: keySecret,
   });
 }
 
@@ -104,32 +132,11 @@ export async function createRazorpayOrder({ amount, currency = 'INR', receipt, n
   // 1. Strict Amount Validation & Conversion
   const { amountInRupees, amountInPaise } = validateAndConvertAmount(amount);
 
-  // If KEY_SECRET is not set in environment, generate client-compatible fallback order structure
+  // If KEY_SECRET is not set in environment, fail closed with explicit security error
   if (!creds.has_key_secret) {
-    console.warn('[Razorpay Client-Mode] RAZORPAY_KEY_SECRET is not configured. Generating client order reference.');
-    const fallbackOrderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    
-    await logPaymentEvent({
-      eventType: 'order_creation',
-      orderNumber: receipt,
-      razorpayOrderId: fallbackOrderId,
-      amount: amountInRupees,
-      status: 'info',
-      customerInfo,
-      rawPayload: { mode: 'client_fallback', key_id: keyId }
-    });
-
-    return {
-      success: true,
-      order: {
-        id: fallbackOrderId,
-        amount: amountInPaise,
-        currency: 'INR',
-        receipt,
-        status: 'created'
-      },
-      key_id: keyId
-    };
+    const errorMsg = '[Razorpay Security Error] RAZORPAY_KEY_SECRET is not configured on the server. Refusing to create unverified order.';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 
   const options = {
@@ -198,7 +205,7 @@ export async function createRazorpayOrder({ amount, currency = 'INR', receipt, n
   const finalErrorMsg = `[Razorpay Critical Error] Failed to create order after ${maxAttempts} attempts. Please check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment variables.`;
   console.error(finalErrorMsg);
   
-  throw new Error('Failed to initialize payment gateway order. Please verify your payment credentials or try Cash on Delivery.');
+  throw new Error('Failed to initialize payment gateway order. Please check your network connection or choose Direct UPI QR.');
 }
 
 /**
@@ -208,8 +215,13 @@ export function verifySignature({ razorpay_order_id, razorpay_payment_id, razorp
   const { keySecret } = getRazorpayKeys();
 
   if (!keySecret) {
-    console.warn('[Razorpay Warning] Signature verification skipped because RAZORPAY_KEY_SECRET is missing.');
-    return Boolean(razorpay_order_id && razorpay_payment_id);
+    console.error('[Razorpay Security Error] Signature verification rejected: RAZORPAY_KEY_SECRET is missing from environment.');
+    return false;
+  }
+
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    console.error('[Razorpay Security Error] Signature verification rejected: Missing required verification parameters.');
+    return false;
   }
 
   const generatedSignature = crypto
@@ -217,9 +229,14 @@ export function verifySignature({ razorpay_order_id, razorpay_payment_id, razorp
     .update(`${razorpay_order_id}|${razorpay_payment_id}`)
     .digest('hex');
 
-  const isMatch = generatedSignature === razorpay_signature;
-  console.log(`[Signature Debug] Generated: ${generatedSignature}, Received: ${razorpay_signature}, Match: ${isMatch}`);
-  return isMatch;
+  try {
+    const a = Buffer.from(generatedSignature, 'utf8');
+    const b = Buffer.from(razorpay_signature, 'utf8');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch (err) {
+    return generatedSignature === razorpay_signature;
+  }
 }
 
 /**
@@ -232,11 +249,7 @@ export async function verifyPaymentViaApi(paymentId) {
   try {
     const payment = await fetchPaymentDetails(paymentId);
     if (!payment) {
-      // If keySecret is missing or fetch returned null, assume valid if format matches 'pay_...'
-      if (paymentId.startsWith('pay_')) {
-        return { verified: true, status: 'captured', isFallback: true, payment: null };
-      }
-      return { verified: false, reason: 'Razorpay API returned null for payment ID' };
+      return { verified: false, reason: 'Razorpay API returned null or credentials unconfigured for payment ID' };
     }
 
     const validStatuses = ['captured', 'authorized', 'paid'];
@@ -250,10 +263,7 @@ export async function verifyPaymentViaApi(paymentId) {
     };
   } catch (err) {
     console.error(`[Razorpay API Verification Exception ${paymentId}]:`, err.message);
-    if (paymentId.startsWith('pay_')) {
-      return { verified: true, status: 'captured', isFallback: true, error: err.message };
-    }
-    return { verified: false, reason: err.message };
+    return { verified: false, reason: `Gateway verification failed: ${err.message}` };
   }
 }
 
@@ -264,8 +274,8 @@ export async function capturePayment(paymentId, amount, currency = 'INR') {
   const { keySecret } = getRazorpayKeys();
 
   if (!keySecret) {
-    console.warn('[Razorpay Warning] Cannot capture payment programmatically without RAZORPAY_KEY_SECRET.');
-    return { success: true, message: 'Client mode capture fallback' };
+    console.error('[Razorpay Security Error] Cannot capture payment without RAZORPAY_KEY_SECRET.');
+    return { success: false, error: 'RAZORPAY_KEY_SECRET is not configured' };
   }
 
   try {
@@ -327,14 +337,21 @@ export async function fetchPaymentDetails(paymentId) {
  */
 export function verifyWebhookSignature(bodyString, signature, webhookSecret) {
   const secret = webhookSecret || process.env.RAZORPAY_WEBHOOK_SECRET;
-  if (!secret) return false;
+  if (!secret || !signature || !bodyString) return false;
 
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(bodyString)
-    .digest('hex');
+  try {
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(bodyString)
+      .digest('hex');
 
-  return expectedSignature === signature;
+    const a = Buffer.from(expectedSignature, 'utf8');
+    const b = Buffer.from(signature, 'utf8');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch (err) {
+    return false;
+  }
 }
 
 /**

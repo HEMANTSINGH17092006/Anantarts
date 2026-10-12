@@ -1,22 +1,46 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req) {
   try {
-    const { contactInfo } = await req.json();
-    if (!contactInfo || !contactInfo.trim()) {
-      return NextResponse.json({ message: 'Email or Phone number is required.' }, { status: 400 });
+    const body = await req.json();
+    const contactInfo = (body.contactInfo || '').trim();
+
+    if (!contactInfo) {
+      return NextResponse.json({ message: 'Email or phone number is required.' }, { status: 400 });
     }
 
-    const value = contactInfo.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneDigits = contactInfo.replace(/\D/g, '');
+    const cleanPhone = phoneDigits.length === 12 && phoneDigits.startsWith('91') 
+      ? phoneDigits.slice(2) 
+      : phoneDigits;
+
+    const isEmail = emailRegex.test(contactInfo);
+    const isPhone = /^[6-9]\d{9}$/.test(cleanPhone);
+
+    if (!isEmail && !isPhone) {
+      return NextResponse.json({
+        message: 'Please enter a valid email address or 10-digit mobile number.'
+      }, { status: 400 });
+    }
+
     const supabase = createAdminClient();
 
-    // Query orders matching email or phone
-    const { data: orders, error: ordersErr } = await supabase
-      .from('orders')
-      .select('*')
-      .or(`customer_email.ilike.%${value}%,customer_phone.eq.${value}`)
-      .order('created_at', { ascending: false });
+    // Query strictly with exact match (.eq) — prevent wildcard / partial harvesting
+    let query = supabase.from('orders').select('*');
+
+    if (isEmail) {
+      query = query.eq('customer_email', contactInfo.toLowerCase());
+    } else {
+      query = query.eq('customer_phone', cleanPhone);
+    }
+
+    const { data: orders, error: ordersErr } = await query
+      .order('created_at', { ascending: false })
+      .limit(50);
 
     if (ordersErr) {
       console.error('Error fetching orders:', ordersErr);
@@ -27,7 +51,7 @@ export async function POST(req) {
       return NextResponse.json({ success: true, orders: [] });
     }
 
-    const orderIds = orders.map(o => o.id);
+    const orderIds = orders.map((o) => o.id);
 
     // Fetch order items
     const { data: items, error: itemsErr } = await supabase
@@ -41,12 +65,12 @@ export async function POST(req) {
     }
 
     // Attach items to orders, mapping product images
-    const ordersWithItems = orders.map(order => {
+    const ordersWithItems = orders.map((order) => {
       const orderItems = items
-        .filter(item => item.order_id === order.id)
-        .map(item => {
+        .filter((item) => item.order_id === order.id)
+        .map((item) => {
           const images = item.products?.product_images || [];
-          const primaryImg = images.find(img => img.is_primary === 1) || images[0];
+          const primaryImg = images.find((img) => img.is_primary === 1) || images[0];
           return {
             id: item.id,
             product_id: item.product_id,

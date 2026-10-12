@@ -30,7 +30,31 @@ export async function proxy(request) {
   }
 
   // =============================================
-  // 2. ADMIN ROUTE PROTECTION
+  // 2. ADMIN API PROTECTION
+  // Protect all /api/admin/* routes with HTTP 401/403 JSON
+  // =============================================
+  if (pathname.startsWith('/api/admin')) {
+    const tokenCookie = request.cookies.get('token');
+    const token = tokenCookie?.value;
+
+    if (!token) {
+      return NextResponse.json({ success: false, message: 'Unauthorized. Admin session required.' }, { status: 401 });
+    }
+
+    try {
+      const { payload } = await jose.jwtVerify(token, JWT_SECRET_KEY);
+      const adminRoles = ['admin', 'super_admin', 'manager', 'content_editor'];
+      if (!adminRoles.includes(payload.role)) {
+        return NextResponse.json({ success: false, message: 'Forbidden. Insufficient permissions.' }, { status: 403 });
+      }
+      return NextResponse.next();
+    } catch (err) {
+      return NextResponse.json({ success: false, message: 'Unauthorized. Invalid or expired admin session.' }, { status: 401 });
+    }
+  }
+
+  // =============================================
+  // 3. ADMIN DASHBOARD PAGE PROTECTION
   // Protect all /admin/* routes (except /admin/login)
   // =============================================
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
@@ -63,9 +87,10 @@ export async function proxy(request) {
 
   // =============================================
   // 3. CUSTOMER ROUTE PROTECTION
-  // Protect /checkout, /account
+  // Protect customer account pages (/account, /my-orders)
+  // Guest access is permitted for /checkout
   // =============================================
-  const customerProtectedRoutes = ['/checkout', '/account'];
+  const customerProtectedRoutes = ['/account', '/my-orders'];
   const isCustomerRoute = customerProtectedRoutes.some(route => pathname.startsWith(route));
 
   if (isCustomerRoute) {

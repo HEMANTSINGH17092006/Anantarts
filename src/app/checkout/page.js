@@ -604,11 +604,35 @@ export default function CheckoutPage() {
           setError(lastErrMessage || "We're unable to connect to our payment partner right now. Please try again or select Direct UPI QR.");
           return;
         }
-        const razorpayKey = orderData.key_id || (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TF5Q4XYGrKlT1b');
+        const isProductionDeployment =
+          (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') ||
+          (process.env.VERCEL_ENV === 'production');
+
+        const razorpayKey = orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+
+        // Client-side guard: In non-production environments, reject any live key
+        if (!isProductionDeployment && razorpayKey.startsWith('rzp_live_')) {
+          setLoading(false);
+          const configErr = "Security Configuration Error: Live payment keys (rzp_live_*) cannot be used in Preview or Development environments. Please configure test mode keys (rzp_test_*).";
+          console.error(`[Checkout Security] ${configErr}`);
+          setError(configErr);
+          return;
+        }
+
+        // Client-side guard: If the server or environment did not provide a valid key
+        if (!razorpayKey || razorpayKey === 'missing_key') {
+          setLoading(false);
+          const configErr = "Payment Gateway Configuration Error: No valid Razorpay Key ID was returned from the server. Please check environment settings.";
+          console.error(`[Checkout Security] ${configErr}`);
+          setError(configErr);
+          return;
+        }
 
         // 2. Configure Razorpay modal with server generated order_id
         if (!orderData || !orderData.order_id) {
-          throw new Error(lastErrMessage || 'Failed to initialize payment.');
+          setLoading(false);
+          setError(lastErrMessage || 'Failed to initialize payment.');
+          return;
         }
 
         // Check if backend gave us a fake order ID because of missing credentials
@@ -617,7 +641,7 @@ export default function CheckoutPage() {
         }
 
         const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'missing_key',
+          key: razorpayKey,
           amount: orderData.amount,
           currency: orderData.currency || 'INR',
           name: 'Anant Arts',

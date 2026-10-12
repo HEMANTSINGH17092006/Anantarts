@@ -1,5 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import * as jose from 'jose';
+
+const JWT_SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'anant_arts_divine_key_999');
 
 export async function GET(request, { params }) {
   try {
@@ -30,6 +34,57 @@ export async function GET(request, { params }) {
 
     if (!order) {
       return new NextResponse('Order not found', { status: 404 });
+    }
+
+    // Authorization Verification
+    const url = new URL(request.url);
+    const cookieStore = await cookies();
+    const adminToken = cookieStore.get('token')?.value;
+    const customerToken = cookieStore.get('customer_token')?.value;
+    const queryEmail = url.searchParams.get('email')?.toLowerCase()?.trim();
+    const queryPhone = url.searchParams.get('phone')?.trim()?.replace(/\D/g, '');
+
+    let isAuthorized = false;
+
+    // 1. Admin session check
+    if (adminToken) {
+      try {
+        const { payload } = await jose.jwtVerify(adminToken, JWT_SECRET_KEY);
+        const adminRoles = ['admin', 'super_admin', 'manager', 'content_editor'];
+        if (adminRoles.includes(payload.role)) {
+          isAuthorized = true;
+        }
+      } catch {}
+    }
+
+    // 2. Customer session check
+    if (!isAuthorized && customerToken) {
+      try {
+        const { payload } = await jose.jwtVerify(customerToken, JWT_SECRET_KEY);
+        if (
+          (order.user_id && payload.id === order.user_id) ||
+          (order.customer_email && payload.email?.toLowerCase() === order.customer_email.toLowerCase())
+        ) {
+          isAuthorized = true;
+        }
+      } catch {}
+    }
+
+    // 3. Contact verification parameter check (for guests opening invoice from order-success page/email)
+    if (!isAuthorized) {
+      if (queryEmail && order.customer_email && queryEmail === order.customer_email.toLowerCase()) {
+        isAuthorized = true;
+      }
+      if (queryPhone && order.customer_phone) {
+        const orderPhoneClean = order.customer_phone.replace(/\D/g, '');
+        if (queryPhone === orderPhoneClean || orderPhoneClean.endsWith(queryPhone)) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new NextResponse('Unauthorized: Access to this tax invoice is restricted. Please log in or provide order verification credentials.', { status: 403 });
     }
 
     // Fetch order items
@@ -84,7 +139,6 @@ export async function GET(request, { params }) {
         })
       : new Date().toLocaleDateString('en-IN');
 
-    const url = new URL(request.url);
     const isDownload = url.searchParams.get('download') === '1';
 
     const htmlContent = `<!DOCTYPE html>
