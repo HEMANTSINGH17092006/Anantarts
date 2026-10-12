@@ -41,13 +41,25 @@ export function getRazorpayKeys() {
     const testKey = candidateKeys.find(k => k.startsWith('rzp_test_'));
     if (testKey) {
       keyId = testKey;
+      // Pair strictly with verified test secret; refuse to fall back to potentially live RAZORPAY_KEY_SECRET
+      if (process.env.RAZORPAY_TEST_KEY_SECRET) {
+        keySecret = process.env.RAZORPAY_TEST_KEY_SECRET;
+      } else if (process.env.RAZORPAY_KEY_SECRET && process.env.RAZORPAY_KEY_ID?.startsWith('rzp_test_')) {
+        // Only accept RAZORPAY_KEY_SECRET if RAZORPAY_KEY_ID itself was explicitly configured as test mode
+        keySecret = process.env.RAZORPAY_KEY_SECRET;
+      } else {
+        console.error('[Razorpay Preview Security] Test key detected without verified test secret. Refusing to pair with unverified fallback secret.');
+        keyId = '';
+        keySecret = '';
+      }
     } else if (candidateKeys.length > 0) {
       // If candidate keys were provided but NONE are test keys (e.g. only live keys available in Preview)
       console.error('[Razorpay Preview Security] Live key detected in Preview/Development environment. Live keys are strictly prohibited in non-production environments.');
       keyId = '';
+      keySecret = '';
+    } else {
+      keySecret = '';
     }
-
-    keySecret = process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET || '';
   }
 
   return {
