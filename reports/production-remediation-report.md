@@ -114,7 +114,18 @@ Every production environment variable on Vercel project `anant12/anant-arts` was
 
 ## 6. Production Pre-Release Audit: Razorpay Live Webhook Configuration
 
-### 6.1 Server Webhook Implementation & Fail-Closed Guard Analysis
+### 6.1 Status Matrix
+
+| Check / Action Item | Status | Verified Finding / Action Required |
+| :--- | :---: | :--- |
+| **Razorpay Dashboard Access** | **BLOCKED (UNAVAILABLE)** | Interactive browser automation cannot access the dashboard due to environment driver restrictions and requirement for merchant 2FA credentials. Dashboard must be accessed directly by the merchant. |
+| **Live Webhook Endpoint Creation** | **BLOCKED (PENDING OPERATOR)** | **Not created yet.** Webhook pointing to `https://anantarts.in/api/razorpay/webhook` must be manually created in Live Mode on Razorpay Dashboard. |
+| **Live Webhook Signing Secret** | **PENDING OPERATOR** | Secret must be generated/copied during webhook creation in the Razorpay Dashboard. Not available in code, Git, or logs. |
+| **Vercel Production Variable** | **BLOCKED (PENDING SECRET)** | `RAZORPAY_WEBHOOK_SECRET` is **not configured** in Production scope. Will be added once the live secret is securely available. |
+| **Webhook Code & Security Audit** | **PASS** | [`src/app/api/razorpay/webhook/route.js`](file:///c:/Users/Hemant/OneDrive/Desktop/Anant/src/app/api/razorpay/webhook/route.js) and [`src/lib/razorpay.js`](file:///c:/Users/Hemant/OneDrive/Desktop/Anant/src/lib/razorpay.js) strictly fail closed on missing secret (HTTP 500), enforce HMAC-SHA256 timing-safe signatures (HTTP 401), and give `process.env` absolute priority over DB settings. |
+| **Production Deployment Safeguard** | **PASS** | Zero deployments triggered; `vercel --prod` was never executed; zero live payments attempted. |
+
+### 6.2 Code & Security Audit Details
 - **Target Variable**: `RAZORPAY_WEBHOOK_SECRET`
 - **Route**: [`src/app/api/razorpay/webhook/route.js`](file:///c:/Users/Hemant/OneDrive/Desktop/Anant/src/app/api/razorpay/webhook/route.js)
 - **Signature Engine**: [`src/lib/razorpay.js`](file:///c:/Users/Hemant/OneDrive/Desktop/Anant/src/lib/razorpay.js#L350-L365) (`verifyWebhookSignature` via HMAC-SHA256 and `crypto.timingSafeEqual`)
@@ -127,38 +138,43 @@ Every production environment variable on Vercel project `anant12/anant-arts` was
   4. At no point are unauthenticated payloads parsed, processed, or credited.
   5. If an invalid signature is received, it returns HTTP 401: `{"success": false, "message": "Invalid webhook signature."}`.
   6. Cryptographic signature verification is unconditional; no bypass or weak fallback exists.
+  7. **Precedence Protection**: `process.env.RAZORPAY_WEBHOOK_SECRET` is evaluated first. Once configured in Vercel, it short-circuits the check and completely prevents any stale value in `website_settings` from being read or overriding the production secret.
 
-### 6.2 Razorpay Dashboard Webhook Endpoint Status
-- **Dashboard Access Status**: **UNAVAILABLE TO ASSISTANT**
-  - The assistant does not possess credentials, session tokens, or automated access to the merchant Razorpay Dashboard (`https://dashboard.razorpay.com`).
-  - Webhook endpoint configuration on the live gateway must be verified directly by the merchant administrator.
+### 6.3 Tooling & Dashboard Verification Outcome
+- **Browser Subagent Navigation**: Attempted automated navigation to `https://dashboard.razorpay.com`. The environment's Playwright driver could not be initialized (404 on driver binary download), and merchant dashboards require interactive 2FA/OTP login.
+- **Outcome**: The assistant cannot directly create or verify webhooks in the Razorpay Dashboard. The live webhook was **NOT** created.
 
-### 6.3 Standard Operating Procedure: Live Webhook Secret Retrieval & Configuration
-The live webhook signing secret is mathematically distinct from the API Key Secret (`RAZORPAY_KEY_SECRET`). It must be extracted from the webhook endpoint configuration:
+### 6.4 Operator Action Required to Complete Webhook Configuration
+The merchant administrator must complete the following manual steps:
 
-1. **Access Gateway**:
-   - Log in to [Razorpay Merchant Dashboard](https://dashboard.razorpay.com/).
-   - Ensure the mode toggle in the top header is switched to **Live Mode** (NOT Test Mode).
-2. **Navigate to Webhooks**:
+1. **Step 1: Log In to Razorpay Dashboard**:
+   - Navigate to [https://dashboard.razorpay.com](https://dashboard.razorpay.com) and complete merchant login.
+   - Verify that the toggle in the top header is set to **Live Mode** (NOT Test Mode).
+2. **Step 2: Add Webhook**:
    - Go to **Settings** (left sidebar gear icon) $\to$ **Webhooks** tab.
-3. **Verify or Create Webhook**:
-   - **URL**: `https://anantarts.in/api/razorpay/webhook`
-   - **Secret**: Enter or retrieve a high-entropy signing secret. (If editing an existing webhook where the secret is masked and unrecorded, generate and save a new secret).
-   - **Active Events**: Check the following required events:
+   - Click **+ Add New Webhook**.
+   - **Webhook URL**: `https://anantarts.in/api/razorpay/webhook`
+   - **Secret**: Enter a strong, random, high-entropy secret string (this is the webhook signing secret, separate from `RAZORPAY_KEY_SECRET`).
+   - **Alert Email**: Enter administrator alert email.
+   - **Active Events**: Select:
      - `payment.authorized`
      - `payment.captured`
      - `payment.failed`
      - `order.paid`
-   - Save the webhook configuration.
-4. **Configure in Vercel Production**:
-   - Using Vercel Dashboard (Project Settings $\to$ Environment Variables) or Vercel CLI:
+   - Click **Create Webhook**.
+   - Securely copy the entered secret.
+3. **Step 3: Add to Vercel Production Scope**:
+   - In Vercel Project Dashboard (`anant12/anant-arts`) $\to$ **Settings** $\to$ **Environment Variables**:
+     - Key: `RAZORPAY_WEBHOOK_SECRET`
+     - Value: `<paste the secret from Step 2>`
+     - Scope: Check **Production** ONLY.
+   - Alternatively run:
      ```bash
      npx vercel env add RAZORPAY_WEBHOOK_SECRET production
      ```
-   - Paste the exact live webhook secret.
-   - Never paste the Preview secret or the API key secret.
-5. **Runtime Effect Requirement**:
-   - **A new deployment or redeployment of Production is strictly required** for the Next.js production serverless functions to inject and consume `RAZORPAY_WEBHOOK_SECRET`. Existing deployed lambda containers do not inherit runtime variable updates until redeployed.
+4. **Step 4: Redeploy Production**:
+   - Next.js serverless functions require a redeployment to pick up newly added environment variables.
+   - Merge `fix/audit-phase2-prioritized-fixes` into `main`, which will trigger the production build and deployment with all audit fixes and the live webhook secret active.
 
 ---
 
