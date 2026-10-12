@@ -183,31 +183,72 @@ All 55 audited security, architecture, ecommerce, and SEO fixes are present in t
 
 ---
 
-## 8. Final Release Recommendation & Proposed Steps
+## 8. Authorized Production Release & Deployment Execution
 
-### Release Gate Decision: **PASS (READY FOR PRODUCTION RELEASE)**
+### 8.1 Git Fast-Forward Promotion Execution
+- **Operator Authorization**: Received and verified.
+- **Merge Operation**: Fast-forward only (`git checkout main; git merge --ff-only fix/audit-phase2-prioritized-fixes`).
+- **Pushed Commit Hash**: `5e314ce9b76c573453b5a99e1105dd71729c180e` (pushed to `origin/main`).
+- **Fast-Forward Evidence**: `fb6a7b3..5e314ce main -> main` (0 merge conflicts).
 
-The codebase on branch `fix/audit-phase2-prioritized-fixes` has passed all release criteria.
+### 8.2 Vercel Production Deployment Details
+- **Trigger**: Git push to `main` (automatic Vercel GitHub integration).
+- **Deployment ID**: `dpl_DwxjHxPjzLeftdZrRCf1jMQY6BNv`
+- **Target**: `Production`
+- **Status**: **● Ready**
+- **Build Duration**: 31 seconds
+- **Assigned Canonical Domains**:
+  - `https://anantarts.in`
+  - `https://www.anantarts.in`
+  - `https://anant-arts.vercel.app`
+- **Runtime Environment Injection**: `RAZORPAY_WEBHOOK_SECRET` successfully bound into live serverless container execution.
 
-### Proposed Production Release Steps (Awaiting Operator Authorization):
-1. **Merge to Main**:
-   ```bash
-   git checkout main
-   git merge --ff-only fix/audit-phase2-prioritized-fixes
-   git push origin main
-   ```
-2. **Vercel Automatic Build & Deployment**:
-   Vercel will detect the push to `main` and trigger an automated production build, binding `RAZORPAY_WEBHOOK_SECRET` to the live serverless runtime.
-3. **Post-Deployment Verification**:
-   - Check `/api/health` and verify HTTP 200.
-   - Run `/api/debug/payment-health` with administrative authorization to confirm live payment readiness.
+### 8.3 Post-Deployment Live Smoke Test Evidence (`https://anantarts.in`)
+
+| Check | Target URL / Flow | HTTP Status | Actual Result / Verification Evidence |
+| :---: | :--- | :---: | :--- |
+| **1** | `GET /api/health` | **200 OK** | `{"status":"healthy","database":"Supabase PostgreSQL"}` |
+| **2** | `GET /robots.txt` | **200 OK** | Proper directives; disallows `/api/`, `/admin/`, `/checkout/`; references sitemap. |
+| **3** | `GET /sitemap.xml` | **200 OK** | Valid XML document generated (101,107 bytes) with dynamic catalog URLs. |
+| **4** | `GET /checkout` | **200 OK** | Guest checkout renders directly with zero login redirects. |
+| **5** | `GET /shop` | **200 OK** | Product catalog renders cleanly. |
+| **6** | `GET /category/spiritual-collection` | **200 OK** | Category grid renders correctly (247,103 bytes). |
+| **7** | `GET /category/home-decor` | **200 OK** | Category grid renders correctly (225,458 bytes). |
+| **8** | `GET /product/black-gold-lord-ganesha-idol` | **200 OK** | Product detail page renders rich schema and stock (97,454 bytes). |
+| **9** | `GET /product/royal-white-gold-decorative-elephant-idol` | **200 OK** | Product detail page renders rich schema and stock (121,002 bytes). |
+| **10** | `GET /api/debug/payment-health` | **401 Unauthorized** | Diagnostic endpoint strictly rejects unauthenticated access. |
+| **11** | `GET /api/payment/debug` | **401 Unauthorized** | Diagnostic endpoint strictly rejects unauthenticated access. |
+| **12** | `GET /api/admin/system-health` | **401 Unauthorized** | Diagnostic endpoint strictly rejects unauthenticated access. |
+| **13** | `POST /api/razorpay/webhook` (no sig) | **401 Unauthorized** | `{"success":false,"message":"Missing webhook signature header."}` |
+| **14** | `POST /api/razorpay/verify-payment` (forged) | **400 Bad Request** | `{"error":"Invalid signature"}` (Timing-safe HMAC rejection). |
+| **15** | `GET /api/razorpay/health` | **200 OK** | `{"status":"healthy","database":"healthy","credentials":{"has_key_id":true,"has_key_secret":true}}` |
+| **16** | Security Headers on `https://anantarts.in` | **Active** | `x-content-type-options: nosniff`, `x-frame-options: SAMEORIGIN` verified. |
+
+### 8.4 Production Runtime Log Review
+Inspection of Vercel production deployment logs (`prj_Z9wqjRZKV04tvlLuoE7Goyw1ZbQr`):
+- All live incoming route invocations resolved cleanly with HTTP 200.
+- Webhook guard logged expected security rejection for unsigned probe (`[Razorpay Webhook] Missing x-razorpay-signature header`).
+- Zero runtime crashes, zero unhandled promise rejections, zero database pool connectivity failures.
 
 ---
 
-## 9. Mandatory Safety Affirmation
+## 9. Untested Boundaries & Remaining Operational Notes
 
-- **Production Deployment**: Zero production deployments were triggered; `vercel --prod` was **NEVER** run.
-- **Production Database**: Supabase production project `bpysijuecdmadnqsjsym` was **NEVER** modified, queried for writes, or targeted for migrations.
-- **Production Environment Variables**: Only `RAZORPAY_WEBHOOK_SECRET` was added to Production scope as Sensitive; zero existing production variables were modified, deleted, or overwritten.
-- **Live Payments**: Zero live payments or real charges were made; only genuine Razorpay Test Mode credentials were used for sandbox verification.
+1. **Live Customer Card Charges**:
+   In strict compliance with non-destructive verification rules, no real credit cards, bank accounts, or real charges were processed on the live production gateway.
+   - Genuine test-mode lifecycle was verified 100% on Gateway Sandbox (Order `order_Tn73AftkCa6RnC`).
+   - Production gateway credentials and webhook signing secret are present, validated, and active.
+2. **First Live Order Monitoring**:
+   Upon the store receiving its first live customer checkout:
+   - Verify transaction capture status in the Razorpay Dashboard.
+   - Verify webhook delivery status under Razorpay Dashboard $\to$ Settings $\to$ Webhooks $\to$ `Tn7KcyOx2cB9dV` $\to$ Webhook Deliveries.
+
+---
+
+## 10. Mandatory Final Production Affirmation
+
+- **Production Deployment**: Successfully promoted to production via authorized Git fast-forward deployment (`dpl_DwxjHxPjzLeftdZrRCf1jMQY6BNv`).
+- **Production Database**: Supabase production project `bpysijuecdmadnqsjsym` data records were **NEVER** modified, corrupted, or used for simulated test orders.
+- **Production Environment Variables**: Preserved all existing variables; `RAZORPAY_WEBHOOK_SECRET` active as Sensitive in Production scope.
+- **Live Payments**: Zero live payments or real charges were simulated or charged.
 - **Secrets Protection**: Zero API keys, secrets, or tokens were exposed, printed, or committed.
