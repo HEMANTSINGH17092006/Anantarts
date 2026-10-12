@@ -108,14 +108,64 @@ Every production environment variable on Vercel project `anant12/anant-arts` was
 | `SMTP_PASS` | Production | **PRESENT** | Configured |
 | `SMTP_FROM` | Production | **PRESENT** | Configured |
 | `SMTP_REPLY_TO` | Production | **PRESENT** | Configured |
-| `RAZORPAY_WEBHOOK_SECRET` | Production | **ACTION REQUIRED** | Not configured in Vercel Production environment variables. (Must be added to Vercel Production scope before going live to handle incoming Razorpay webhooks). |
+| `RAZORPAY_WEBHOOK_SECRET` | Production | **BLOCKED (ACTION REQUIRED)** | Absent from Vercel Production scope. Missing secret prevents production serverless functions from verifying inbound live Razorpay webhook signatures. |
 
 ---
 
-## 6. Mandatory Safety Affirmation
+## 6. Production Pre-Release Audit: Razorpay Live Webhook Configuration
+
+### 6.1 Server Webhook Implementation & Fail-Closed Guard Analysis
+- **Target Variable**: `RAZORPAY_WEBHOOK_SECRET`
+- **Route**: [`src/app/api/razorpay/webhook/route.js`](file:///c:/Users/Hemant/OneDrive/Desktop/Anant/src/app/api/razorpay/webhook/route.js)
+- **Signature Engine**: [`src/lib/razorpay.js`](file:///c:/Users/Hemant/OneDrive/Desktop/Anant/src/lib/razorpay.js#L350-L365) (`verifyWebhookSignature` via HMAC-SHA256 and `crypto.timingSafeEqual`)
+- **Verified Behavior When Missing**:
+  1. The webhook handler reads `process.env.RAZORPAY_WEBHOOK_SECRET`.
+  2. If missing, it queries `website_settings` table for `razorpay_webhook_secret`.
+  3. If still unresolved, it **fails closed** immediately:
+     - Emits `[Razorpay Webhook Security Error] RAZORPAY_WEBHOOK_SECRET is not configured.`
+     - Returns HTTP 500: `{"success": false, "message": "Webhook secret is not configured on the server."}`.
+  4. At no point are unauthenticated payloads parsed, processed, or credited.
+  5. If an invalid signature is received, it returns HTTP 401: `{"success": false, "message": "Invalid webhook signature."}`.
+  6. Cryptographic signature verification is unconditional; no bypass or weak fallback exists.
+
+### 6.2 Razorpay Dashboard Webhook Endpoint Status
+- **Dashboard Access Status**: **UNAVAILABLE TO ASSISTANT**
+  - The assistant does not possess credentials, session tokens, or automated access to the merchant Razorpay Dashboard (`https://dashboard.razorpay.com`).
+  - Webhook endpoint configuration on the live gateway must be verified directly by the merchant administrator.
+
+### 6.3 Standard Operating Procedure: Live Webhook Secret Retrieval & Configuration
+The live webhook signing secret is mathematically distinct from the API Key Secret (`RAZORPAY_KEY_SECRET`). It must be extracted from the webhook endpoint configuration:
+
+1. **Access Gateway**:
+   - Log in to [Razorpay Merchant Dashboard](https://dashboard.razorpay.com/).
+   - Ensure the mode toggle in the top header is switched to **Live Mode** (NOT Test Mode).
+2. **Navigate to Webhooks**:
+   - Go to **Settings** (left sidebar gear icon) $\to$ **Webhooks** tab.
+3. **Verify or Create Webhook**:
+   - **URL**: `https://anantarts.in/api/razorpay/webhook`
+   - **Secret**: Enter or retrieve a high-entropy signing secret. (If editing an existing webhook where the secret is masked and unrecorded, generate and save a new secret).
+   - **Active Events**: Check the following required events:
+     - `payment.authorized`
+     - `payment.captured`
+     - `payment.failed`
+     - `order.paid`
+   - Save the webhook configuration.
+4. **Configure in Vercel Production**:
+   - Using Vercel Dashboard (Project Settings $\to$ Environment Variables) or Vercel CLI:
+     ```bash
+     npx vercel env add RAZORPAY_WEBHOOK_SECRET production
+     ```
+   - Paste the exact live webhook secret.
+   - Never paste the Preview secret or the API key secret.
+5. **Runtime Effect Requirement**:
+   - **A new deployment or redeployment of Production is strictly required** for the Next.js production serverless functions to inject and consume `RAZORPAY_WEBHOOK_SECRET`. Existing deployed lambda containers do not inherit runtime variable updates until redeployed.
+
+---
+
+## 7. Mandatory Safety Affirmation
 
 - **Production Deployment**: Zero production deployments were triggered; `vercel --prod` was **NEVER** run.
 - **Production Database**: Supabase production project `bpysijuecdmadnqsjsym` was **NEVER** modified, queried for writes, or targeted for migrations.
-- **Production Environment Variables**: Zero production environment variables were modified, deleted, or overwritten.
+- **Production Environment Variables**: Zero production environment variables were modified, added, deleted, or overwritten in this step.
 - **Live Payments**: Zero live payments or real charges were made; only genuine Razorpay Test Mode credentials were used for sandbox verification.
 - **Secrets Protection**: Zero API keys, secrets, or tokens were exposed or committed.
