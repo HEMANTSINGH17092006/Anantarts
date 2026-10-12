@@ -3,7 +3,13 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 let pool = null;
 
-if (!pool && process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== '') {
+const isProdDeployment = process.env.VERCEL_ENV
+  ? process.env.VERCEL_ENV === 'production'
+  : process.env.NODE_ENV === 'production';
+
+// Only initialize direct pg Pool in Production when DATABASE_URL is configured
+// Non-production (Preview/Dev) strictly uses Supabase admin client fallback to maintain staging isolation
+if (!pool && isProdDeployment && process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== '') {
   try {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
