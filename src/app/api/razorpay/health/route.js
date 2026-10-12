@@ -11,7 +11,7 @@ export async function GET() {
 
   try {
     const supabase = createAdminClient();
-    const { error } = await supabase.from('website_settings').select('id').limit(1);
+    const { error } = await supabase.from('website_settings').select('key').limit(1);
     if (error) dbStatus = 'warning';
   } catch (e) {
     dbStatus = 'warning';
