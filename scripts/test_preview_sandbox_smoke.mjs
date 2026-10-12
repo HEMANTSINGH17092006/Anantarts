@@ -5,7 +5,7 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 
-const DEPLOYMENT_URL = process.env.DEPLOYMENT_URL || 'https://anant-arts-busggb4yo-anant12.vercel.app';
+const DEPLOYMENT_URL = 'https://anant-arts-io8ipju37-anant12.vercel.app';
 
 console.log('='.repeat(75));
 console.log('ANANT ARTS — PREVIEW STAGING INTEGRATION & SANDBOX SMOKE SUITE');
