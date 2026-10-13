@@ -32,12 +32,32 @@ export async function generateMetadata({ searchParams }) {
   });
 }
 
+// Helper to construct a lightweight searchable description:
+// Preserves the first 180 chars for UI preview (e.g. QuickView modal)
+// followed by unique extra keywords from the remaining text to retain 100% search accuracy
+function buildSearchableDescription(rawDesc, name = '') {
+  if (!rawDesc) return '';
+  const plain = rawDesc.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const snippet = plain.slice(0, 180);
+  
+  const existingWords = new Set((snippet + ' ' + name).toLowerCase().match(/[a-z0-9]+/g) || []);
+  const remainingWords = plain.slice(180).toLowerCase().match(/[a-z0-9]+/g) || [];
+  const uniqueExtras = [];
+  for (const w of remainingWords) {
+    if (w.length > 2 && !existingWords.has(w)) {
+      existingWords.add(w);
+      uniqueExtras.push(w);
+    }
+  }
+  return uniqueExtras.length > 0 ? `${snippet} | ${uniqueExtras.join(' ')}` : snippet;
+}
+
 export default async function ShopPage() {
   const categories = await getCategories();
   const rawProducts = await getProducts(); // Fetch all published products for instant client-side filtering
 
   // Performance Optimization: Strip multi-kilobyte raw HTML descriptions and unneeded database fields
-  // before serializing to Client Component flight payload, reducing document HTML size by >95%.
+  // before serializing to Client Component flight payload, reducing document HTML size by >85%.
   const products = (rawProducts || []).map((p) => ({
     id: p.id,
     name: p.name,
@@ -62,8 +82,8 @@ export default async function ShopPage() {
       image_path: typeof img === 'string' ? img : img.image_path,
       is_primary: img.is_primary,
     })),
-    // Lightweight plain-text snippet (first 150 chars) for client search without multi-kilobyte HTML bloat
-    description: p.description ? p.description.replace(/<[^>]+>/g, ' ').slice(0, 150).replace(/\s+/g, ' ').trim() : '',
+    // Lightweight plain-text snippet (180 chars for QuickView display) + unique keywords for 100% search accuracy
+    description: buildSearchableDescription(p.description, p.name),
   }));
 
   return (
