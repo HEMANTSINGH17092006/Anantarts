@@ -4,7 +4,7 @@ import { getSessionCustomer } from '../auth/actions';
 import { redirect } from 'next/navigation';
 
 export const metadata = {
-  title: 'Create Account - Anant Arts',
+  title: 'Create Account',
   description: 'Create your Anant Arts account to shop premium divine idols, track orders, and save your addresses.',
 };
 

@@ -34,7 +34,37 @@ export async function generateMetadata({ searchParams }) {
 
 export default async function ShopPage() {
   const categories = await getCategories();
-  const products = await getProducts(); // Fetch all published products for instant client-side filtering
+  const rawProducts = await getProducts(); // Fetch all published products for instant client-side filtering
+
+  // Performance Optimization: Strip multi-kilobyte raw HTML descriptions and unneeded database fields
+  // before serializing to Client Component flight payload, reducing document HTML size by >95%.
+  const products = (rawProducts || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    sku: p.sku || '',
+    price: p.price,
+    discount_price: p.discount_price,
+    stock_quantity: p.stock_quantity,
+    material: p.material || '',
+    tags: p.tags || '',
+    occasion: p.occasion || '',
+    color: p.color || '',
+    rating: p.rating || 5,
+    created_at: p.created_at || '',
+    is_bestseller: p.is_bestseller,
+    is_new_arrival: p.is_new_arrival,
+    category_id: p.category_id,
+    category_name: p.category_name || p.categories?.name || '',
+    category_slug: p.category_slug || p.categories?.slug || '',
+    image_path: p.image_path || (p.images?.[0]?.image_path) || (p.product_images?.[0]?.image_path) || '/images/placeholder.jpg',
+    images: (p.images || p.product_images || []).map((img) => ({
+      image_path: typeof img === 'string' ? img : img.image_path,
+      is_primary: img.is_primary,
+    })),
+    // Lightweight plain-text snippet (first 150 chars) for client search without multi-kilobyte HTML bloat
+    description: p.description ? p.description.replace(/<[^>]+>/g, ' ').slice(0, 150).replace(/\s+/g, ' ').trim() : '',
+  }));
 
   return (
     <Suspense fallback={

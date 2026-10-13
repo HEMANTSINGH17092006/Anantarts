@@ -2,7 +2,7 @@ import { getSessionCustomer } from '../auth/actions';
 import ProfileSettingsClient from './ProfileSettingsClient';
 
 export const metadata = {
-  title: 'My Profile - Anant Arts',
+  title: 'My Profile',
 };
 
 export default async function AccountProfilePage() {

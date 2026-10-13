@@ -7,7 +7,7 @@ import CancelOrderModal from '@/components/CancelOrderModal';
 import MetaOrderPurchaseTracker from '@/components/analytics/MetaOrderPurchaseTracker';
 
 export const metadata = {
-  title: 'Order Tracking Detail - Anant Arts',
+  title: 'Order Tracking Detail',
 };
 
 export default async function CustomerOrderDetailPage({ params }) {

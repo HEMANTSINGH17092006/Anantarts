@@ -4,7 +4,7 @@ import Link from 'next/link';
 import CancelOrderModal from '@/components/CancelOrderModal';
 
 export const metadata = {
-  title: 'My Orders - Anant Arts',
+  title: 'My Orders',
 };
 
 function formatPrice(price) {

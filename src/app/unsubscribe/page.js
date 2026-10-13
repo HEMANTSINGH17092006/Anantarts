@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import UnsubscribeClient from '@/components/shop/UnsubscribeClient';
 
 export const metadata = {
-  title: 'Communication Preferences | Anant Arts',
+  title: 'Communication Preferences',
   description: 'Manage your marketing communication and email newsletter preferences for Anant Arts.',
   robots: {
     index: false,

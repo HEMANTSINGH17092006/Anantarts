@@ -2,7 +2,7 @@ import { getSessionCustomer } from '../../auth/actions';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const metadata = {
-  title: 'Saved Addresses - Anant Arts',
+  title: 'Saved Addresses',
 };
 
 export default async function AccountAddressesPage() {

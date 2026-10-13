@@ -1,7 +1,9 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Page Not Found (404) | Anant Arts',
+  title: {
+    absolute: 'Page Not Found (404) | Anant Arts',
+  },
   description: 'The divine page or handcrafted idol you are searching for could not be found.',
   robots: {
     index: false,

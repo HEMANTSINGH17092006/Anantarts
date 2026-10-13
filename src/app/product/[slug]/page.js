@@ -35,13 +35,43 @@ export async function generateMetadata({ params }) {
   const categoryName = product.categories?.name || '';
   const materialName = product.material || '24K Gold Electroplated';
 
-  let title = product.seo_title;
-  if (!title) {
-    if (categoryName) {
-      title = `${rawName} | Premium ${categoryName} | Anant Arts`;
-    } else {
-      title = `${rawName} | Handcrafted Luxury Décor | Anant Arts`;
+  // Extract variant indicator if present, e.g. "(Blue)", "(Design 1)", "(Men-Set of 3)"
+  const parenthesizedMatches = rawName.match(/\(([^)]+)\)/g);
+  const parenthesizedText = parenthesizedMatches ? parenthesizedMatches.join(' ') : '';
+
+  // Extract dimensions or size if present, e.g. "8x9 inch", "8x10.5 inch", "6 inch", "14-inch"
+  const sizeMatch = rawName.match(/\b\d+(?:\.\d+)?\s*(?:x\s*\d+(?:\.\d+)?\s*)?(?:inch|cm|-inch)\b/i);
+  const sizeText = sizeMatch ? sizeMatch[0] : '';
+
+  const existingSeoTitle = (product.seo_title || '').trim();
+
+  // Check if existingSeoTitle is truncated (ends in cut-off word before brand) or generic
+  const isTruncated = /([a-z]{1,4}|-)\s*\|\s*Anant Arts$/i.test(existingSeoTitle) && 
+                      !/(inch|set|gold|item|art|gift|wood|brass|statue|decor|idol|diffuser|holder|organizer|clock|planter)\s*\|\s*Anant Arts$/i.test(existingSeoTitle);
+  const isGeneric = /^(Luxury (Ganesh|Krishna|Hanuman) Idol|Radha Krishna Idol)\s*\|\s*Anant Arts$/i.test(existingSeoTitle);
+  
+  const missingVariant = parenthesizedMatches && !parenthesizedMatches.some(p => existingSeoTitle.toLowerCase().includes(p.toLowerCase()));
+  const missingSize = sizeText && !existingSeoTitle.toLowerCase().includes(sizeText.toLowerCase());
+
+  let title;
+  // If existing SEO title is valid, unique, and does not suffer from variant collision, size loss, or truncation
+  if (existingSeoTitle && !isTruncated && !isGeneric && !missingVariant && !missingSize) {
+    const cleanTitle = existingSeoTitle.replace(/\s*\|\s*Anant Arts\s*(\| Anant Arts)*$/i, '').trim();
+    title = `${cleanTitle} | Anant Arts`;
+  } else {
+    // Construct unique, descriptive title preserving distinguishing variant and dimensions
+    let titleCore = rawName;
+    if (rawName.includes('|')) {
+      const segments = rawName.split('|').map(s => s.trim());
+      titleCore = segments[0];
+      if (sizeText && !titleCore.includes(sizeText)) {
+        titleCore += ` (${sizeText})`;
+      }
+      if (parenthesizedText && !titleCore.includes(parenthesizedText)) {
+        titleCore += ` ${parenthesizedText}`;
+      }
     }
+    title = `${titleCore.trim()} | Anant Arts`;
   }
 
   let description = product.seo_description;
@@ -113,8 +143,23 @@ export default async function ProductDetailPage({ params }) {
     .eq('is_approved', 1)
     .order('created_at', { ascending: false });
 
-  // Fetch related products
-  const relatedProducts = await getRelatedProducts(product.id, product.category_id);
+  // Fetch related products and sanitize payload to eliminate multi-kilobyte description bloat
+  const rawRelatedProducts = await getRelatedProducts(product.id, product.category_id);
+  const relatedProducts = (rawRelatedProducts || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: p.price,
+    discount_price: p.discount_price,
+    stock_quantity: p.stock_quantity,
+    material: p.material || '',
+    tags: p.tags || '',
+    category_name: p.category_name || '',
+    category_slug: p.category_slug || '',
+    image_path: p.image_path || '/images/placeholder.jpg',
+    is_bestseller: p.is_bestseller,
+    is_new_arrival: p.is_new_arrival,
+  }));
 
   // Parse tags
   let tags = [];
@@ -223,7 +268,14 @@ export default async function ProductDetailPage({ params }) {
       {/* Structured Data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <RecentlyViewedLogger product={product} />
+      <RecentlyViewedLogger product={{
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: product.price,
+        discount_price: product.discount_price,
+        image_path: primaryImage
+      }} />
       <MetaViewContent product={{
         id: product.id,
         sku: product.sku,
