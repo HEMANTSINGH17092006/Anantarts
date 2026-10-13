@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function CollectionHero({ categoryName, categoryDescription, categoryBanner }) {
   const title = categoryName ? `${categoryName}` : 'Handicrafts Online India — Handcrafted Idols & Décor';
@@ -16,16 +17,27 @@ export default function CollectionHero({ categoryName, categoryDescription, cate
       overflow: 'hidden',
       borderBottom: '2px solid #D4AF37'
     }}>
-      {/* Background Image */}
+      {/* Background Image Optimized with Next.js Image Priority Preload */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        backgroundImage: `url(${bgImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        opacity: 0.35,
-        zIndex: 1
-      }} />
+        zIndex: 1,
+        overflow: 'hidden'
+      }}>
+        <Image
+          src={bgImage}
+          alt={title}
+          fill
+          priority
+          sizes="100vw"
+          quality={75}
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center',
+            opacity: 0.35
+          }}
+        />
+      </div>
 
       {/* Dark Gradient Overlay */}
       <div style={{

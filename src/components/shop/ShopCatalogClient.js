@@ -1,12 +1,88 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import ProductCard from '../common/ProductCard';
 import FilterSidebar from './FilterSidebar';
 import CollectionHero from './CollectionHero';
 
-export default function ShopCatalogClient({ initialProducts = [], categories = [] }) {
+const paginationNavBtnStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '44px',
+  height: '44px',
+  padding: '0 16px',
+  borderRadius: '8px',
+  border: '1px solid var(--primary-gold-border, #D4A346)',
+  background: '#FFFFFF',
+  color: 'var(--text-dark, #1A1816)',
+  textDecoration: 'none',
+  fontWeight: '600',
+  fontSize: '0.9rem',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  boxShadow: 'var(--shadow-sm)'
+};
+
+const paginationDisabledBtnStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '44px',
+  height: '44px',
+  padding: '0 16px',
+  borderRadius: '8px',
+  border: '1px solid rgba(0,0,0,0.08)',
+  background: 'rgba(0,0,0,0.03)',
+  color: '#A09890',
+  fontWeight: '600',
+  fontSize: '0.9rem',
+  cursor: 'not-allowed'
+};
+
+const paginationPageStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '44px',
+  height: '44px',
+  padding: '0 12px',
+  borderRadius: '8px',
+  border: '1px solid var(--primary-gold-border, #D4A346)',
+  background: '#FFFFFF',
+  color: 'var(--text-dark, #1A1816)',
+  textDecoration: 'none',
+  fontWeight: '600',
+  fontSize: '0.9rem',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  boxShadow: 'var(--shadow-sm)'
+};
+
+const paginationActivePageStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '44px',
+  height: '44px',
+  padding: '0 12px',
+  borderRadius: '8px',
+  border: '1px solid var(--primary-gold, #B8860B)',
+  background: 'var(--primary-gold, #B8860B)',
+  color: '#FFFFFF',
+  textDecoration: 'none',
+  fontWeight: '700',
+  fontSize: '0.9rem',
+  boxShadow: '0 2px 8px rgba(184,134,11,0.25)'
+};
+
+export default function ShopCatalogClient({ 
+  initialProducts = [], 
+  categories = [], 
+  initialPage = 1,
+  pageSize = 24 
+}) {
   const searchParams = useSearchParams();
 
   // Filter States initialized from URL params if present
@@ -19,6 +95,22 @@ export default function ShopCatalogClient({ initialProducts = [], categories = [
   const [inStockOnly, setInStockOnly] = useState(searchParams.get('inStock') === '1');
   const [sort, setSort] = useState(searchParams.get('sort') || 'latest');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+
+  // Pagination State
+  const urlPage = parseInt(searchParams.get('page'), 10);
+  const [currentPage, setCurrentPage] = useState(
+    !isNaN(urlPage) && urlPage >= 1 ? urlPage : initialPage
+  );
+
+  // Reset pagination to page 1 whenever active filters or search change
+  const isFirstMount = useRef(true);
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    setCurrentPage(1);
+  }, [search, selectedCategory, selectedMaterial, selectedOccasion, selectedColor, maxPrice, inStockOnly, sort]);
 
   // Active Category Object for Hero Banner
   const activeCategoryObj = useMemo(() => {
@@ -106,6 +198,40 @@ export default function ShopCatalogClient({ initialProducts = [], categories = [
     return result;
   }, [initialProducts, search, selectedCategory, selectedMaterial, selectedOccasion, selectedColor, maxPrice, inStockOnly, sort]);
 
+  // Paginated Slicing
+  const totalProducts = filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
+  const validPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (validPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalProducts);
+  const displayedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Helper to construct crawlable pagination URLs with all active filters preserved
+  const getPageHref = (pageNum) => {
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (search) params.set('search', search);
+    if (selectedMaterial) params.set('material', selectedMaterial);
+    if (selectedOccasion) params.set('occasion', selectedOccasion);
+    if (selectedColor) params.set('color', selectedColor);
+    if (maxPrice < 50000) params.set('maxPrice', String(maxPrice));
+    if (inStockOnly) params.set('inStock', '1');
+    if (sort && sort !== 'latest') params.set('sort', sort);
+    if (pageNum > 1) params.set('page', String(pageNum));
+    const qs = params.toString();
+    return qs ? `/shop?${qs}` : '/shop';
+  };
+
+  const handlePageNavigation = (pageNum) => {
+    setCurrentPage(pageNum);
+    const href = getPageHref(pageNum);
+    window.history.pushState({}, '', href);
+    const target = document.querySelector('.catalog-main-layout');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const handleClearAll = () => {
     setSearch('');
     setSelectedCategory('');
@@ -115,6 +241,8 @@ export default function ShopCatalogClient({ initialProducts = [], categories = [
     setMaxPrice(50000);
     setInStockOnly(false);
     setSort('latest');
+    setCurrentPage(1);
+    window.history.pushState({}, '', '/shop');
   };
 
   return (
@@ -132,7 +260,7 @@ export default function ShopCatalogClient({ initialProducts = [], categories = [
         {/* 2. Top Controls Bar */}
         <div style={{
           display: 'flex',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '1rem',
@@ -145,7 +273,9 @@ export default function ShopCatalogClient({ initialProducts = [], categories = [
         }}>
           {/* Left: Product Count */}
           <div style={{ fontSize: '0.9rem', color: 'var(--text-dark)', fontWeight: '600' }}>
-            Showing: <span style={{ color: 'var(--primary-gold)' }}>{filteredProducts.length}</span> Products
+            Showing: <span style={{ color: 'var(--primary-gold)' }}>
+              {totalProducts > 0 ? `${startIndex + 1}–${endIndex} of ${totalProducts}` : '0'}
+            </span> Products
           </div>
 
           {/* Right: Sort Dropdown & Grid/List Toggle */}
@@ -240,19 +370,106 @@ export default function ShopCatalogClient({ initialProducts = [], categories = [
 
           {/* Right Product Grid / List or Empty State */}
           <div>
-            {filteredProducts.length > 0 ? (
-              <div 
-                className={viewMode === 'grid' ? "shop-products-grid" : "shop-products-list"}
-                style={{
-                  display: viewMode === 'grid' ? 'grid' : 'flex',
-                  flexDirection: viewMode === 'list' ? 'column' : 'none',
-                  gap: '1.75rem'
-                }}
-              >
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} isListView={viewMode === 'list'} />
-                ))}
-              </div>
+            {displayedProducts.length > 0 ? (
+              <>
+                <div 
+                  className={viewMode === 'grid' ? "shop-products-grid" : "shop-products-list"}
+                  style={{
+                    display: viewMode === 'grid' ? 'grid' : 'flex',
+                    flexDirection: viewMode === 'list' ? 'column' : 'none',
+                    gap: '1.75rem'
+                  }}
+                >
+                  {displayedProducts.map((product, idx) => (
+                    <ProductCard 
+                      key={product.id} 
+                      product={product} 
+                      isListView={viewMode === 'list'}
+                      priority={validPage === 1 && idx < 4}
+                    />
+                  ))}
+                </div>
+
+                {/* 4. Accessible & Crawlable Semantic Pagination Links */}
+                {totalPages > 1 && (
+                  <nav
+                    id="catalog-pagination"
+                    aria-label="Shop catalog pagination"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginTop: '3rem',
+                      marginBottom: '2rem',
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    {/* Previous Button / Link */}
+                    {validPage > 1 ? (
+                      <Link
+                        href={getPageHref(validPage - 1)}
+                        rel="prev"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageNavigation(validPage - 1);
+                        }}
+                        style={paginationNavBtnStyle}
+                      >
+                        ← Previous
+                      </Link>
+                    ) : (
+                      <span
+                        aria-disabled="true"
+                        style={paginationDisabledBtnStyle}
+                      >
+                        ← Previous
+                      </span>
+                    )}
+
+                    {/* Page Number Links */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                      const isCurrent = pageNum === validPage;
+                      return (
+                        <Link
+                          key={pageNum}
+                          href={getPageHref(pageNum)}
+                          aria-current={isCurrent ? 'page' : undefined}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageNavigation(pageNum);
+                          }}
+                          style={isCurrent ? paginationActivePageStyle : paginationPageStyle}
+                        >
+                          {pageNum}
+                        </Link>
+                      );
+                    })}
+
+                    {/* Next Button / Link */}
+                    {validPage < totalPages ? (
+                      <Link
+                        href={getPageHref(validPage + 1)}
+                        rel="next"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageNavigation(validPage + 1);
+                        }}
+                        style={paginationNavBtnStyle}
+                      >
+                        Next →
+                      </Link>
+                    ) : (
+                      <span
+                        aria-disabled="true"
+                        style={paginationDisabledBtnStyle}
+                      >
+                        Next →
+                      </span>
+                    )}
+                  </nav>
+                )}
+              </>
             ) : (
               /* Premium Empty State */
               <div style={{

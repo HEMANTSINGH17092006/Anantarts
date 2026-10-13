@@ -7,18 +7,35 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ searchParams }) {
   const resolvedParams = searchParams ? await searchParams : {};
+  const pageParam = parseInt(resolvedParams?.page, 10);
+  const page = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+
   const hasSubFilters = Boolean(
     resolvedParams?.search ||
     resolvedParams?.minPrice ||
     resolvedParams?.maxPrice ||
-    resolvedParams?.sort
+    resolvedParams?.sort ||
+    resolvedParams?.material ||
+    resolvedParams?.occasion ||
+    resolvedParams?.color ||
+    resolvedParams?.inStock
   );
 
   const categoryParam = resolvedParams?.category;
-  const canonicalUrl = categoryParam ? `/category/${categoryParam}` : '/shop';
+  let canonicalUrl = '/shop';
+  if (categoryParam) {
+    canonicalUrl = page > 1 ? `/category/${categoryParam}?page=${page}` : `/category/${categoryParam}`;
+  } else if (page > 1) {
+    canonicalUrl = `/shop?page=${page}`;
+  }
+
+  const baseTitle = 'Handicrafts Online India — Handcrafted Idols & Décor | Anant Arts';
+  const title = page > 1 
+    ? `Handicrafts Online India — Page ${page} | Anant Arts`
+    : baseTitle;
 
   return constructMetadata({
-    title: 'Handicrafts Online India — Handcrafted Idols & Décor | Anant Arts',
+    title,
     description: 'Shop authentic handicrafts online in India. Explore master-crafted 24K gold god idols, handmade wooden home décor, and traditional Indian handicrafts with insured shipping.',
     canonical: canonicalUrl,
     noIndex: hasSubFilters,
@@ -52,12 +69,16 @@ function buildSearchableDescription(rawDesc, name = '') {
   return uniqueExtras.length > 0 ? `${snippet} | ${uniqueExtras.join(' ')}` : snippet;
 }
 
-export default async function ShopPage() {
+export default async function ShopPage({ searchParams }) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const pageParam = parseInt(resolvedParams?.page, 10);
+  const initialPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+
   const categories = await getCategories();
   const rawProducts = await getProducts(); // Fetch all published products for instant client-side filtering
 
-  // Performance Optimization: Strip multi-kilobyte raw HTML descriptions and unneeded database fields
-  // before serializing to Client Component flight payload, reducing document HTML size by >85%.
+  // Performance Optimization: Strip multi-kilobyte raw HTML descriptions, unused images array,
+  // and unneeded database fields before serializing to Client Component flight payload.
   const products = (rawProducts || []).map((p) => ({
     id: p.id,
     name: p.name,
@@ -78,10 +99,6 @@ export default async function ShopPage() {
     category_name: p.category_name || p.categories?.name || '',
     category_slug: p.category_slug || p.categories?.slug || '',
     image_path: p.image_path || (p.images?.[0]?.image_path) || (p.product_images?.[0]?.image_path) || '/images/placeholder.jpg',
-    images: (p.images || p.product_images || []).map((img) => ({
-      image_path: typeof img === 'string' ? img : img.image_path,
-      is_primary: img.is_primary,
-    })),
     // Lightweight plain-text snippet (180 chars for QuickView display) + unique keywords for 100% search accuracy
     description: buildSearchableDescription(p.description, p.name),
   }));
@@ -98,7 +115,12 @@ export default async function ShopPage() {
         </p>
       </div>
     }>
-      <ShopCatalogClient initialProducts={products} categories={categories} />
+      <ShopCatalogClient 
+        initialProducts={products} 
+        categories={categories} 
+        initialPage={initialPage}
+        pageSize={24}
+      />
     </Suspense>
   );
 }

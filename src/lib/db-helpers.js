@@ -187,10 +187,46 @@ export const getProductBySlug = unstable_cache(
   { tags: ['products'], revalidate: 3600 }
 );
 
-// 8. Get Products List (Filtered & Sorted)
-// Note: We don't cache the entire filtered lists globally using unstable_cache 
-// because filters change frequently, or we can use custom cache keys if needed.
+// 8a. Cached Base Published Products Catalog (Zero Query Parameters)
+export const getCachedPublishedCatalog = unstable_cache(
+  async () => {
+    const supabase = getSupabaseDirect();
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        categories(name, slug),
+        product_images(image_path, is_primary)
+      `)
+      .eq('is_published', 1)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching cached published catalog:', error);
+      return [];
+    }
+
+    return (data || []).map(product => {
+      const primaryImg = product.product_images?.find(img => img.is_primary === 1) || product.product_images?.[0];
+      return {
+        ...product,
+        category_name: product.categories?.name || '',
+        category_slug: product.categories?.slug || '',
+        image_path: primaryImg?.image_path || '/images/placeholder.jpg'
+      };
+    });
+  },
+  ['shop-published-catalog'],
+  { tags: ['products'], revalidate: 3600 }
+);
+
+// 8b. Get Products List (Filtered & Sorted)
 export async function getProducts(params = {}) {
+  // If no filtering parameters provided (e.g. initial /shop catalog load), serve from cached catalog
+  if (!params || Object.keys(params).length === 0) {
+    return getCachedPublishedCatalog();
+  }
+
   const supabase = getSupabaseDirect();
   const { category, search, sort, minPrice, maxPrice, inStock, tag, material, occasion, festival, gift_type, color, all, limit } = params;
   

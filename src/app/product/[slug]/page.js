@@ -303,7 +303,7 @@ export default async function ProductDetailPage({ params }) {
           
           {/* Left Column: Image Gallery */}
           <div>
-            <ProductGallery images={product.images || []} />
+            <ProductGallery images={product.images || []} productTitle={product.name} />
           </div>
 
           {/* Right Column: Info details */}

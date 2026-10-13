@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCart, useWishlist } from '../context/AppContext';
 import { formatPrice, calcDiscount } from '@/lib/utils';
 
-export default function ProductCard({ product, isListView = false, onCompareClick }) {
+export default function ProductCard({ product, isListView = false, onCompareClick, priority = false }) {
   const router = useRouter();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -110,7 +110,8 @@ export default function ProductCard({ product, isListView = false, onCompareClic
               fill 
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               style={{ objectFit: 'cover' }}
-              priority={isBestSeller || isNewArrival}
+              priority={priority}
+              loading={priority ? 'eager' : 'lazy'}
             />
 
             {/* Quick Actions Hover Overlay (Issue #10: 44px touch targets) */}

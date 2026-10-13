@@ -1,7 +1,8 @@
 'use client';
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 
-export default function ProductGallery({ images = [] }) {
+export default function ProductGallery({ images = [], productTitle = '' }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [zoomStyle, setZoomStyle] = useState({ display: 'none' });
   const containerRef = useRef(null);
@@ -62,10 +63,14 @@ export default function ProductGallery({ images = [] }) {
           marginBottom: '1rem'
         }}
       >
-        <img 
+        <Image 
           src={activeImage} 
-          alt="Product details" 
-          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          alt={productTitle || "Handcrafted artisanal product details"} 
+          fill
+          priority
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+          quality={85}
+          style={{ objectFit: 'contain' }}
         />
         
         {/* Zoom Lens Overlay */}
@@ -98,13 +103,18 @@ export default function ProductGallery({ images = [] }) {
                 background: 'white',
                 padding: '4px',
                 cursor: 'pointer',
+                position: 'relative',
                 overflow: 'hidden'
               }}
+              aria-label={`Select product image ${idx + 1}`}
             >
-              <img 
+              <Image 
                 src={img.image_path} 
-                alt={`Thumbnail ${idx + 1}`} 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                alt={`${productTitle || 'Product'} thumbnail ${idx + 1}`} 
+                fill
+                sizes="70px"
+                loading="lazy"
+                style={{ objectFit: 'cover', borderRadius: '2px' }} 
               />
             </button>
           ))}

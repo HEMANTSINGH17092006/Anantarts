@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const HERO_SLIDES = [
   {
@@ -62,15 +63,27 @@ export default function HeroBanner() {
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: `url(${s.image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center right',
             opacity: idx === currentIndex ? 0.88 : 0,
             filter: 'brightness(1.18) contrast(1.08) saturate(1.1)',
             transition: 'opacity 1.2s ease-in-out',
-            zIndex: 1
+            zIndex: 1,
+            pointerEvents: 'none'
           }}
-        />
+        >
+          <Image
+            src={s.image}
+            alt={s.title}
+            fill
+            priority={idx === 0}
+            loading={idx === 0 ? 'eager' : 'lazy'}
+            sizes="100vw"
+            quality={80}
+            style={{
+              objectFit: 'cover',
+              objectPosition: 'center right'
+            }}
+          />
+        </div>
       ))}
 
       {/* Deepened Left-Side Scrim Gradient Overlay (Issue #19: Text pop over busy background) */}

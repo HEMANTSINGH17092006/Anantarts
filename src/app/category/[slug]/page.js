@@ -265,8 +265,8 @@ export default async function CategoryPage({ params, searchParams }) {
                 marginBottom: '3rem'
               }}
             >
-              {paginatedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {paginatedProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} priority={validPage === 1 && idx < 4} />
               ))}
             </div>
 
