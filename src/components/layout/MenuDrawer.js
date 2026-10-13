@@ -139,7 +139,7 @@ export default function MenuDrawer({ isOpen, onClose }) {
             isOpen={openGroup === 'corporate'}
             onToggle={() => toggleGroup('corporate')}
             items={[
-              { label: 'View All Corporate Gifts', link: '/corporate-gifts' },
+              { label: 'View All Corporate Gifts', link: '/category/corporate-gifts' },
               { label: 'Executive Desk Gifts', link: '/corporate-gifts' },
               { label: 'Awards & Mementos', link: '/corporate-gifts' },
               { label: 'Bulk Enquiry & Catalog', link: '/corporate-gifts#bulk-enquiry-section' }
