@@ -30,6 +30,19 @@ export async function proxy(request) {
   }
 
   // =============================================
+  // GSC SEARCH PLACEHOLDER CLEANUP
+  // Clean ?search={search_term_string} -> /shop
+  // =============================================
+  if (pathname === '/shop') {
+    const searchParam = request.nextUrl.searchParams.get('search');
+    if (searchParam === '{search_term_string}' || searchParam === '%7Bsearch_term_string%7D') {
+      const cleanUrl = request.nextUrl.clone();
+      cleanUrl.searchParams.delete('search');
+      return NextResponse.redirect(cleanUrl, { status: 308 });
+    }
+  }
+
+  // =============================================
   // 2. ADMIN API PROTECTION
   // Protect all /api/admin/* routes with HTTP 401/403 JSON
   // =============================================
