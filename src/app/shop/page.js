@@ -7,8 +7,17 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ searchParams }) {
   const resolvedParams = searchParams ? await searchParams : {};
-  const pageParam = parseInt(resolvedParams?.page, 10);
-  const page = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+  const PAGE_SIZE = 24;
+
+  const rawProducts = await getProducts();
+  const totalProducts = Array.isArray(rawProducts) ? rawProducts.length : 0;
+  const totalPages = Math.max(1, Math.ceil(totalProducts / PAGE_SIZE));
+
+  const rawPageParam = parseInt(resolvedParams?.page, 10);
+  const isPageParamProvided = !isNaN(rawPageParam);
+  const requestedPage = isPageParamProvided && rawPageParam >= 1 ? rawPageParam : 1;
+  const isOutOfRange = isPageParamProvided && rawPageParam > totalPages;
+  const validPage = Math.min(requestedPage, totalPages);
 
   const hasSubFilters = Boolean(
     resolvedParams?.search ||
@@ -24,21 +33,21 @@ export async function generateMetadata({ searchParams }) {
   const categoryParam = resolvedParams?.category;
   let canonicalUrl = '/shop';
   if (categoryParam) {
-    canonicalUrl = page > 1 ? `/category/${categoryParam}?page=${page}` : `/category/${categoryParam}`;
-  } else if (page > 1) {
-    canonicalUrl = `/shop?page=${page}`;
+    canonicalUrl = validPage > 1 ? `/category/${categoryParam}?page=${validPage}` : `/category/${categoryParam}`;
+  } else if (validPage > 1) {
+    canonicalUrl = `/shop?page=${validPage}`;
   }
 
   const baseTitle = 'Handicrafts Online India — Handcrafted Idols & Décor | Anant Arts';
-  const title = page > 1 
-    ? `Handicrafts Online India — Page ${page} | Anant Arts`
+  const title = validPage > 1 
+    ? `Handicrafts Online India — Page ${validPage} | Anant Arts`
     : baseTitle;
 
   return constructMetadata({
     title,
     description: 'Shop authentic handicrafts online in India. Explore master-crafted 24K gold god idols, handmade wooden home décor, and traditional Indian handicrafts with insured shipping.',
     canonical: canonicalUrl,
-    noIndex: hasSubFilters,
+    noIndex: hasSubFilters || isOutOfRange,
     keywords: [
       'handicrafts online India',
       'Indian handicrafts online',
@@ -69,10 +78,12 @@ function buildSearchableDescription(rawDesc, name = '') {
   return uniqueExtras.length > 0 ? `${snippet} | ${uniqueExtras.join(' ')}` : snippet;
 }
 
+const PRODUCTION_DOMAIN = 'https://anantarts.in';
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || PRODUCTION_DOMAIN).replace(/\/$/, '');
+
 export default async function ShopPage({ searchParams }) {
   const resolvedParams = searchParams ? await searchParams : {};
-  const pageParam = parseInt(resolvedParams?.page, 10);
-  const initialPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+  const PAGE_SIZE = 24;
 
   const categories = await getCategories();
   const rawProducts = await getProducts(); // Fetch all published products for instant client-side filtering
@@ -103,24 +114,99 @@ export default async function ShopPage({ searchParams }) {
     description: buildSearchableDescription(p.description, p.name),
   }));
 
+  // Pagination derivation matching generateMetadata & ShopCatalogClient
+  const totalProducts = products.length;
+  const totalPages = Math.max(1, Math.ceil(totalProducts / PAGE_SIZE));
+  const rawPageParam = parseInt(resolvedParams?.page, 10);
+  const isPageParamProvided = !isNaN(rawPageParam);
+  const requestedPage = isPageParamProvided && rawPageParam >= 1 ? rawPageParam : 1;
+  const isOutOfRange = isPageParamProvided && rawPageParam > totalPages;
+  const validPage = Math.min(requestedPage, totalPages);
+  const startIndex = (validPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, totalProducts);
+  const displayedProducts = products.slice(startIndex, endIndex);
+
+  // Active filter detection: emit CollectionPage/ItemList only for clean catalog pages
+  const hasSubFilters = Boolean(
+    resolvedParams?.search ||
+    resolvedParams?.minPrice ||
+    resolvedParams?.maxPrice ||
+    resolvedParams?.sort ||
+    resolvedParams?.material ||
+    resolvedParams?.occasion ||
+    resolvedParams?.color ||
+    resolvedParams?.inStock
+  );
+  const categoryParam = resolvedParams?.category;
+  const isCleanCatalog = !categoryParam && !hasSubFilters && !isOutOfRange;
+
+  const canonicalUrl = validPage > 1 
+    ? `${BASE_URL}/shop?page=${validPage}` 
+    : `${BASE_URL}/shop`;
+
+  const pageTitle = validPage > 1 
+    ? `Handicrafts Online India — Page ${validPage} | Anant Arts`
+    : 'Handicrafts Online India — Handcrafted Idols & Décor | Anant Arts';
+  const pageDescription = 'Shop authentic handicrafts online in India. Explore master-crafted 24K gold god idols, handmade wooden home décor, and traditional Indian handicrafts with insured shipping.';
+
+  const breadcrumbSchema = isCleanCatalog ? {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: `${BASE_URL}/shop` },
+    ],
+  } : null;
+
+  const collectionSchema = isCleanCatalog ? {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: pageTitle,
+    description: pageDescription,
+    url: canonicalUrl,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: displayedProducts.map((p, idx) => ({
+        '@type': 'ListItem',
+        position: startIndex + idx + 1,
+        url: `${BASE_URL}/product/${p.slug}`,
+        name: p.name,
+      })),
+    },
+  } : null;
+
   return (
-    <Suspense fallback={
-      <div style={{ background: 'var(--bg-cream)', minHeight: '100vh', padding: '5rem 0', textAlign: 'center' }}>
-        <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>🪷</div>
-        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: 'var(--text-dark)' }}>
-          Loading Divine Collections...
-        </h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '8px' }}>
-          Preparing our handcrafted spiritual idols catalogue for you.
-        </p>
-      </div>
-    }>
-      <ShopCatalogClient 
-        initialProducts={products} 
-        categories={categories} 
-        initialPage={initialPage}
-        pageSize={24}
-      />
-    </Suspense>
+    <>
+      {breadcrumbSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+      )}
+      {collectionSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        />
+      )}
+      <Suspense fallback={
+        <div style={{ background: 'var(--bg-cream)', minHeight: '100vh', padding: '5rem 0', textAlign: 'center' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>🪷</div>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: 'var(--text-dark)' }}>
+            Loading Divine Collections...
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '8px' }}>
+            Preparing our handcrafted spiritual idols catalogue for you.
+          </p>
+        </div>
+      }>
+        <ShopCatalogClient 
+          initialProducts={products} 
+          categories={categories} 
+          initialPage={validPage}
+          pageSize={PAGE_SIZE}
+        />
+      </Suspense>
+    </>
   );
 }
