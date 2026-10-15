@@ -174,7 +174,7 @@ export default async function ProductDetailPage({ params }) {
   }
 
   const canonicalUrl = `${BASE_URL}/product/${product.slug}`;
-  const primaryImage = product.images?.[0]?.image_path || '';
+  const primaryImage = product.images?.[0]?.image_path || product.image_path || '';
   const avgRating = reviews?.length > 0
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
     : null;
@@ -185,16 +185,49 @@ export default async function ProductDetailPage({ params }) {
     .replace(/\s+/g, ' ')
     .trim();
 
+  // Helper to ensure fully qualified URL
+  const resolveAbsoluteUrl = (path) => {
+    if (!path || typeof path !== 'string') return null;
+    const trimmed = path.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return `${BASE_URL}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+  };
+
+  // Collect all valid gallery images in order
+  const rawImagePaths = [
+    ...(product.images || []).map(img => img?.image_path),
+    product.image_path
+  ];
+  const galleryImageUrls = rawImagePaths
+    .map(path => resolveAbsoluteUrl(path))
+    .filter(Boolean);
+  const uniqueImages = Array.from(new Set(galleryImageUrls));
+  const schemaImages = uniqueImages.length > 0
+    ? (uniqueImages.length === 1 ? uniqueImages[0] : uniqueImages)
+    : null;
+
+  // Genuine SKU and MPN mapping (no fabricated IDs, omit if absent, do not copy SKU into MPN)
+  const genuineSku = typeof product.sku === 'string' && product.sku.trim().length > 0
+    ? product.sku.trim()
+    : null;
+  const genuineMpn = typeof product.mpn === 'string' && product.mpn.trim().length > 0
+    ? product.mpn.trim()
+    : null;
+
   // Product JSON-LD Schema
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     description: sanitizedDescription,
-    sku: product.sku,
     brand: { '@type': 'Brand', name: 'Anant Arts' },
-    image: primaryImage.startsWith('http') ? primaryImage : `${BASE_URL}${primaryImage}`,
+    ...(schemaImages && { image: schemaImages }),
     url: canonicalUrl,
+    ...(genuineSku && { sku: genuineSku }),
+    ...(genuineMpn && { mpn: genuineMpn }),
     offers: {
       '@type': 'Offer',
       priceCurrency: 'INR',
